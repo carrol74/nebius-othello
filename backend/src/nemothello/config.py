@@ -44,6 +44,7 @@ class Settings(BaseSettings):
                 or report.get("base_model") != self.pytrio_base_model
                 or report.get("template_version") != TEMPLATE_VERSION
                 or report.get("scoring_mode") != SCORING_MODE
+                or report.get("batch_order_checked") is not True
                 or report.get("symbols") != SYMBOLS
                 or report.get("source_model_path") != self.pytrio_model_path
                 or len(report.get("samples", [])) < 2):

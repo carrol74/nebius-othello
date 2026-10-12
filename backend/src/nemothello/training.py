@@ -2,6 +2,7 @@ import importlib.metadata
 import json
 import math
 import random
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -39,7 +40,8 @@ def calibrate(
               "template_version": TEMPLATE_VERSION, "symbols": SYMBOLS,
               "scoring_mode": SCORING_MODE, "source_model_path": model_path,
               "artifact_kind": "calibration-only", "tolerance": tolerance,
-              "samples": [], "data_path": str(data), "forward_samples": 0}
+              "samples": [], "data_path": str(data), "forward_samples": 0,
+              "batch_order_checked": False}
     write_json(output, report)
     service = trio.ServiceClient(api_key=api_key)
     training = (
@@ -57,10 +59,14 @@ def calibrate(
         report["forward_samples"] = len(before)
         write_json(output, report)
         print(f"校准初始评分：{len(before)}/{limit}", flush=True)
-    saved = training.save_weights_for_sampler(name=name, ttl_seconds=None).result()
+    saved = training.save_state(name=f"{name}-train", ttl_seconds=None).result()
+    sampler_saved = training.save_weights_for_sampler(
+        name=f"{name}-sampler", ttl_seconds=None,
+    ).result()
     report["model_path"] = saved.path
+    report["sampler_path"] = sampler_saved.path
     write_json(output, report)
-    reference = SamplingPolicy(api_key, base_model, saved.path)
+    reference = SamplingPolicy(api_key, base_model, sampler_saved.path)
     restored = PytrioPolicy(api_key, base_model, saved.path)
     rows = report["samples"]
     passed = True
@@ -73,7 +79,17 @@ def calibrate(
         restored_scores = recovered["scores"]
         difference = max(abs(scores[m] - reference_scores[m]) for m in scores)
         recovery_difference = max(abs(scores[m] - restored_scores[m]) for m in scores)
-        passed &= difference <= tolerance and recovery_difference <= tolerance
+        # Reverse only the batch rows. The prompt and symbol mapping are unchanged.
+        reverse_rows = replace(encoded, coordinates=encoded.coordinates[::-1],
+                               symbols=encoded.symbols[::-1],
+                               symbol_tokens=encoded.symbol_tokens[::-1])
+        reversed_result = training.forward(
+            scoring_datums(encoded)[::-1], loss_fn="cross_entropy", auto_shift=False,
+        ).result()
+        reversed_scores = complete_scores(reversed_result, reverse_rows)
+        batch_order_difference = max(abs(scores[m] - reversed_scores[m]) for m in scores)
+        passed &= (difference <= tolerance and recovery_difference <= tolerance
+                   and batch_order_difference <= tolerance)
         reverse = encode_position(tokenizer, tuple(sample["board"]), sample["turn"],
                                   tuple(reversed(encoded.coordinates)))
         reverse_output = training.forward(
@@ -86,12 +102,16 @@ def calibrate(
                      "batched_forward": scores, "reference": reference_scores,
                      "restored": restored_scores,
                      "max_reference_difference": difference, "max_restore_difference": recovery_difference,
+                     "reversed_batch": reversed_scores,
+                     "max_batch_order_difference": batch_order_difference,
                      "reordered": reordered,
                      "order_changed_selection": max(scores, key=scores.get) != max(reordered, key=reordered.get),
                      "metrics": metrics, "restored_elapsed_ms": recovered["elapsed_ms"]})
         write_json(output, report)
-        print(f"校准对照与恢复：{len(rows)}/{limit}，误差 {difference:.6g}/{recovery_difference:.6g}",
+        print(f"校准对照与恢复：{len(rows)}/{limit}，误差 {difference:.6g}/{recovery_difference:.6g}，"
+              f"批次顺序误差 {batch_order_difference:.6g}",
               flush=True)
+    report["batch_order_checked"] = True
     report["status"] = "passed" if passed else "failed"
     write_json(output, report)
     if not passed:
@@ -124,7 +144,8 @@ def train(
 ) -> dict[str, Any]:
     if (calibration["status"] != "passed" or calibration["base_model"] != base_model
             or calibration["template_version"] != TEMPLATE_VERSION
-            or calibration.get("scoring_mode") != SCORING_MODE):
+            or calibration.get("scoring_mode") != SCORING_MODE
+            or calibration.get("batch_order_checked") is not True):
         raise ValueError("训练前需要当前基座与模板的真实评分核验记录")
     if (rank < 4 or rank > 64 or batch_size < 1 or epochs < 1
             or not math.isfinite(learning_rate) or learning_rate <= 0):
@@ -191,7 +212,8 @@ def train(
     lengths = [length for _, length in encoded_training]
     best = min(history, key=lambda entry: entry["validation_answer_loss"]) if history else None
     best_loss = best["validation_answer_loss"] if best else math.inf
-    best_path = best["sampler_path"] if best else None
+    best_path = best["state_path"] if best else None
+    best_sampler_path = best["sampler_path"] if best else None
     start_epoch = len(history)
     invocation_id = uuid4().hex[:12]
     output.mkdir(parents=True, exist_ok=True)
@@ -230,10 +252,11 @@ def train(
         history.append({"epoch": epoch + 1, "validation_answer_loss": loss,
                         "state_path": checkpoint.path, "sampler_path": sampler.path})
         if loss < best_loss:
-            best_loss, best_path = loss, sampler.path
+            best_loss, best_path, best_sampler_path = loss, checkpoint.path, sampler.path
         write_json(output / "training-history.json", history)
     result = {"status": "trained-not-strength-verified", "artifact_kind": "trained-policy",
-              "base_model": base_model, "model_path": best_path, "validation_loss": best_loss,
+              "base_model": base_model, "model_path": best_path,
+              "sampler_path": best_sampler_path, "validation_loss": best_loss,
               "template_version": TEMPLATE_VERSION, "history": history}
     write_json(output / "adapter-metadata.json", result)
     return result

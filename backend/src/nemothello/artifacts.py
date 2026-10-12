@@ -32,14 +32,15 @@ def backup_adapter(
     api_key: str, metadata_path: Path, destination: Path, temporary_root: Path,
 ) -> dict[str, Any]:
     metadata = json.loads(metadata_path.read_text())
-    if metadata.get("artifact_kind") != "trained-policy" or not metadata.get("model_path"):
+    if (metadata.get("artifact_kind") != "trained-policy"
+            or not metadata.get("model_path") or not metadata.get("sampler_path")):
         raise ValueError("备份需要真实训练产物的 adapter-metadata.json")
     if destination.exists():
         raise ValueError("备份目录已经存在，请选择新的输出目录")
     temporary_root.mkdir(parents=True, exist_ok=True)
     service = trio.ServiceClient(api_key=api_key)
     rest = service.create_rest_client()
-    checkpoint = find_checkpoint(rest, metadata["model_path"])
+    checkpoint = find_checkpoint(rest, metadata["sampler_path"])
     with tempfile.TemporaryDirectory(prefix="adapter-", dir=temporary_root) as directory:
         work = Path(directory)
         archive = work / "checkpoint.archive"
@@ -71,6 +72,7 @@ def backup_adapter(
         report = {
             "status": "downloaded-and-structure-checked",
             "base_model": metadata["base_model"], "model_path": metadata["model_path"],
+            "sampler_path": metadata["sampler_path"],
             "checkpoint_id": checkpoint.checkpoint_id,
             "archive_bytes": result.file_size_bytes,
             "adapter_directory": str((destination / "adapter").resolve()),
