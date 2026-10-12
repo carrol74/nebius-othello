@@ -29,3 +29,12 @@ deploy/backend.env
 deploy/runtime/
 deploy/edax/
 data/book.dat
+
+# Local discussion, historical research, and experiment records
+/AGENTS.md
+/docs/review/
+/docs/archive/
+/docs/research/
+/backend/tools/diagnose_pytrio*.py
+/eval/results/*
+!/eval/results/.gitkeep

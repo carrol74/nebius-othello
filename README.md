@@ -12,9 +12,9 @@ Checkpoint-based training resume, PEFT adapter backup, OpenAPI export, and a liv
 
 On 2026-10-12, all **23 Python tests** and Ruff checks passed locally. Web type checking, the production build, and generated API type verification passed earlier that day. Tests include actual SDK batch planning, real Edax output parsing, board rules, history, SQLite recovery, exclusive worker ownership, and calibration gates.
 
-The user built patched Edax 4.6 on macOS ARM64 and passed the real Python adapter check, including black and white candidates, forced-pass parsing, and exact endgame scores. The report is [edax-check.json](eval/results/edax-check.json). Data generation produced 250 complete games and 14,479 policy positions, split into 200/25/25 games; [dataset-split.json](eval/results/dataset-split.json) preserves the statistics and shared-position counts. Raw data, binaries, weights, credentials, and build output are ignored by Git.
+The user built patched Edax 4.6 on macOS ARM64 and passed the real Python adapter check, including black and white candidates, forced-pass parsing, and exact endgame scores. The report is `eval/results/edax-check.json`. Data generation produced 250 complete games and 14,479 policy positions, split into 200/25/25 games; `eval/results/dataset-split.json` preserves the statistics and shared-position counts. Raw data, binaries, weights, credentials, and build output are ignored by Git.
 
-PyTRIO 0.2.9 rejected two-dimensional candidate targets before submission. Scoring now batches one one-dimensional sample per candidate and records repeated input tokens. The user authorized cloud calibration and two training epochs conditional on calibration passing. All 12 calibration positions returned complete scores, and Train-checkpoint restoration reproduced scores exactly; cross-interface differences reached 0.196168 and changed one selected move. Identical inputs also produced batch-position-dependent scores. [calibration.json](eval/results/calibration.json) remains failed at the unchanged 0.0001 tolerance. Training has not started. The [diagnosis](docs/review/pytrio-calibration-diagnosis-2026-10-12.md) contains measured evidence and a direct SDK reproducer. End-to-end games and public deployment remain unverified.
+PyTRIO 0.2.9 rejected two-dimensional candidate targets before submission. Scoring now batches one one-dimensional sample per candidate and records repeated input tokens. The user authorized cloud calibration and two training epochs conditional on calibration passing. All 12 calibration positions returned complete scores, and Train-checkpoint restoration reproduced scores exactly; cross-interface differences reached 0.196168 and changed one selected move. Identical inputs also produced batch-position-dependent scores. `eval/results/calibration.json` remains failed at the unchanged 0.0001 tolerance. Training has not started. Follow the [runbook](docs/runbook.md) for calibration checks. End-to-end games and public deployment remain unverified.
 
 ## Development
 
@@ -43,6 +43,6 @@ Environment examples are in `web/.env.example` and `backend/.env.example`. Never
 - [Third-party license checklist](docs/licenses.md)
 - [Technical design](docs/technical-design.md)
 - [Product behavior and deployment](docs/product-integration.md)
-- [Open technical questions](docs/review/open-questions.md)
+- [Open technical questions](docs/open-questions.md)
 
 The project is intended for the Best Apps and Agents Track of the Nebius x NVIDIA Global AI Hackathon. Public release still requires real Nemotron integration, evaluation evidence, a working demo, and code and asset license notices.
