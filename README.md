@@ -4,7 +4,7 @@ An Othello app with an AI opponent, optional move hints, and post-game review.
 
 The opponent uses Jev-style candidate scoring with Qwen3.5-4B through PyTRIO. Edax supplies training labels, hints, and analysis. NVIDIA Nemotron through Nebius Token Factory explains completed games and answers review questions.
 
-The implementation is available, but scoring calibration currently fails numerical consistency checks. Training and public deployment are incomplete. A passing calibration report is required before training or serving a policy.
+AI games require a trained policy checkpoint and its passing scoring calibration report.
 
 ## Development
 
@@ -44,4 +44,4 @@ From the root: `npm run typecheck`, `npm run build`, and `npm run check:api-type
 
 From `backend/`: `uv run pytest`, `uv run ruff check src tests`, and `uv run nemothello --help`. The CLI provides Edax checks, data preparation, calibration, training, evaluation, adapter backup, API export, and live acceptance checks. Cloud model operations can incur charges.
 
-`deploy/compose.yaml` provides a CPU backend deployment template; the Next.js app targets Vercel. Binaries, credentials, model weights, datasets, experiment results, and local planning documents are excluded from version control.
+`deploy/compose.yaml` provides a CPU backend deployment template; the Next.js app targets Vercel.
