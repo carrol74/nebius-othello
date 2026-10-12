@@ -1,0 +1,15 @@
+{
+  "name": "nemothello",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["web"],
+  "engines": { "node": ">=20.9.0" },
+  "scripts": {
+    "dev": "npm run dev --workspace @nemothello/web",
+    "build": "npm run build --workspace @nemothello/web",
+    "start": "npm run start --workspace @nemothello/web",
+    "typecheck": "npm run typecheck --workspace @nemothello/web",
+    "generate:types": "npm run generate:types --workspace @nemothello/web",
+    "check:api-types": "npm run check:api-types --workspace @nemothello/web"
+  }
+}

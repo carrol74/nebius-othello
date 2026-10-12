@@ -1,0 +1,2056 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Nemothello",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games": {
+      "post": {
+        "summary": "Create Game",
+        "operationId": "create_game_games_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGame"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{game_id}": {
+      "get": {
+        "summary": "Get Game",
+        "operationId": "get_game_games__game_id__get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{game_id}/moves": {
+      "post": {
+        "summary": "Move",
+        "operationId": "move_games__game_id__moves_post",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{game_id}/ai-move": {
+      "post": {
+        "summary": "Ai Move",
+        "operationId": "ai_move_games__game_id__ai_move_post",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GameState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{game_id}/hint": {
+      "post": {
+        "summary": "Hint",
+        "operationId": "hint_games__game_id__hint_post",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HintRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Hint"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{game_id}/hint-displays": {
+      "post": {
+        "summary": "Display Hint",
+        "operationId": "display_hint_games__game_id__hint_displays_post",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HintDisplay"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HintDisplayResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analyze": {
+      "post": {
+        "summary": "Analyze",
+        "operationId": "analyze_analyze_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Analysis"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{game_id}/reviews": {
+      "post": {
+        "summary": "Review",
+        "operationId": "review_games__game_id__reviews_post",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{game_id}/review": {
+      "get": {
+        "summary": "Get Review",
+        "operationId": "get_review_games__game_id__review_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/Review"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReviewLookup"
+                    }
+                  ],
+                  "title": "Response Get Review Games  Game Id  Review Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{game_id}/review/questions": {
+      "post": {
+        "summary": "Question",
+        "operationId": "question_games__game_id__review_questions_post",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{game_id}/branches": {
+      "post": {
+        "summary": "Branch",
+        "operationId": "branch_games__game_id__branches_post",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BranchRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/GameState"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Task"
+                    }
+                  ],
+                  "title": "Response Branch Games  Game Id  Branches Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tasks/{task_id}": {
+      "get": {
+        "summary": "Get Task",
+        "operationId": "get_task_tasks__task_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Analysis": {
+        "properties": {
+          "board": {
+            "items": {
+              "type": "string",
+              "pattern": "^[.XO]{8}$"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 8,
+            "title": "Board"
+          },
+          "turn": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Turn"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/Candidate"
+            },
+            "type": "array",
+            "title": "Candidates"
+          },
+          "recommended_move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Recommended Move"
+          },
+          "score_perspective": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Score Perspective"
+          },
+          "score_kind": {
+            "type": "string",
+            "enum": [
+              "estimate",
+              "exact"
+            ],
+            "title": "Score Kind"
+          },
+          "engine_version": {
+            "type": "string",
+            "title": "Engine Version"
+          },
+          "eval_file": {
+            "type": "string",
+            "title": "Eval File"
+          },
+          "depth": {
+            "type": "integer",
+            "maximum": 60.0,
+            "minimum": 1.0,
+            "title": "Depth"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/AnalysisSettings"
+          },
+          "elapsed_ms": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Elapsed Ms"
+          },
+          "raw_output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Output"
+          }
+        },
+        "type": "object",
+        "required": [
+          "board",
+          "turn",
+          "candidates",
+          "recommended_move",
+          "score_perspective",
+          "score_kind",
+          "engine_version",
+          "eval_file",
+          "depth",
+          "settings",
+          "elapsed_ms"
+        ],
+        "title": "Analysis"
+      },
+      "AnalysisSettings": {
+        "properties": {
+          "level": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Level"
+          },
+          "minimum_depth": {
+            "type": "integer",
+            "maximum": 60.0,
+            "minimum": 1.0,
+            "title": "Minimum Depth"
+          },
+          "threads": {
+            "type": "integer",
+            "const": 1,
+            "title": "Threads"
+          },
+          "book": {
+            "type": "boolean",
+            "const": false,
+            "title": "Book"
+          },
+          "selectivity": {
+            "type": "integer",
+            "const": 5,
+            "title": "Selectivity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level",
+          "minimum_depth",
+          "threads",
+          "book",
+          "selectivity"
+        ],
+        "title": "AnalysisSettings"
+      },
+      "AnalyzeRequest": {
+        "properties": {
+          "board": {
+            "items": {
+              "type": "string",
+              "pattern": "^[.XO]{8}$"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 8,
+            "title": "Board"
+          },
+          "turn": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Turn"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "board",
+          "turn"
+        ],
+        "title": "AnalyzeRequest"
+      },
+      "AutomaticHintMove": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "hint_id": {
+            "type": "string",
+            "title": "Hint Id"
+          },
+          "coordinate": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Coordinate"
+          },
+          "analysis_settings": {
+            "$ref": "#/components/schemas/AnalysisSettings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revision",
+          "hint_id",
+          "coordinate",
+          "analysis_settings"
+        ],
+        "title": "AutomaticHintMove"
+      },
+      "BranchRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 8,
+            "title": "Request Id"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Revision"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "follow_hints"
+            ],
+            "title": "Mode"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "revision",
+          "mode"
+        ],
+        "title": "BranchRequest"
+      },
+      "BranchResult": {
+        "properties": {
+          "game_id": {
+            "type": "string",
+            "title": "Game Id"
+          },
+          "result": {
+            "$ref": "#/components/schemas/GameResult"
+          }
+        },
+        "type": "object",
+        "required": [
+          "game_id",
+          "result"
+        ],
+        "title": "BranchResult"
+      },
+      "Candidate": {
+        "properties": {
+          "coordinate": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Coordinate"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "principal_variation": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Principal Variation"
+          },
+          "depth": {
+            "type": "integer",
+            "maximum": 60.0,
+            "minimum": 1.0,
+            "title": "Depth"
+          },
+          "score_kind": {
+            "type": "string",
+            "enum": [
+              "estimate",
+              "exact"
+            ],
+            "title": "Score Kind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "coordinate",
+          "score",
+          "principal_variation",
+          "depth",
+          "score_kind"
+        ],
+        "title": "Candidate"
+      },
+      "CreateGame": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 8,
+            "title": "Request Id"
+          },
+          "human_color": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Human Color"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "human_color"
+        ],
+        "title": "CreateGame"
+      },
+      "GameResult": {
+        "properties": {
+          "black_count": {
+            "type": "integer",
+            "title": "Black Count"
+          },
+          "white_count": {
+            "type": "integer",
+            "title": "White Count"
+          },
+          "winner": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O",
+              "draw"
+            ],
+            "title": "Winner"
+          }
+        },
+        "type": "object",
+        "required": [
+          "black_count",
+          "white_count",
+          "winner"
+        ],
+        "title": "GameResult"
+      },
+      "GameState": {
+        "properties": {
+          "game_id": {
+            "type": "string",
+            "title": "Game Id"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "board": {
+            "items": {
+              "type": "string",
+              "pattern": "^[.XO]{8}$"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 8,
+            "title": "Board"
+          },
+          "turn": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "X",
+                  "O"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turn"
+          },
+          "human_color": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Human Color"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "finished"
+            ],
+            "title": "Status"
+          },
+          "legal_moves": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Legal Moves"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryEvent"
+            },
+            "type": "array",
+            "title": "History"
+          },
+          "initial_board": {
+            "items": {
+              "type": "string",
+              "pattern": "^[.XO]{8}$"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 8,
+            "title": "Initial Board"
+          },
+          "initial_turn": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Initial Turn"
+          },
+          "opponent_config_id": {
+            "type": "string",
+            "title": "Opponent Config Id"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GameResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parent_game_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Game Id"
+          },
+          "parent_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Revision"
+          },
+          "auto_play": {
+            "type": "boolean",
+            "title": "Auto Play",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "game_id",
+          "revision",
+          "board",
+          "turn",
+          "human_color",
+          "status",
+          "legal_moves",
+          "history",
+          "initial_board",
+          "initial_turn",
+          "opponent_config_id",
+          "result"
+        ],
+        "title": "GameState"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Hint": {
+        "properties": {
+          "hint_id": {
+            "type": "string",
+            "title": "Hint Id"
+          },
+          "game_id": {
+            "type": "string",
+            "title": "Game Id"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "recommended_move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Recommended Move"
+          },
+          "analysis": {
+            "$ref": "#/components/schemas/Analysis"
+          },
+          "displayed": {
+            "type": "boolean",
+            "title": "Displayed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hint_id",
+          "game_id",
+          "revision",
+          "recommended_move",
+          "analysis",
+          "displayed"
+        ],
+        "title": "Hint"
+      },
+      "HintAdoption": {
+        "properties": {
+          "shown_turns": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Shown Turns"
+          },
+          "adopted_turns": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Adopted Turns"
+          }
+        },
+        "type": "object",
+        "required": [
+          "shown_turns",
+          "adopted_turns"
+        ],
+        "title": "HintAdoption"
+      },
+      "HintDisplay": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 8,
+            "title": "Request Id"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "hint_id": {
+            "type": "string",
+            "title": "Hint Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "expected_revision",
+          "hint_id"
+        ],
+        "title": "HintDisplay"
+      },
+      "HintDisplayResult": {
+        "properties": {
+          "hint_id": {
+            "type": "string",
+            "title": "Hint Id"
+          },
+          "displayed": {
+            "type": "boolean",
+            "title": "Displayed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hint_id",
+          "displayed"
+        ],
+        "title": "HintDisplayResult"
+      },
+      "HintRequest": {
+        "properties": {
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected_revision"
+        ],
+        "title": "HintRequest"
+      },
+      "HistoryEvent": {
+        "properties": {
+          "event_index": {
+            "type": "integer",
+            "title": "Event Index"
+          },
+          "actor": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Actor"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "move",
+              "pass"
+            ],
+            "title": "Kind"
+          },
+          "coordinate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coordinate"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "board": {
+            "items": {
+              "type": "string",
+              "pattern": "^[.XO]{8}$"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 8,
+            "title": "Board"
+          },
+          "turn": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "X",
+                  "O"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turn"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_index",
+          "actor",
+          "kind",
+          "coordinate",
+          "revision",
+          "board",
+          "turn"
+        ],
+        "title": "HistoryEvent"
+      },
+      "MoveRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 8,
+            "title": "Request Id"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "coordinate": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Coordinate"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "expected_revision",
+          "coordinate"
+        ],
+        "title": "MoveRequest"
+      },
+      "QuestionRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 8,
+            "title": "Request Id"
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Question"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "question"
+        ],
+        "title": "QuestionRequest"
+      },
+      "QuestionResult": {
+        "properties": {
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          },
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "answer",
+          "model_id",
+          "usage"
+        ],
+        "title": "QuestionResult"
+      },
+      "Review": {
+        "properties": {
+          "game_id": {
+            "type": "string",
+            "title": "Game Id"
+          },
+          "result": {
+            "$ref": "#/components/schemas/GameResult"
+          },
+          "human_color": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Human Color"
+          },
+          "initial_board": {
+            "items": {
+              "type": "string",
+              "pattern": "^[.XO]{8}$"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 8,
+            "title": "Initial Board"
+          },
+          "initial_turn": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Initial Turn"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewEvent"
+            },
+            "type": "array",
+            "title": "History"
+          },
+          "parent_game_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Game Id"
+          },
+          "parent_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Revision"
+          },
+          "opponent_config_id": {
+            "type": "string",
+            "title": "Opponent Config Id"
+          },
+          "key_moves": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewEvidence"
+            },
+            "type": "array",
+            "title": "Key Moves"
+          },
+          "branch_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "manual",
+                  "follow_hints"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Branch Mode"
+          },
+          "automatic_hint_moves": {
+            "items": {
+              "$ref": "#/components/schemas/AutomaticHintMove"
+            },
+            "type": "array",
+            "title": "Automatic Hint Moves"
+          },
+          "hints": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewHint"
+            },
+            "type": "array",
+            "title": "Hints"
+          },
+          "hint_adoption": {
+            "$ref": "#/components/schemas/HintAdoption"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewEvidence"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "model_id": {
+            "type": "string",
+            "title": "Model Id"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "game_id",
+          "result",
+          "human_color",
+          "initial_board",
+          "initial_turn",
+          "history",
+          "parent_game_id",
+          "parent_revision",
+          "opponent_config_id",
+          "key_moves",
+          "branch_mode",
+          "automatic_hint_moves",
+          "hints",
+          "hint_adoption",
+          "explanation",
+          "evidence",
+          "model_id",
+          "usage"
+        ],
+        "title": "Review"
+      },
+      "ReviewEvent": {
+        "properties": {
+          "event_index": {
+            "type": "integer",
+            "title": "Event Index"
+          },
+          "actor": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Actor"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "move",
+              "pass"
+            ],
+            "title": "Kind"
+          },
+          "coordinate": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coordinate"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "event_index",
+          "actor",
+          "kind",
+          "coordinate",
+          "revision"
+        ],
+        "title": "ReviewEvent"
+      },
+      "ReviewEvidence": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "actor": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Actor"
+          },
+          "actual_move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Actual Move"
+          },
+          "recommended_move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Recommended Move"
+          },
+          "score_loss": {
+            "type": "number",
+            "title": "Score Loss"
+          },
+          "analysis": {
+            "$ref": "#/components/schemas/Analysis"
+          },
+          "shown_hint_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Shown Hint Ids"
+          },
+          "adopted_hint": {
+            "type": "boolean",
+            "title": "Adopted Hint"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revision",
+          "actor",
+          "actual_move",
+          "recommended_move",
+          "score_loss",
+          "analysis",
+          "shown_hint_ids",
+          "adopted_hint"
+        ],
+        "title": "ReviewEvidence"
+      },
+      "ReviewHint": {
+        "properties": {
+          "hint_id": {
+            "type": "string",
+            "title": "Hint Id"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "recommended_move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Recommended Move"
+          }
+        },
+        "type": "object",
+        "required": [
+          "hint_id",
+          "revision",
+          "recommended_move"
+        ],
+        "title": "ReviewHint"
+      },
+      "ReviewLookup": {
+        "properties": {
+          "task": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Task"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "task"
+        ],
+        "title": "ReviewLookup"
+      },
+      "RevisionRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 8,
+            "title": "Request Id"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "expected_revision"
+        ],
+        "title": "RevisionRequest"
+      },
+      "Task": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "review",
+              "question",
+              "branch"
+            ],
+            "title": "Kind"
+          },
+          "game_id": {
+            "type": "string",
+            "title": "Game Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Review"
+              },
+              {
+                "$ref": "#/components/schemas/BranchResult"
+              },
+              {
+                "$ref": "#/components/schemas/QuestionResult"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "kind",
+          "game_id",
+          "status"
+        ],
+        "title": "Task"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WriteRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 8,
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id"
+        ],
+        "title": "WriteRequest"
+      }
+    }
+  }
+}

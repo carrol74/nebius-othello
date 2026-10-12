@@ -1,0 +1,26 @@
+{
+  "name": "@nemothello/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "export:api": "cd ../backend && uv run nemothello export-openapi --output ../web/openapi.json",
+    "generate:types": "npm run export:api && openapi-typescript openapi.json -o lib/generated-api.d.ts",
+    "check:api-types": "npm run export:api && openapi-typescript openapi.json -o lib/generated-api.d.ts --check"
+  },
+  "dependencies": {
+    "next": "^16.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "openapi-typescript": "^7.0.0"
+  }
+}
