@@ -10,6 +10,7 @@ from uuid import uuid4
 import numpy as np
 import pytrio as trio
 
+from nemothello.calibration import calibration_passed
 from nemothello.data import read_jsonl, validate_sample, write_json
 from nemothello.policy import (
     SCORING_MODE,
@@ -142,10 +143,8 @@ def train(
     calibration: dict[str, Any], rank: int = 32, learning_rate: float = 1e-4,
     batch_size: int = 16, epochs: int = 2, seed: int = 42, resume: bool = False,
 ) -> dict[str, Any]:
-    if (calibration["status"] != "passed" or calibration["base_model"] != base_model
-            or calibration["template_version"] != TEMPLATE_VERSION
-            or calibration.get("scoring_mode") != SCORING_MODE
-            or calibration.get("batch_order_checked") is not True):
+    policy_mode = calibration.get("scoring_mode", "")
+    if not calibration_passed(calibration, base_model, policy_mode):
         raise ValueError("训练前需要当前基座与模板的真实评分核验记录")
     if (rank < 4 or rank > 64 or batch_size < 1 or epochs < 1
             or not math.isfinite(learning_rate) or learning_rate <= 0):
@@ -165,6 +164,7 @@ def train(
     identity = {
         "base_model": base_model, "rank": rank, "learning_rate": learning_rate,
         "batch_size": batch_size, "seed": seed, "template_version": TEMPLATE_VERSION,
+        "policy_mode": policy_mode,
         "symbols": SYMBOLS, "dataset": str(dataset.resolve()),
         "dataset_groups": {name: {"game_ids": sorted(group), "positions": len(rows)}
                            for name, group, rows in zip(
@@ -255,6 +255,7 @@ def train(
             best_loss, best_path, best_sampler_path = loss, checkpoint.path, sampler.path
         write_json(output / "training-history.json", history)
     result = {"status": "trained-not-strength-verified", "artifact_kind": "trained-policy",
+              "policy_mode": policy_mode,
               "base_model": base_model, "model_path": best_path,
               "sampler_path": best_sampler_path, "validation_loss": best_loss,
               "template_version": TEMPLATE_VERSION, "history": history}

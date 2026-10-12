@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from nemothello.edax import Edax
 from nemothello.errors import AppError
-from nemothello.policy import PytrioPolicy
+from nemothello.policy import GenerationPolicy, PytrioPolicy, SamplingPolicy
 from nemothello.rules import Position, opponent
 from nemothello.schemas import GameState
 from nemothello.storage import Store
@@ -48,7 +48,8 @@ def advance(game: dict[str, Any], move: str) -> dict[str, Any]:
 
 class Games:
     def __init__(
-        self, store: Store, policy: PytrioPolicy, edax: Edax, task_limit: int,
+        self, store: Store, policy: GenerationPolicy | PytrioPolicy | SamplingPolicy,
+        edax: Edax, task_limit: int,
         task_queue_limit: int = 16,
     ) -> None:
         self.store = store

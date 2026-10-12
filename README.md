@@ -2,9 +2,9 @@
 
 An Othello app with an AI opponent, optional move hints, and post-game review.
 
-The opponent uses Jev-style candidate scoring with Qwen3.5-4B through PyTRIO. Edax supplies training labels, hints, and analysis. NVIDIA Nemotron through Nebius Token Factory explains completed games and answers review questions.
+The opponent uses Qwen3.5-4B through PyTRIO to generate one candidate symbol per move. The backend validates the symbol against legal moves. Edax supplies training labels, hints, and analysis. NVIDIA Nemotron through Nebius Token Factory explains completed games and answers review questions.
 
-AI games require a trained policy checkpoint and its passing scoring calibration report.
+AI games require a trained Sampler checkpoint and its passing generation calibration report. The optional `candidate-batch-1d` policy requires a Train checkpoint and a passing score calibration report instead. Reports must match the configured policy mode.
 
 ## Development
 

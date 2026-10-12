@@ -1,10 +1,12 @@
 import json
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from nemothello.policy import SCORING_MODE, SYMBOLS, TEMPLATE_VERSION
+from nemothello.calibration import calibration_passed
+from nemothello.policy import GENERATION_MODE, SYMBOLS
 
 
 class Settings(BaseSettings):
@@ -13,6 +15,7 @@ class Settings(BaseSettings):
     pytrio_api_key: SecretStr
     pytrio_base_model: str = "Qwen/Qwen3.5-4B"
     pytrio_model_path: str = Field(min_length=1)
+    pytrio_policy_mode: Literal["single-token-generation", "candidate-batch-1d"] = GENERATION_MODE
     pytrio_calibration_path: Path = Path("../eval/results/serving-calibration.json")
     token_factory_api_key: SecretStr
     token_factory_base_url: str = "https://api.tokenfactory.nebius.com/v1"
@@ -40,12 +43,10 @@ class Settings(BaseSettings):
             if not secret.get_secret_value().strip():
                 raise ValueError("平台密钥和服务凭据不能为空")
         report = json.loads(self.pytrio_calibration_path.read_text(encoding="utf-8"))
-        if (report.get("status") != "passed"
-                or report.get("base_model") != self.pytrio_base_model
-                or report.get("template_version") != TEMPLATE_VERSION
-                or report.get("scoring_mode") != SCORING_MODE
-                or report.get("batch_order_checked") is not True
+        source_key = ("source_sampler_path" if self.pytrio_policy_mode == GENERATION_MODE
+                      else "source_model_path")
+        if (not calibration_passed(report, self.pytrio_base_model, self.pytrio_policy_mode)
                 or report.get("symbols") != SYMBOLS
-                or report.get("source_model_path") != self.pytrio_model_path
+                or report.get(source_key) != self.pytrio_model_path
                 or len(report.get("samples", [])) < 2):
-            raise ValueError("服务启动需要当前 adapter、基座与模板通过真实评分校准的报告")
+            raise ValueError("服务启动需要当前 adapter、基座、模板与落子模式通过真实校准的报告")

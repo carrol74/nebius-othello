@@ -18,6 +18,8 @@ from nemothello.data import (
 from nemothello.edax import Edax
 from nemothello.edax_verification import verify_edax
 from nemothello.evaluation import evaluate, evaluate_positions
+from nemothello.generation_calibration import calibrate_generation
+from nemothello.policy import GENERATION_MODE, POLICY_MODES
 from nemothello.training import calibrate, train
 from nemothello.verification import verify_demo
 
@@ -60,11 +62,14 @@ def main() -> None:
     prepare.add_argument("--input", type=Path, required=True)
     prepare.add_argument("--output", type=Path, required=True)
     prepare.add_argument("--seed", type=int, default=42)
-    calibration = sub.add_parser("calibrate", help="真实云端完整评分与保存恢复核验，会产生调用费用")
+    calibration = sub.add_parser("calibrate", help="真实云端落子与保存恢复核验，会产生调用费用")
     calibration.add_argument("--data", type=Path, required=True)
     calibration.add_argument("--output", type=Path, required=True)
     calibration.add_argument("--name", required=True)
     calibration.add_argument("--model-path")
+    calibration.add_argument("--sampler-path", help="生成模式恢复时，与 Train 检查点配对的 Sampler 路径")
+    calibration.add_argument("--mode", choices=POLICY_MODES, default=GENERATION_MODE)
+    calibration.add_argument("--repeats", type=int, default=3)
     calibration.add_argument("--limit", type=int, default=12)
     calibration.add_argument("--tolerance", type=float, default=1e-4)
     training = sub.add_parser("train", help="真实云端训练，会产生训练费用")
@@ -83,6 +88,7 @@ def main() -> None:
     evaluation.add_argument("--openings", type=Path, required=True)
     evaluation.add_argument("--output", type=Path, required=True)
     evaluation.add_argument("--seed", type=int, default=42)
+    evaluation.add_argument("--mode", choices=POLICY_MODES, default=GENERATION_MODE)
     positions = sub.add_parser("evaluate-positions", help="真实保留测试局面的基座与微调比较，会产生推理费用")
     positions.add_argument("--model-path", required=True)
     positions.add_argument("--dataset", type=Path, required=True)
@@ -90,6 +96,7 @@ def main() -> None:
     positions.add_argument("--seed", type=int, default=42)
     positions.add_argument("--limit", type=int, default=200)
     positions.add_argument("--equivalent-margin", type=float, default=1)
+    positions.add_argument("--mode", choices=POLICY_MODES, default=GENERATION_MODE)
     backup = sub.add_parser("backup", help="下载真实 sampler adapter 归档并检查 PEFT 文件，不运行模型")
     backup.add_argument("--metadata", type=Path, required=True)
     backup.add_argument("--output", type=Path, required=True)
@@ -117,24 +124,31 @@ def main() -> None:
     elif args.command == "prepare":
         prepare_dataset(read_jsonl(args.input), args.output, args.seed)
     elif args.command == "calibrate":
+        if args.output.exists():
+            parser.error("校准输出已存在，请使用新文件保留原始证据")
         try:
-            calibrate(api_key(), base_model, args.data, args.output, args.name,
-                      args.model_path, args.limit, args.tolerance)
+            if args.mode == GENERATION_MODE:
+                calibrate_generation(api_key(), base_model, args.data, args.output, args.name,
+                                     args.model_path, args.sampler_path,
+                                     args.limit, args.tolerance, args.repeats)
+            else:
+                calibrate(api_key(), base_model, args.data, args.output, args.name,
+                          args.model_path, args.limit, args.tolerance)
         except Exception as exc:
             if args.output.exists():
                 report = json.loads(args.output.read_text(encoding="utf-8"))
                 if report.get("status") == "running":
-                    report.update(status="failed", error_type=type(exc).__name__, error=str(exc))
+                    report.update(status="failed", error_type=type(exc).__name__)
                     write_json(args.output, report)
             raise
-        print(f"评分校准通过，报告：{args.output}")
+        print(f"落子校准通过，报告：{args.output}")
     elif args.command == "train":
         train(api_key(), base_model, args.dataset, args.output, args.name,
               json.loads(args.calibration.read_text()), args.rank, args.learning_rate,
               args.batch_size, args.epochs, args.seed, args.resume)
     elif args.command == "evaluate-positions":
         evaluate_positions(api_key(), base_model, args.model_path, args.dataset,
-                           args.output, args.seed, args.limit, args.equivalent_margin)
+                           args.output, args.seed, args.limit, args.equivalent_margin, args.mode)
     elif args.command == "backup":
         backup_adapter(api_key(), args.metadata, args.output, args.tmp_dir)
     elif args.command == "export-openapi":
@@ -145,7 +159,7 @@ def main() -> None:
         edax = engine(2)
         try:
             evaluate(api_key(), base_model, args.model_path,
-                     json.loads(args.openings.read_text()), edax, args.output, args.seed)
+                     json.loads(args.openings.read_text()), edax, args.output, args.seed, args.mode)
         finally:
             edax.close()
 

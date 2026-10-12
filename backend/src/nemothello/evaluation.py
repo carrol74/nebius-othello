@@ -6,7 +6,7 @@ import numpy as np
 
 from nemothello.data import read_jsonl, write_json
 from nemothello.edax import Edax
-from nemothello.policy import PytrioPolicy, SamplingPolicy
+from nemothello.policy import GENERATION_MODE, SCORING_MODE, create_policy
 from nemothello.rules import Position, replay
 
 
@@ -19,6 +19,7 @@ def interval(groups: list[float], seed: int) -> list[float]:
 def evaluate_positions(
     api_key: str, base_model: str, model_path: str, dataset: Path,
     output: Path, seed: int, limit: int = 200, equivalent_margin: float = 1,
+    mode: str = GENERATION_MODE,
 ) -> dict[str, Any]:
     if limit < 1 or equivalent_margin < 0:
         raise ValueError("评测数量须为正，近似等价容差不能为负")
@@ -47,11 +48,12 @@ def evaluate_positions(
         scores = {c["coordinate"]: float(c["score"]) for c in candidates}
         if any(not np.isfinite(v) for v in scores.values()) or scores[sample["target"]] != max(scores.values()):
             raise ValueError("老师目标与实际候选分数不一致")
-    policies = {"base": SamplingPolicy(api_key, base_model),
-                "trained": PytrioPolicy(api_key, base_model, model_path)}
+    policies = {"base": create_policy(api_key, base_model, None, mode),
+                "trained": create_policy(api_key, base_model, model_path, mode)}
     records: list[dict[str, Any]] = []
     report = {"status": "running", "dataset": str(dataset.resolve()), "seed": seed,
               "base_model": base_model, "model_path": model_path,
+              "policy_mode": mode,
               "available_test_positions": len(splits["test"]), "requested_limit": limit,
               "equivalent_margin": equivalent_margin, "records": records, "summary": {}}
     for sample in samples:
@@ -62,8 +64,9 @@ def evaluate_positions(
         for name, policy in policies.items():
             decision = policy.score(tuple(sample["board"]), sample["turn"])
             move = decision["coordinate"]
-            if set(decision["scores"]) != set(scores) or move not in scores:
-                raise ValueError("模型没有返回完整合法候选")
+            if (move not in scores or (mode == SCORING_MODE
+                                      and set(decision["scores"]) != set(scores))):
+                raise ValueError("模型落子或候选评分不合法")
             regret = best - scores[move]
             records.append({"policy": name, "game_id": sample["game_id"], "ply": sample["ply"],
                             "stage": stage, "candidate_count": len(scores),
@@ -109,7 +112,7 @@ def evaluate_positions(
 
 def evaluate(
     api_key: str, base_model: str, model_path: str, openings: list[dict[str, Any]],
-    edax: Edax, output: Path, seed: int,
+    edax: Edax, output: Path, seed: int, mode: str = GENERATION_MODE,
 ) -> dict[str, Any]:
     if len(openings) != 40 or len({o["opening_id"] for o in openings}) != 40:
         raise ValueError("主评测需要四十组不同的共享开局")
@@ -117,10 +120,11 @@ def evaluate(
         position = replay(opening["moves"])
         if list(position.board) != opening["board"] or position.turn != opening["turn"]:
             raise ValueError("共享开局的棋盘与棋谱不一致")
-    policies = {"base": SamplingPolicy(api_key, base_model),
-                "trained": PytrioPolicy(api_key, base_model, model_path)}
+    policies = {"base": create_policy(api_key, base_model, None, mode),
+                "trained": create_policy(api_key, base_model, model_path, mode)}
     records = []
     report = {"status": "running", "base_model": base_model, "model_path": model_path,
+              "policy_mode": mode,
               "seed": seed, "edax_level": edax.level, "records": records, "summary": {}}
     for policy_name, policy in policies.items():
         for opponent_name in ("random", "edax"):

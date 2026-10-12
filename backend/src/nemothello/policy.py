@@ -14,6 +14,9 @@ from nemothello.rules import Board, Color, legal_moves
 SYMBOLS = string.ascii_uppercase + string.ascii_lowercase
 TEMPLATE_VERSION = "othello-candidates-v1"
 SCORING_MODE = "candidate-batch-1d"
+GENERATION_MODE = "single-token-generation"
+POLICY_MODES = (GENERATION_MODE, SCORING_MODE)
+GENERATION_SETTINGS = {"temperature": 0, "seed": 42, "max_tokens": 1}
 
 
 @dataclass(frozen=True)
@@ -153,3 +156,76 @@ class SamplingPolicy:
                 "input_tokens": len(scores) * (len(encoded.prefix) + 1),
                 "logical_input_tokens": len(encoded.prefix),
                 "candidate_requests": len(scores), "candidate_count": len(scores)}
+
+
+def generated_coordinate(tokens: list[int], encoded: EncodedPosition) -> str:
+    if (len(tokens) != 1 or type(tokens[0]) is not int
+            or tokens[0] not in encoded.symbol_tokens):
+        raise AppError("POLICY_ILLEGAL_OUTPUT", "模型没有返回单个合法候选符号", 502, True)
+    return encoded.coordinates[encoded.symbol_tokens.index(tokens[0])]
+
+
+class GenerationPolicy:
+    """Choose one legal candidate from one sampling request; invalid outputs fail closed."""
+
+    def __init__(self, api_key: str, base_model: str, model_path: str | None = None) -> None:
+        self.api_key, self.base_model, self.model_path = api_key, base_model, model_path
+        self.lock = Lock()
+        self.service: Any = None
+        self.sampler: Any = None
+        self.tokenizer: Any = None
+        self.config_id = f"{base_model}|{model_path}|{TEMPLATE_VERSION}|{GENERATION_MODE}|seed42"
+
+    def connect(self) -> None:
+        if self.sampler is None:
+            trio.configure(request_timeout_seconds=90, actor_event_polling_timeout_seconds=90,
+                           actor_event_submit_timeout_seconds=90)
+            if self.service is None:
+                self.service = trio.ServiceClient(api_key=self.api_key)
+            sampler = self.service.create_sampling_client(
+                base_model=self.base_model, model_path=self.model_path,
+            )
+            if sampler.model_id != self.base_model:
+                raise AppError("MODEL_MISMATCH", "恢复的基座与对局配置不一致", 502)
+            self.sampler, self.tokenizer = sampler, sampler.get_tokenizer()
+
+    def _generate(self, encoded: EncodedPosition) -> dict[str, Any]:
+        response = self.sampler.sample(
+            trio.ModelInput.from_ints(encoded.prefix), num_samples=1,
+            sampling_params=trio.SamplingParams(**GENERATION_SETTINGS), return_text=False,
+        ).result()
+        if len(response.sequences) != 1:
+            raise AppError("POLICY_OUTPUT_SHAPE", "模型返回的序列数量不同于请求", 502, True)
+        tokens = response.sequences[0].tokens
+        coordinate = generated_coordinate(tokens, encoded)
+        return {"coordinate": coordinate, "generated_token": tokens[0],
+                "input_tokens": response.input_tokens, "output_tokens": response.output_tokens,
+                "logical_input_tokens": len(encoded.prefix), "candidate_requests": 1,
+                "candidate_count": len(encoded.coordinates), "scoring_mode": GENERATION_MODE,
+                "generation_settings": dict(GENERATION_SETTINGS),
+                "opponent_config_id": self.config_id}
+
+    def score_encoded(self, encoded: EncodedPosition) -> dict[str, Any]:
+        started = time.monotonic()
+        with self.lock:
+            self.connect()
+            result = self._generate(encoded)
+        return {**result, "elapsed_ms": round((time.monotonic() - started) * 1000, 2)}
+
+    def score(self, board: Board, turn: Color) -> dict[str, Any]:
+        started = time.monotonic()
+        with self.lock:
+            self.connect()
+            result = self._generate(encode_position(self.tokenizer, board, turn))
+        return {**result, "elapsed_ms": round((time.monotonic() - started) * 1000, 2)}
+
+
+def create_policy(
+    api_key: str, base_model: str, model_path: str | None, mode: str = GENERATION_MODE,
+) -> GenerationPolicy | PytrioPolicy | SamplingPolicy:
+    if mode == GENERATION_MODE:
+        return GenerationPolicy(api_key, base_model, model_path)
+    if mode == SCORING_MODE:
+        return (PytrioPolicy(api_key, base_model, model_path) if model_path
+                else SamplingPolicy(api_key, base_model))
+    raise ValueError("未知的 PyTRIO 落子模式")
