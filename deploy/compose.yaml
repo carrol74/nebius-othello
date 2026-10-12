@@ -1,0 +1,44 @@
+services:
+  backend:
+    build: ../backend
+    restart: unless-stopped
+    env_file: backend.env
+    environment:
+      DATABASE_PATH: /app/runtime/nemothello.sqlite3
+      PYTRIO_CALIBRATION_PATH: /app/runtime/serving-calibration.json
+      EDAX_EXECUTABLE: /opt/edax/edax
+      EDAX_EVAL_FILE: /opt/edax/eval.dat
+    volumes:
+      - ./runtime:/app/runtime
+      - ./edax:/opt/edax:ro
+    expose:
+      - "8000"
+    stop_grace_period: 180s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+  gateway:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      BACKEND_DOMAIN: ${BACKEND_DOMAIN:?Set an actual backend domain}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
