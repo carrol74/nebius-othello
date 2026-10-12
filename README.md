@@ -1,48 +1,47 @@
 # Nemothello
 
-An Othello app with a trained AI opponent, optional move hints, and post-game review.
+An Othello app with an AI opponent, optional move hints, and post-game review.
 
-The planned opponent is a Jev-style Qwen3.5-4B model fine-tuned through PyTRIO. Edax supplies training labels, move hints, and analysis evidence. NVIDIA Nemotron, accessed through Nebius Token Factory, explains completed games and answers review questions. Following hints creates a new game branch with newly computed opponent responses.
+The opponent uses Jev-style candidate scoring with Qwen3.5-4B through PyTRIO. Edax supplies training labels, hints, and analysis. NVIDIA Nemotron through Nebius Token Factory explains completed games and answers review questions.
 
-## Current status
-
-The first implementation is written: board rules, SQLite games and tasks, PyTRIO candidate scoring, Edax hints, post-game Nemotron review, manual and automatic game branches, and a Next.js interface. Data preparation, scoring calibration, training, held-out evaluation, paired matches, and CPU deployment templates are included.
-
-Checkpoint-based training resume, PEFT adapter backup, OpenAPI export, and a live backend acceptance command are included. The live acceptance command checks real games, reviews, questions, and branches without recording a programmatic hint query as a player viewing a hint.
-
-On 2026-10-12, all **23 Python tests** and Ruff checks passed locally. Web type checking, the production build, and generated API type verification passed earlier that day. Tests include actual SDK batch planning, real Edax output parsing, board rules, history, SQLite recovery, exclusive worker ownership, and calibration gates.
-
-The user built patched Edax 4.6 on macOS ARM64 and passed the real Python adapter check, including black and white candidates, forced-pass parsing, and exact endgame scores. The report is `eval/results/edax-check.json`. Data generation produced 250 complete games and 14,479 policy positions, split into 200/25/25 games; `eval/results/dataset-split.json` preserves the statistics and shared-position counts. Raw data, binaries, weights, credentials, and build output are ignored by Git.
-
-PyTRIO 0.2.9 rejected two-dimensional candidate targets before submission. Scoring now batches one one-dimensional sample per candidate and records repeated input tokens. The user authorized cloud calibration and two training epochs conditional on calibration passing. All 12 calibration positions returned complete scores, and Train-checkpoint restoration reproduced scores exactly; cross-interface differences reached 0.196168 and changed one selected move. Identical inputs also produced batch-position-dependent scores. `eval/results/calibration.json` remains failed at the unchanged 0.0001 tolerance. Training has not started. Follow the [runbook](docs/runbook.md) for calibration checks. End-to-end games and public deployment remain unverified.
+The implementation is available, but scoring calibration currently fails numerical consistency checks. Training and public deployment are incomplete. A passing calibration report is required before training or serving a policy.
 
 ## Development
 
-| Component | Location | Target |
-| --- | --- | --- |
-| Web | `web/` | Next.js 16, React 19, TypeScript; Vercel |
-| Backend | `backend/` | Python 3.11–3.13, FastAPI; Nebius CPU VM |
-| Data | `data/` | Whole-game splits before position extraction |
-| Artifacts | `artifacts/` | Adapter exports and training metadata |
-| Measurements | `eval/results/` | Actual evaluation results |
+Requirements: Node.js 20.9+, Python 3.11–3.13, uv, and a compatible Edax executable with evaluation weights.
 
-The backend owns board rules and game state. The web app displays backend results and proxies requests. Model credentials remain on the backend. A single backend worker owns the SDK client, Edax process, and durable task queue.
+Install web dependencies at the repository root:
 
-After execution is authorized, follow the [runbook](docs/runbook.md) for setup, local checks, real scoring calibration, training, evaluation, and deployment. Install web dependencies at the repository root and Python dependencies in `backend/`. Generate and verify lockfiles before publishing. The manifests include SDK and tokenizer dependencies; Edax and its evaluation weights must be supplied separately.
+```sh
+npm ci
+```
 
-With actual resources configured, use `npm run dev` at the root and `uv run uvicorn nemothello.main:app --reload` in `backend/`. Startup checks required configuration, engine files, and a passing calibration report for the configured adapter. A file lock rejects additional workers for the same database before task recovery. `GET /health` reports process response, not external model readiness. Creating or viewing a game does not prove that model scoring works.
+Install backend dependencies in `backend/`:
 
-Environment examples are in `web/.env.example` and `backend/.env.example`. Never put provider secrets in a `NEXT_PUBLIC_` variable. `deploy/compose.yaml` targets a Nebius CPU VM; configure Vercel with this repository's npm workspace and the backend HTTPS URL. Neither target has been deployed.
+```sh
+uv sync --extra dev
+```
 
-## Documentation
+Configure `backend/.env` and `web/.env.local` from their `.env.example` files. Supply real PyTRIO and Token Factory credentials, the policy checkpoint and calibration report, Edax paths, and a shared backend service token. Model credentials stay on the backend.
 
-- [Authoritative project plan](plan.md)
-- [Development tasks and acceptance criteria](docs/development-plan.md)
-- [API contract and implementation limits](docs/api-contract.md)
-- [Setup, training, evaluation, and deployment runbook](docs/runbook.md)
-- [Third-party license checklist](docs/licenses.md)
-- [Technical design](docs/technical-design.md)
-- [Product behavior and deployment](docs/product-integration.md)
-- [Open technical questions](docs/open-questions.md)
+Run the web app from the root:
 
-The project is intended for the Best Apps and Agents Track of the Nebius x NVIDIA Global AI Hackathon. Public release still requires real Nemotron integration, evaluation evidence, a working demo, and code and asset license notices.
+```sh
+npm run dev
+```
+
+Run the backend from `backend/`:
+
+```sh
+uv run uvicorn nemothello.main:app --reload
+```
+
+The backend owns board rules, SQLite games, and the task queue. Use one worker per database. Startup validates resources and requires a passing calibration report for the configured policy. `GET /health` checks process response; it does not validate external model readiness.
+
+## Checks and tools
+
+From the root: `npm run typecheck`, `npm run build`, and `npm run check:api-types`.
+
+From `backend/`: `uv run pytest`, `uv run ruff check src tests`, and `uv run nemothello --help`. The CLI provides Edax checks, data preparation, calibration, training, evaluation, adapter backup, API export, and live acceptance checks. Cloud model operations can incur charges.
+
+`deploy/compose.yaml` provides a CPU backend deployment template; the Next.js app targets Vercel. Binaries, credentials, model weights, datasets, experiment results, and local planning documents are excluded from version control.

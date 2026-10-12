@@ -32,9 +32,8 @@ data/book.dat
 
 # Local discussion, historical research, and experiment records
 /AGENTS.md
-/docs/review/
-/docs/archive/
-/docs/research/
+/docs/
+/plan.md
 /backend/tools/diagnose_pytrio*.py
 /eval/results/*
 !/eval/results/.gitkeep
