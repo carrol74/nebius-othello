@@ -24,6 +24,7 @@ from nemothello.policy import (
     training_datum,
 )
 from nemothello.training_recovery import atomic_json, recoverable_error, validate_progress
+from nemothello.validation_cache import validate_cache, validation_signature
 
 
 def calibrate(
@@ -121,21 +122,36 @@ def calibrate(
     return report
 
 
-def validate_loss(training: Any, datums: list[Any], batch_size: int) -> float:
-    total = 0.0
-    for start in range(0, len(datums), batch_size):
+def validate_loss(
+    training: Any, datums: list[Any], batch_size: int,
+    cache_path: Path | None = None, state_path: str | None = None,
+) -> float:
+    record: dict[str, Any] = {"batches": []}
+    if cache_path is not None:
+        signature = validation_signature(datums, batch_size, state_path or "", training.model_id)
+        if cache_path.exists():
+            record = json.loads(cache_path.read_text())
+            validate_cache(record, signature, len(datums), batch_size)
+        else:
+            record.update(version=1, signature=signature, state_path=state_path)
+            atomic_json(cache_path, record)
+    completed = record["batches"]
+    total = sum(batch["answer_loss_sum"] for batch in completed)
+    batches = (len(datums) + batch_size - 1) // batch_size
+    if completed:
+        print(f"复用已保存的验证批次：{len(completed)}/{batches}", flush=True)
+    for start in range(len(completed) * batch_size, len(datums), batch_size):
         batch = datums[start:start + batch_size]
         output = training.forward(batch, loss_fn="cross_entropy", auto_shift=False).result()
-        if len(output.loss_fn_outputs) != len(batch):
-            raise ValueError("验证集评分数量与提交样本数量不同")
-        for loss_output in output.loss_fn_outputs:
-            values = np.asarray(loss_output["logprobs"].to_numpy())
-            if values.ndim != 1 or not values.size:
-                raise ValueError("验证集答案 logprob 形状不完整")
-            value = float(values[-1])
-            if not math.isfinite(value) or value > 1e-5:
-                raise ValueError("验证集答案 logprob 无效")
-            total -= value
+        validate_training_output(output, [datum.loss_fn_inputs["target_tokens"].shape[0]
+                                          for datum in batch])
+        loss = sum(-float(item["logprobs"].to_numpy()[-1]) for item in output.loss_fn_outputs)
+        completed.append({"batch": start // batch_size, "positions": len(batch),
+                          "answer_loss_sum": loss})
+        if cache_path is not None:
+            atomic_json(cache_path, record)
+        total += loss
+        print(f"验证批次已完成：{len(completed)}/{batches}", flush=True)
     return total / len(datums)
 
 
@@ -306,7 +322,8 @@ def train(
                 if len(updates) % checkpoint_every == 0 or len(updates) == batches:
                     snapshot(epoch, len(updates), updates)
                 print(f"训练轮次 {epoch + 1}/{epochs}，批次 {len(updates)}/{batches}", flush=True)
-            loss = validate_loss(training, validation_datums, batch_size)
+            loss = validate_loss(training, validation_datums, batch_size,
+                                 output / f"epoch-{epoch + 1}-validation.json", progress["state_path"])
             checkpoint = training.save_state(
                 name=f"{name}-{invocation_id}-epoch-{epoch + 1}", ttl_seconds=None,
             ).result()
