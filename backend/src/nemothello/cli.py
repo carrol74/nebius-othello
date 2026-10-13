@@ -21,6 +21,7 @@ from nemothello.evaluation import evaluate, evaluate_positions
 from nemothello.generation_calibration import calibrate_generation
 from nemothello.policy import GENERATION_MODE, POLICY_MODES
 from nemothello.training import calibrate, train
+from nemothello.training_recovery import supervise_training
 from nemothello.verification import verify_demo
 
 
@@ -82,7 +83,10 @@ def main() -> None:
     training.add_argument("--batch-size", type=int, default=16)
     training.add_argument("--epochs", type=int, default=2)
     training.add_argument("--seed", type=int, default=42)
-    training.add_argument("--resume", action="store_true", help="从输出目录最后一个完成轮次恢复权重和优化器")
+    training.add_argument("--checkpoint-every", type=int, default=25)
+    training.add_argument("--max-restarts", type=int, default=0,
+                          help="遇到可恢复的传输错误时，从检查点启动新进程的最大次数")
+    training.add_argument("--resume", action="store_true", help="从输出目录已确认的批次检查点恢复权重和优化器")
     evaluation = sub.add_parser("evaluate", help="真实基座与微调对弈评测，会产生推理费用")
     evaluation.add_argument("--model-path", required=True)
     evaluation.add_argument("--openings", type=Path, required=True)
@@ -143,9 +147,14 @@ def main() -> None:
             raise
         print(f"落子校准通过，报告：{args.output}")
     elif args.command == "train":
-        train(api_key(), base_model, args.dataset, args.output, args.name,
-              json.loads(args.calibration.read_text()), args.rank, args.learning_rate,
-              args.batch_size, args.epochs, args.seed, args.resume)
+        if args.max_restarts < 0:
+            parser.error("max-restarts 不能为负")
+        if args.max_restarts:
+            supervise_training(args)
+        else:
+            train(api_key(), base_model, args.dataset, args.output, args.name,
+                  json.loads(args.calibration.read_text()), args.rank, args.learning_rate,
+                  args.batch_size, args.epochs, args.seed, args.resume, args.checkpoint_every)
     elif args.command == "evaluate-positions":
         evaluate_positions(api_key(), base_model, args.model_path, args.dataset,
                            args.output, args.seed, args.limit, args.equivalent_margin, args.mode)

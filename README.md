@@ -44,4 +44,6 @@ From the root: `npm run typecheck`, `npm run build`, and `npm run check:api-type
 
 From `backend/`: `uv run pytest`, `uv run ruff check src tests`, and `uv run nemothello --help`. The CLI provides Edax checks, data preparation, calibration, training, evaluation, adapter backup, API export, and live acceptance checks. Cloud model operations can incur charges.
 
+Training saves weights and optimizer state every 25 batches. Use `train --resume` to continue from the last confirmed checkpoint, or `--max-restarts 2` to enable bounded recovery in fresh processes after transport failures. Batch checkpoints expire after seven days; completed epoch checkpoints are saved without an expiry.
+
 `deploy/compose.yaml` provides a CPU backend deployment template; the Next.js app targets Vercel.

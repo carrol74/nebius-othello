@@ -23,6 +23,7 @@ from nemothello.policy import (
     scoring_datums,
     training_datum,
 )
+from nemothello.training_recovery import atomic_json, recoverable_error, validate_progress
 
 
 def calibrate(
@@ -138,15 +139,28 @@ def validate_loss(training: Any, datums: list[Any], batch_size: int) -> float:
     return total / len(datums)
 
 
+def validate_training_output(output: Any, lengths: list[int]) -> None:
+    if len(output.loss_fn_outputs) != len(lengths):
+        raise ValueError("训练返回的答案数量不完整，停止优化器更新")
+    for item, length in zip(output.loss_fn_outputs, lengths, strict=True):
+        values = np.asarray(item["logprobs"].to_numpy())
+        if (values.shape != (length,) or not np.isfinite(values).all()
+                or values[-1] > 1e-5):
+            raise ValueError("训练答案形状或数值无效，停止优化器更新")
+    if any(not math.isfinite(value) for value in output.metrics.values()):
+        raise ValueError("训练返回非有限指标，停止优化器更新")
+
+
 def train(
     api_key: str, base_model: str, dataset: Path, output: Path, name: str,
     calibration: dict[str, Any], rank: int = 32, learning_rate: float = 1e-4,
     batch_size: int = 16, epochs: int = 2, seed: int = 42, resume: bool = False,
+    checkpoint_every: int = 25,
 ) -> dict[str, Any]:
     policy_mode = calibration.get("scoring_mode", "")
     if not calibration_passed(calibration, base_model, policy_mode):
         raise ValueError("训练前需要当前基座与模板的真实评分核验记录")
-    if (rank < 4 or rank > 64 or batch_size < 1 or epochs < 1
+    if (rank < 4 or rank > 64 or batch_size < 1 or epochs < 1 or checkpoint_every < 1
             or not math.isfinite(learning_rate) or learning_rate <= 0):
         raise ValueError("训练参数不在有效范围")
     examples = read_jsonl(dataset / "train.jsonl")
@@ -179,20 +193,35 @@ def train(
     }
     history = []
     checkpoint_path = None
+    progress = None
+    batches = (len(examples) + batch_size - 1) // batch_size
     if resume:
         config = json.loads((output / "training-config.json").read_text())
         if any(config.get(key) != value for key, value in identity.items()):
             raise ValueError("续训需要原来的基座、训练配置与整盘数据划分")
         if json.loads((output / "dataset-manifest.json").read_text()) != dataset_manifest:
             raise ValueError("训练局面、标签、候选或顺序已经变化，不能沿用原优化器续训")
-        history = json.loads((output / "training-history.json").read_text())
-        if not history or [entry["epoch"] for entry in history] != list(range(1, len(history) + 1)):
-            raise ValueError("续训需要连续且已完成的训练轮次记录")
-        if epochs <= len(history):
-            raise ValueError("epochs 为计划总轮数，须大于已完成轮数")
-        checkpoint_path = history[-1]["state_path"]
+        if (output / "training-progress.json").exists():
+            progress = json.loads((output / "training-progress.json").read_text())
+        elif (output / "training-history.json").exists():
+            history = json.loads((output / "training-history.json").read_text())
+            if not history:
+                raise ValueError("续训需要已保存的训练检查点")
+            progress = {"version": 1, "next_epoch": len(history), "next_batch": 0,
+                        "state_path": history[-1]["state_path"], "history": history, "updates": []}
+        else:
+            raise ValueError("原任务没有已保存的训练检查点，不能从本地损失记录续训")
+        validate_progress(progress, batches, epochs)
+        history = progress["history"]
+        checkpoint_path = progress["state_path"]
     elif output.exists() and any(output.iterdir()):
         raise ValueError("输出目录已有产物；续训使用 --resume，新实验使用新目录")
+    # A failed POST may already have mutated gradients. Recover from a checkpoint
+    # in another process rather than retrying an uncertain event on this run.
+    trio.configure(training_retry_timeout_seconds=0, training_event_max_in_flight=1,
+                   training_event_queue_capacity=1, request_timeout_seconds=90,
+                   actor_event_submit_timeout_seconds=90, actor_event_polling_timeout_seconds=90,
+                   control_retry_timeout_seconds=30, actor_capacity_wait_timeout_seconds=90)
     service = trio.ServiceClient(api_key=api_key)
     training = service.create_lora_training_client(base_model=base_model, rank=rank, seed=seed)
     if checkpoint_path:
@@ -214,12 +243,14 @@ def train(
     best_loss = best["validation_answer_loss"] if best else math.inf
     best_path = best["state_path"] if best else None
     best_sampler_path = best["sampler_path"] if best else None
-    start_epoch = len(history)
+    start_epoch = progress["next_epoch"] if progress else 0
     invocation_id = uuid4().hex[:12]
     output.mkdir(parents=True, exist_ok=True)
-    write_json(output / "dataset-manifest.json", dataset_manifest)
-    write_json(output / "training-config.json", {
+    atomic_json(output / "dataset-manifest.json", dataset_manifest)
+    atomic_json(output / "training-config.json", {
         **identity, "epochs": epochs, "resumed_from": checkpoint_path,
+        "checkpoint_every": checkpoint_every, "batch_checkpoint_ttl_seconds": 604800,
+        "training_event_retry_timeout_seconds": 0,
         "token_lengths": {"min": min(lengths), "max": max(lengths),
                           "p50": float(np.percentile(lengths, 50)),
                           "p95": float(np.percentile(lengths, 95)), "total": sum(lengths)},
@@ -227,37 +258,85 @@ def train(
                      for package in ("pytrio", "transformers", "modelscope")},
         "tokenizer_name": tokenizer.name_or_path, "chat_template": tokenizer.chat_template,
         "calibration_model_path": calibration["model_path"],
+        "training_run_id": training.training_run_cuid,
     })
-    for epoch in range(start_epoch, epochs):
-        order = list(range(len(encoded_training)))
-        random.Random(seed + epoch).shuffle(order)
-        updates = []
-        for start in range(0, len(order), batch_size):
-            batch = [encoded_training[index][0] for index in order[start:start + batch_size]]
-            output_forward = training.forward_backward(
-                batch, loss_fn="cross_entropy", auto_shift=False,
+
+    def commit_progress(epoch: int, batch: int, updates: list[Any], state_path: str) -> None:
+        nonlocal progress
+        record = {"version": 1, "next_epoch": epoch, "next_batch": batch,
+                  "state_path": state_path, "history": list(history), "updates": list(updates)}
+        validate_progress(record, batches, epochs)
+        atomic_json(output / "training-progress.json", record)
+        progress = record
+        atomic_json(output / "training-history.json", history)
+
+    def snapshot(epoch: int, batch: int, updates: list[Any]) -> None:
+        saved = training.save_state(
+            name=f"{name}-{invocation_id}-e{epoch + 1}-b{batch}", ttl_seconds=604800,
+        ).result()
+        commit_progress(epoch, batch, updates, saved.path)
+        print(f"训练检查点已保存：轮次 {epoch + 1}，已完成批次 {batch}", flush=True)
+
+    epoch, updates = start_epoch, []
+    try:
+        atomic_json(output / "training-status.json", {
+            "status": "running", "invocation_id": invocation_id,
+            "training_run_id": training.training_run_cuid,
+        })
+        if progress is None:
+            snapshot(0, 0, [])
+        for epoch in range(start_epoch, epochs):
+            order = list(range(len(encoded_training)))
+            random.Random(seed + epoch).shuffle(order)
+            resume_batch = progress["next_batch"] if epoch == progress["next_epoch"] else 0
+            updates = list(progress["updates"]) if resume_batch else []
+            atomic_json(output / f"epoch-{epoch + 1}-updates.json", updates)
+            for batch_index in range(resume_batch, batches):
+                start = batch_index * batch_size
+                batch = [encoded_training[index][0] for index in order[start:start + batch_size]]
+                output_forward = training.forward_backward(
+                    batch, loss_fn="cross_entropy", auto_shift=False,
+                ).result()
+                validate_training_output(output_forward,
+                                         [encoded_training[index][1]
+                                          for index in order[start:start + batch_size]])
+                training.optim_step(trio.AdamParams(learning_rate=learning_rate)).result()
+                updates.append({"batch": batch_index, "metrics": output_forward.metrics})
+                atomic_json(output / f"epoch-{epoch + 1}-updates.json", updates)
+                if len(updates) % checkpoint_every == 0 or len(updates) == batches:
+                    snapshot(epoch, len(updates), updates)
+                print(f"训练轮次 {epoch + 1}/{epochs}，批次 {len(updates)}/{batches}", flush=True)
+            loss = validate_loss(training, validation_datums, batch_size)
+            checkpoint = training.save_state(
+                name=f"{name}-{invocation_id}-epoch-{epoch + 1}", ttl_seconds=None,
             ).result()
-            training.optim_step(trio.AdamParams(learning_rate=learning_rate)).result()
-            updates.append({"batch": start // batch_size, "metrics": output_forward.metrics})
-            write_json(output / f"epoch-{epoch + 1}-updates.json", updates)
-            print(f"训练轮次 {epoch + 1}/{epochs}，批次 {len(updates)}/"
-                  f"{(len(order) + batch_size - 1) // batch_size}", flush=True)
-        loss = validate_loss(training, validation_datums, batch_size)
-        checkpoint = training.save_state(
-            name=f"{name}-{invocation_id}-epoch-{epoch + 1}", ttl_seconds=None,
-        ).result()
-        sampler = training.save_weights_for_sampler(
-            name=f"{name}-{invocation_id}-policy-epoch-{epoch + 1}", ttl_seconds=None,
-        ).result()
-        history.append({"epoch": epoch + 1, "validation_answer_loss": loss,
-                        "state_path": checkpoint.path, "sampler_path": sampler.path})
-        if loss < best_loss:
-            best_loss, best_path, best_sampler_path = loss, checkpoint.path, sampler.path
-        write_json(output / "training-history.json", history)
+            sampler = training.save_weights_for_sampler(
+                name=f"{name}-{invocation_id}-policy-epoch-{epoch + 1}", ttl_seconds=None,
+            ).result()
+            history.append({"epoch": epoch + 1, "validation_answer_loss": loss,
+                            "state_path": checkpoint.path, "sampler_path": sampler.path})
+            if loss < best_loss:
+                best_loss, best_path, best_sampler_path = loss, checkpoint.path, sampler.path
+            commit_progress(epoch + 1, 0, [], checkpoint.path)
+    except (Exception, KeyboardInterrupt) as error:
+        atomic_json(output / "training-status.json", {
+            "status": "interrupted", "invocation_id": invocation_id,
+            "training_run_id": training.training_run_cuid,
+            "error_type": type(error).__name__, "error_code": getattr(error, "code", ""),
+            "http_status": getattr(error, "status_code", 0),
+            "recoverable": progress is not None and recoverable_error(error),
+            "confirmed_epoch": epoch + 1, "confirmed_batches": len(updates),
+            "checkpoint": progress,
+        })
+        raise
     result = {"status": "trained-not-strength-verified", "artifact_kind": "trained-policy",
               "policy_mode": policy_mode,
               "base_model": base_model, "model_path": best_path,
               "sampler_path": best_sampler_path, "validation_loss": best_loss,
               "template_version": TEMPLATE_VERSION, "history": history}
-    write_json(output / "adapter-metadata.json", result)
+    atomic_json(output / "adapter-metadata.json", result)
+    atomic_json(output / "training-status.json", {
+        "status": "completed", "invocation_id": invocation_id,
+        "training_run_id": training.training_run_cuid,
+    })
     return result
