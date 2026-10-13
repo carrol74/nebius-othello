@@ -5,10 +5,16 @@ import tempfile
 import zipfile
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import pytrio as trio
 
 from nemothello.data import write_json
+
+
+def matches_peft_base(declared: str | None, expected: str) -> bool:
+    # PyTRIO's observed export root; do not accept arbitrary matching basenames.
+    return declared in (expected, f"/data/models/{expected}")
 
 
 def find_checkpoint(rest: Any, model_path: str):
@@ -41,6 +47,12 @@ def backup_adapter(
     service = trio.ServiceClient(api_key=api_key)
     rest = service.create_rest_client()
     checkpoint = find_checkpoint(rest, metadata["sampler_path"])
+    source = urlsplit(checkpoint.path)
+    if source.scheme != "trio" or not source.netloc:
+        raise ValueError("Sampler 检查点缺少可核验的训练任务来源")
+    training_run = rest.get_training_run(source.netloc).result()
+    if training_run.base_model != metadata["base_model"] or not training_run.is_lora:
+        raise ValueError("检查点来源的基座或 LoRA 类型与训练元数据不同")
     with tempfile.TemporaryDirectory(prefix="adapter-", dir=temporary_root) as directory:
         work = Path(directory)
         archive = work / "checkpoint.archive"
@@ -64,9 +76,16 @@ def backup_adapter(
         if not (adapter_root / "adapter_model.safetensors").is_file():
             raise ValueError("下载归档缺少 adapter_model.safetensors")
         config = json.loads(configs[0].read_text())
-        if config.get("base_model_name_or_path") != metadata["base_model"]:
+        original_base = config.get("base_model_name_or_path")
+        if not matches_peft_base(original_base, metadata["base_model"]):
             raise ValueError("PEFT 配置中的基座与训练元数据不同")
+        if config.get("peft_type") != "LORA" or config.get("r") != training_run.lora_rank:
+            raise ValueError("PEFT 类型或 rank 与平台训练任务不同")
         shutil.copytree(adapter_root, destination / "adapter")
+        if original_base != metadata["base_model"]:
+            shutil.copy2(configs[0], destination / "adapter" / "adapter_config.original.json")
+            config["base_model_name_or_path"] = metadata["base_model"]
+            write_json(destination / "adapter" / "adapter_config.json", config)
         shutil.copy2(archive, destination / "checkpoint.archive")
         shutil.copy2(metadata_path, destination / "adapter-metadata.json")
         report = {
@@ -75,6 +94,10 @@ def backup_adapter(
             "sampler_path": metadata["sampler_path"],
             "checkpoint_id": checkpoint.checkpoint_id,
             "archive_bytes": result.file_size_bytes,
+            "training_run_base_model": training_run.base_model,
+            "lora_rank": training_run.lora_rank,
+            "original_peft_base_model_reference": original_base,
+            "portable_peft_base_model_reference": metadata["base_model"],
             "adapter_directory": str((destination / "adapter").resolve()),
             "files": sorted(str(path.relative_to(destination)) for path in destination.rglob("*")
                             if path.is_file()),
