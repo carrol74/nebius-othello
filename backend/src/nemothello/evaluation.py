@@ -147,8 +147,9 @@ def evaluate(
     api_key: str, base_model: str, model_path: str, openings: list[dict[str, Any]],
     edax: Edax, output: Path, seed: int, mode: str = GENERATION_MODE,
     pilot: bool = False, resume: bool = False,
+    opponents: tuple[str, ...] = ("random", "edax"),
 ) -> dict[str, Any]:
     from nemothello.match_evaluation import run_matches
 
     return run_matches(api_key, base_model, model_path, openings, edax, output,
-                       seed, interval, mode, pilot, resume)
+                       seed, interval, mode, pilot, resume, opponents)

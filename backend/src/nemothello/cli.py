@@ -95,6 +95,9 @@ def main() -> None:
     evaluation.add_argument("--mode", choices=POLICY_MODES, default=GENERATION_MODE)
     evaluation.add_argument("--pilot-openings", type=int, help="仅做前 N 个固定开局的试验，不作为正式评测")
     evaluation.add_argument("--resume", action="store_true", help="从已保存棋谱继续，不重复完成对局")
+    evaluation.add_argument("--edax-level", type=int, choices=range(1, 11), default=2)
+    evaluation.add_argument("--opponents", nargs="+", choices=("random", "edax"),
+                            default=["random", "edax"], help="只运行选定对手的对照")
     positions = sub.add_parser("evaluate-positions", help="真实保留测试局面的基座与微调比较，会产生推理费用")
     positions.add_argument("--model-path", required=True)
     positions.add_argument("--dataset", type=Path, required=True)
@@ -167,7 +170,7 @@ def main() -> None:
     elif args.command == "verify-demo":
         verify_demo(args.url, os.environ["BACKEND_SERVICE_TOKEN"], args.output, args.task_timeout)
     else:
-        edax = engine(2)
+        edax = engine(args.edax_level)
         try:
             openings = json.loads(args.openings.read_text())
             if args.pilot_openings is not None:
@@ -175,7 +178,8 @@ def main() -> None:
                     parser.error("pilot-openings 超出可用开局范围")
                 openings = openings[:args.pilot_openings]
             evaluate(api_key(), base_model, args.model_path, openings, edax, args.output,
-                     args.seed, args.mode, args.pilot_openings is not None, args.resume)
+                     args.seed, args.mode, args.pilot_openings is not None, args.resume,
+                     tuple(args.opponents))
         finally:
             edax.close()
 

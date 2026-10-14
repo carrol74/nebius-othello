@@ -89,3 +89,23 @@ def test_resume_rejects_changed_configuration_before_paid_calls(tmp_path, monkey
     with pytest.raises(ValueError, match="输出已存在"):
         match_evaluation.run_matches("", "base", "adapter", openings(), Engine(),
                                      output, 42, interval, pilot=True)
+
+
+def test_selected_opponent_does_not_repeat_other_games(tmp_path, monkeypatch):
+    monkeypatch.setattr(match_evaluation, "create_policy", lambda *args: Policy())
+    output = tmp_path / "edax.json"
+    engine = Engine()
+    engine.level = 1
+    report = match_evaluation.run_matches("", "base", "adapter", openings(), engine,
+                                          output, 42, interval, pilot=True, opponents=("edax",))
+    assert report["expected_games"] == 4
+    assert len(report["records"]) == 4
+    assert all(r["opponent"] == "edax" for r in report["records"])
+    assert all("random" not in key for key in report["summary"])
+    monkeypatch.setattr(match_evaluation, "create_policy", lambda *args: pytest.fail("paid call"))
+    with pytest.raises(ValueError, match="恢复配置"):
+        match_evaluation.run_matches("", "base", "adapter", openings(), Engine(),
+                                     output, 42, interval, pilot=True, resume=True, opponents=("edax",))
+    with pytest.raises(ValueError, match="恢复配置"):
+        match_evaluation.run_matches("", "base", "adapter", openings(), engine,
+                                     output, 42, interval, pilot=True, resume=True)

@@ -48,4 +48,6 @@ Training saves weights and optimizer state every 25 batches. Use `train --resume
 
 Match evaluation uses 40 fixed openings with both colors. Add `evaluate --pilot-openings 4` to run a 32-game pilot against random play and Edax level 2. Each accepted move is saved; use `evaluate --resume` with the same options and output path after a transport interruption. Invalid model outputs are recorded separately from wins, draws, and losses. Scores and comparisons use complete games and complete opening groups, with completion coverage reported alongside them.
 
+Use `--edax-level 1 --opponents edax` to select Edax level 1 without repeating random-opponent games. With four pilot openings, this runs 16 games. The opponent selection and engine level must stay unchanged when resuming.
+
 `deploy/compose.yaml` provides a CPU backend deployment template; the Next.js app targets Vercel.

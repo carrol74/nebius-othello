@@ -14,7 +14,7 @@ from nemothello.training_recovery import atomic_json
 def summarize_matches(report, interval):
     summary = {}
     for name in ("base", "trained"):
-        for opponent in ("random", "edax"):
+        for opponent in report.get("opponents", ("random", "edax")):
             rows = [r for r in report["records"] if r["policy"] == name and r["opponent"] == opponent]
             completed = [r for r in rows if r["status"] == "completed"]
             groups = [[r for r in completed if r["opening_id"] == o["opening_id"]]
@@ -38,7 +38,7 @@ def summarize_matches(report, interval):
                 "successful_input_tokens": sum(d["input_tokens"] for d in decisions),
                 "successful_output_tokens": sum(d.get("output_tokens", 0) for d in decisions),
             }
-    for opponent in ("random", "edax"):
+    for opponent in report.get("opponents", ("random", "edax")):
         differences = []
         for opening in report["openings"]:
             rows = [r for r in report["records"] if r["opening_id"] == opening["opening_id"]
@@ -57,7 +57,11 @@ def summarize_matches(report, interval):
 
 
 def run_matches(api_key, base_model, model_path, openings, edax, output: Path, seed,
-                interval, mode=GENERATION_MODE, pilot=False, resume=False):
+                interval, mode=GENERATION_MODE, pilot=False, resume=False,
+                opponents=("random", "edax")):
+    if (not opponents or len(set(opponents)) != len(opponents)
+            or set(opponents) - {"random", "edax"}):
+        raise ValueError("对手必须是不同的 random 或 edax")
     if ((len(openings) != 40 and not pilot) or (pilot and not 1 <= len(openings) <= 40)
             or len({o["opening_id"] for o in openings}) != len(openings)):
         raise ValueError("正式评测需要四十组开局；试验需显式 pilot 并使用不同开局")
@@ -67,14 +71,16 @@ def run_matches(api_key, base_model, model_path, openings, edax, output: Path, s
             raise ValueError("共享开局的棋盘与棋谱不一致")
     identity = {"base_model": base_model, "model_path": model_path, "policy_mode": mode,
                 "seed": seed, "edax_level": edax.level, "openings": openings, "pilot": pilot,
-                "protocol_version": "matches-v2", "expected_games": len(openings) * 8}
+                "protocol_version": "matches-v2", "opponents": list(opponents),
+                "expected_games": len(openings) * 4 * len(opponents)}
     schedule = [(name, opponent, index, color) for name in ("base", "trained")
-                for opponent in ("random", "edax") for index in range(len(openings))
+                for opponent in opponents for index in range(len(openings))
                 for color in ("X", "O")]
     if output.exists():
         if not resume:
             raise ValueError("评测输出已存在，需显式 resume，不能覆盖证据")
         report = json.loads(output.read_text())
+        report.setdefault("opponents", ["random", "edax"])
         if any(report.get(k) != v for k, v in identity.items()):
             raise ValueError("恢复配置与原对弈报告不一致")
         for i, row in enumerate(report["records"]):
