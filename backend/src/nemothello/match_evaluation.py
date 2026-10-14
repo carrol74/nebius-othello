@@ -58,7 +58,7 @@ def summarize_matches(report, interval):
 
 def run_matches(api_key, base_model, model_path, openings, edax, output: Path, seed,
                 interval, mode=GENERATION_MODE, pilot=False, resume=False,
-                opponents=("random", "edax")):
+                opponents=("random", "edax"), baseline_model_path=None):
     if (not opponents or len(set(opponents)) != len(opponents)
             or set(opponents) - {"random", "edax"}):
         raise ValueError("对手必须是不同的 random 或 edax")
@@ -69,7 +69,8 @@ def run_matches(api_key, base_model, model_path, openings, edax, output: Path, s
         position = replay(opening["moves"])
         if list(position.board) != opening["board"] or position.turn != opening["turn"]:
             raise ValueError("共享开局的棋盘与棋谱不一致")
-    identity = {"base_model": base_model, "model_path": model_path, "policy_mode": mode,
+    identity = {"base_model": base_model, "model_path": model_path,
+                "baseline_model_path": baseline_model_path, "policy_mode": mode,
                 "seed": seed, "edax_level": edax.level, "openings": openings, "pilot": pilot,
                 "protocol_version": "matches-v2", "opponents": list(opponents),
                 "expected_games": len(openings) * 4 * len(opponents)}
@@ -81,6 +82,7 @@ def run_matches(api_key, base_model, model_path, openings, edax, output: Path, s
             raise ValueError("评测输出已存在，需显式 resume，不能覆盖证据")
         report = json.loads(output.read_text())
         report.setdefault("opponents", ["random", "edax"])
+        report.setdefault("baseline_model_path", None)
         if any(report.get(k) != v for k, v in identity.items()):
             raise ValueError("恢复配置与原对弈报告不一致")
         for i, row in enumerate(report["records"]):
@@ -99,7 +101,7 @@ def run_matches(api_key, base_model, model_path, openings, edax, output: Path, s
                   "试验不证明棋力；客户端耗时和成功响应 token 不是端到端延迟或完整账单。"}
     report["status"] = "running"
     atomic_json(output, report)
-    policies = {"base": create_policy(api_key, base_model, None, mode),
+    policies = {"base": create_policy(api_key, base_model, baseline_model_path, mode),
                 "trained": create_policy(api_key, base_model, model_path, mode)}
     for name, opponent, index, color in schedule[len(report["records"]):]:
         opening = openings[index]

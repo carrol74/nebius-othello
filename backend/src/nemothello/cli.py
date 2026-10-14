@@ -90,6 +90,7 @@ def main() -> None:
     training.add_argument("--resume", action="store_true", help="从输出目录已确认的批次检查点恢复权重和优化器")
     evaluation = sub.add_parser("evaluate", help="真实基座与微调对弈评测，会产生推理费用")
     evaluation.add_argument("--model-path", required=True)
+    evaluation.add_argument("--baseline-model-path", help="参考模型的已保存路径；省略时使用未微调基座")
     evaluation.add_argument("--openings", type=Path, required=True)
     evaluation.add_argument("--output", type=Path, required=True)
     evaluation.add_argument("--seed", type=int, default=42)
@@ -192,7 +193,7 @@ def main() -> None:
                 openings = openings[:args.pilot_openings]
             evaluate(api_key(), base_model, args.model_path, openings, edax, args.output,
                      args.seed, args.mode, args.pilot_openings is not None, args.resume,
-                     tuple(args.opponents))
+                     tuple(args.opponents), args.baseline_model_path)
         finally:
             edax.close()
 

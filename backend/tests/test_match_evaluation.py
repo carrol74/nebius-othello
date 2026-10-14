@@ -109,3 +109,47 @@ def test_selected_opponent_does_not_repeat_other_games(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match="恢复配置"):
         match_evaluation.run_matches("", "base", "adapter", openings(), engine,
                                      output, 42, interval, pilot=True, resume=True)
+
+
+def test_saved_reference_is_used_and_cannot_change_on_resume(tmp_path, monkeypatch):
+    requested = []
+
+    def factory(api_key, model, path, mode):
+        requested.append(path)
+        return Policy(AppError("POLICY_ILLEGAL_OUTPUT", "invalid", 502)
+                      if path == "reference" else None)
+
+    monkeypatch.setattr(match_evaluation, "create_policy", factory)
+    output = tmp_path / "reference.json"
+    report = match_evaluation.run_matches("", "base", "candidate", openings(), Engine(),
+        output, 42, interval, pilot=True, opponents=("edax",), baseline_model_path="reference")
+    assert requested == ["reference", "candidate"]
+    assert report["baseline_model_path"] == "reference"
+    assert all(r["status"] == "failed" for r in report["records"] if r["policy"] == "base")
+    assert all(r["status"] == "completed" for r in report["records"] if r["policy"] == "trained")
+    original = output.read_bytes()
+    monkeypatch.setattr(match_evaluation, "create_policy", lambda *args: pytest.fail("paid call"))
+    for reference in (None, "other"):
+        with pytest.raises(ValueError, match="恢复配置"):
+            match_evaluation.run_matches("", "base", "candidate", openings(), Engine(),
+                output, 42, interval, pilot=True, resume=True, opponents=("edax",),
+                baseline_model_path=reference)
+    assert output.read_bytes() == original
+
+
+def test_legacy_report_means_untrained_reference(tmp_path, monkeypatch):
+    monkeypatch.setattr(match_evaluation, "create_policy", lambda *args: Policy())
+    output = tmp_path / "legacy.json"
+    report = match_evaluation.run_matches("", "base", "candidate", openings(), Engine(),
+        output, 42, interval, pilot=True, opponents=("edax",))
+    report.pop("baseline_model_path")
+    output.write_text(json.dumps(report))
+    monkeypatch.setattr(match_evaluation, "create_policy", lambda *args: pytest.fail("paid call"))
+    with pytest.raises(ValueError, match="恢复配置"):
+        match_evaluation.run_matches("", "base", "candidate", openings(), Engine(),
+            output, 42, interval, pilot=True, resume=True, opponents=("edax",),
+            baseline_model_path="reference")
+    resumed = match_evaluation.run_matches("", "base", "candidate", openings(), Engine(),
+        output, 42, interval, pilot=True, resume=True, opponents=("edax",))
+    assert resumed["baseline_model_path"] is None
+    assert resumed["records"] == report["records"]
