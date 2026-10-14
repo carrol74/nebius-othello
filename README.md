@@ -50,4 +50,6 @@ Match evaluation uses 40 fixed openings with both colors. Add `evaluate --pilot-
 
 Use `--edax-level 1 --opponents edax` to select Edax level 1 without repeating random-opponent games. With four pilot openings, this runs 16 games. The opponent selection and engine level must stay unchanged when resuming.
 
+`analyze-failures --sources REPORT... --dataset DATASET_DIR --output OUTPUT` uses the configured Edax engine to label model decisions in saved losses. It does not call cloud models or modify training data. The default teacher level is 8; use `--resume` to continue an interrupted analysis with unchanged sources and dataset files. Diagnostic positions from evaluation games stay separate from training data.
+
 `deploy/compose.yaml` provides a CPU backend deployment template; the Next.js app targets Vercel.

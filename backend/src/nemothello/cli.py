@@ -18,6 +18,7 @@ from nemothello.data import (
 from nemothello.edax import Edax
 from nemothello.edax_verification import verify_edax
 from nemothello.evaluation import evaluate, evaluate_positions
+from nemothello.failure_analysis import analyze_failures
 from nemothello.generation_calibration import calibrate_generation
 from nemothello.policy import GENERATION_MODE, POLICY_MODES
 from nemothello.training import calibrate, train
@@ -106,6 +107,12 @@ def main() -> None:
     positions.add_argument("--limit", type=int, default=200)
     positions.add_argument("--equivalent-margin", type=float, default=1)
     positions.add_argument("--mode", choices=POLICY_MODES, default=GENERATION_MODE)
+    failures = sub.add_parser("analyze-failures", help="只运行 Edax 标注已保存败局，不调用云端模型")
+    failures.add_argument("--sources", type=Path, nargs="+", required=True)
+    failures.add_argument("--dataset", type=Path, required=True)
+    failures.add_argument("--output", type=Path, required=True)
+    failures.add_argument("--level", type=int, choices=range(1, 11), default=8)
+    failures.add_argument("--resume", action="store_true")
     backup = sub.add_parser("backup", help="下载真实 sampler adapter 归档并检查 PEFT 文件，不运行模型")
     backup.add_argument("--metadata", type=Path, required=True)
     backup.add_argument("--output", type=Path, required=True)
@@ -163,6 +170,12 @@ def main() -> None:
     elif args.command == "evaluate-positions":
         evaluate_positions(api_key(), base_model, args.model_path, args.dataset,
                            args.output, args.seed, args.limit, args.equivalent_margin, args.mode)
+    elif args.command == "analyze-failures":
+        edax = engine(args.level)
+        try:
+            analyze_failures(args.sources, args.dataset, edax, args.output, args.resume)
+        finally:
+            edax.close()
     elif args.command == "backup":
         backup_adapter(api_key(), args.metadata, args.output, args.tmp_dir)
     elif args.command == "export-openapi":
