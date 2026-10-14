@@ -93,6 +93,8 @@ def main() -> None:
     evaluation.add_argument("--output", type=Path, required=True)
     evaluation.add_argument("--seed", type=int, default=42)
     evaluation.add_argument("--mode", choices=POLICY_MODES, default=GENERATION_MODE)
+    evaluation.add_argument("--pilot-openings", type=int, help="仅做前 N 个固定开局的试验，不作为正式评测")
+    evaluation.add_argument("--resume", action="store_true", help="从已保存棋谱继续，不重复完成对局")
     positions = sub.add_parser("evaluate-positions", help="真实保留测试局面的基座与微调比较，会产生推理费用")
     positions.add_argument("--model-path", required=True)
     positions.add_argument("--dataset", type=Path, required=True)
@@ -167,8 +169,13 @@ def main() -> None:
     else:
         edax = engine(2)
         try:
-            evaluate(api_key(), base_model, args.model_path,
-                     json.loads(args.openings.read_text()), edax, args.output, args.seed, args.mode)
+            openings = json.loads(args.openings.read_text())
+            if args.pilot_openings is not None:
+                if not 1 <= args.pilot_openings <= len(openings):
+                    parser.error("pilot-openings 超出可用开局范围")
+                openings = openings[:args.pilot_openings]
+            evaluate(api_key(), base_model, args.model_path, openings, edax, args.output,
+                     args.seed, args.mode, args.pilot_openings is not None, args.resume)
         finally:
             edax.close()
 

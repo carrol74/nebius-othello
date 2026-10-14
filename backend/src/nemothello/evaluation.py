@@ -8,7 +8,7 @@ from nemothello.data import read_jsonl, write_json
 from nemothello.edax import Edax
 from nemothello.errors import AppError
 from nemothello.policy import GENERATION_MODE, SCORING_MODE, create_policy
-from nemothello.rules import Position, replay
+from nemothello.rules import Position
 
 
 def interval(groups: list[float], seed: int) -> list[float]:
@@ -146,77 +146,9 @@ def evaluate_positions(
 def evaluate(
     api_key: str, base_model: str, model_path: str, openings: list[dict[str, Any]],
     edax: Edax, output: Path, seed: int, mode: str = GENERATION_MODE,
+    pilot: bool = False, resume: bool = False,
 ) -> dict[str, Any]:
-    if len(openings) != 40 or len({o["opening_id"] for o in openings}) != 40:
-        raise ValueError("主评测需要四十组不同的共享开局")
-    for opening in openings:
-        position = replay(opening["moves"])
-        if list(position.board) != opening["board"] or position.turn != opening["turn"]:
-            raise ValueError("共享开局的棋盘与棋谱不一致")
-    policies = {"base": create_policy(api_key, base_model, None, mode),
-                "trained": create_policy(api_key, base_model, model_path, mode)}
-    records = []
-    report = {"status": "running", "base_model": base_model, "model_path": model_path,
-              "policy_mode": mode,
-              "seed": seed, "edax_level": edax.level, "records": records, "summary": {}}
-    for policy_name, policy in policies.items():
-        for opponent_name in ("random", "edax"):
-            for opening_index, opening in enumerate(openings):
-                for color in ("X", "O"):
-                    rng = random.Random(seed + opening_index)
-                    position = Position(tuple(opening["board"]), opening["turn"])
-                    moves, decisions = [], []
-                    while position.turn:
-                        if len(position.moves) == 1:
-                            move = position.moves[0]
-                        elif position.turn == color:
-                            decision = policy.score(position.board, position.turn)
-                            move = decision["coordinate"]
-                            decisions.append(decision)
-                        elif opponent_name == "random":
-                            move = rng.choice(position.moves)
-                        else:
-                            move = edax.analyze(position.board, position.turn)["recommended_move"]
-                        moves.append(move)
-                        position, _ = position.play(move)
-                    result = position.result()
-                    score = 0.5 if result["winner"] == "draw" else float(result["winner"] == color)
-                    records.append({
-                        "policy": policy_name, "opponent": opponent_name,
-                        "opening_id": opening["opening_id"], "color": color,
-                        "moves": moves, "result": result, "score": score, "decisions": decisions,
-                    })
-                    write_json(output, report)
-    for policy_name in policies:
-        for opponent_name in ("random", "edax"):
-            group = [r for r in records if r["policy"] == policy_name and r["opponent"] == opponent_name]
-            pairs = [np.mean([r["score"] for r in group if r["opening_id"] == o["opening_id"]])
-                     for o in openings]
-            elapsed = [d["elapsed_ms"] for r in group for d in r["decisions"]]
-            report["summary"][f"{policy_name}_vs_{opponent_name}"] = {
-                "games": len(group), "opening_groups": len(pairs),
-                "wins": sum(r["score"] == 1 for r in group),
-                "draws": sum(r["score"] == 0.5 for r in group),
-                "losses": sum(r["score"] == 0 for r in group),
-                "score_rate": float(np.mean(pairs)), "score_rate_ci95": interval(pairs, seed),
-                "decision_p50_ms": float(np.percentile(elapsed, 50)) if elapsed else None,
-                "decision_p95_ms": float(np.percentile(elapsed, 95)) if elapsed else None,
-                "input_tokens": sum(d["input_tokens"] for r in group for d in r["decisions"]),
-            }
-    for opponent_name in ("random", "edax"):
-        differences = []
-        for opening in openings:
-            scores = {}
-            for name in policies:
-                scores[name] = np.mean([r["score"] for r in records
-                                        if r["policy"] == name and r["opponent"] == opponent_name
-                                        and r["opening_id"] == opening["opening_id"]])
-            differences.append(scores["trained"] - scores["base"])
-        report["summary"][f"paired_improvement_vs_{opponent_name}"] = {
-            "score_rate_difference": float(np.mean(differences)),
-            "ci95": interval(differences, seed),
-        }
-    report["status"] = "completed"
-    report["limits"] = "决策耗时来自实际客户端调用；端到端服务延迟与账单需另行记录。"
-    write_json(output, report)
-    return report
+    from nemothello.match_evaluation import run_matches
+
+    return run_matches(api_key, base_model, model_path, openings, edax, output,
+                       seed, interval, mode, pilot, resume)

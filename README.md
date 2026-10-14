@@ -46,4 +46,6 @@ From `backend/`: `uv run pytest`, `uv run ruff check src tests`, and `uv run nem
 
 Training saves weights and optimizer state every 25 batches. Use `train --resume` to continue from the last confirmed checkpoint, or `--max-restarts 2` to enable bounded recovery in fresh processes after transport failures. Batch checkpoints expire after seven days; completed epoch checkpoints are saved without an expiry.
 
+Match evaluation uses 40 fixed openings with both colors. Add `evaluate --pilot-openings 4` to run a 32-game pilot against random play and Edax level 2. Each accepted move is saved; use `evaluate --resume` with the same options and output path after a transport interruption. Invalid model outputs are recorded separately from wins, draws, and losses. Scores and comparisons use complete games and complete opening groups, with completion coverage reported alongside them.
+
 `deploy/compose.yaml` provides a CPU backend deployment template; the Next.js app targets Vercel.
