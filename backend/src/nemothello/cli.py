@@ -20,7 +20,7 @@ from nemothello.edax_verification import verify_edax
 from nemothello.evaluation import evaluate, evaluate_positions
 from nemothello.failure_analysis import analyze_failures
 from nemothello.generation_calibration import calibrate_generation
-from nemothello.policy import GENERATION_MODE, POLICY_MODES
+from nemothello.policy import GENERATION_MODE, POLICY_MODES, TEMPLATE_VERSIONS
 from nemothello.training import calibrate, train
 from nemothello.training_recovery import supervise_training
 from nemothello.verification import verify_demo
@@ -71,6 +71,8 @@ def main() -> None:
     calibration.add_argument("--model-path")
     calibration.add_argument("--sampler-path", help="生成模式恢复时，与 Train 检查点配对的 Sampler 路径")
     calibration.add_argument("--mode", choices=POLICY_MODES, default=GENERATION_MODE)
+    calibration.add_argument("--template-version", choices=TEMPLATE_VERSIONS,
+                             help="显式选择与权重配对的输入模板；省略时使用原候选模板")
     calibration.add_argument("--repeats", type=int, default=3)
     calibration.add_argument("--limit", type=int, default=12)
     calibration.add_argument("--tolerance", type=float, default=1e-4)
@@ -141,13 +143,16 @@ def main() -> None:
     elif args.command == "prepare":
         prepare_dataset(read_jsonl(args.input), args.output, args.seed)
     elif args.command == "calibrate":
+        if args.template_version is not None and args.mode != GENERATION_MODE:
+            parser.error("显式模板选择只支持单 token 生成校准")
         if args.output.exists():
             parser.error("校准输出已存在，请使用新文件保留原始证据")
         try:
             if args.mode == GENERATION_MODE:
                 calibrate_generation(api_key(), base_model, args.data, args.output, args.name,
                                      args.model_path, args.sampler_path,
-                                     args.limit, args.tolerance, args.repeats)
+                                     args.limit, args.tolerance, args.repeats,
+                                     template_version=args.template_version)
             else:
                 calibrate(api_key(), base_model, args.data, args.output, args.name,
                           args.model_path, args.limit, args.tolerance)

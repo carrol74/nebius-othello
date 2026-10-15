@@ -16,6 +16,7 @@ from nemothello.policy import (
     TEMPLATE_VERSION,
     GenerationPolicy,
     encode_position,
+    position_encoder,
     training_datum,
 )
 
@@ -24,6 +25,7 @@ def calibrate_generation(
     api_key: str, base_model: str, data: Path, output: Path, name: str,
     model_path: str | None, sampler_path: str | None,
     limit: int = 12, tolerance: float = 1e-4, repeats: int = 3,
+    template_version: str | None = None,
 ) -> dict[str, Any]:
     """Check generation independently of the legacy cross-engine score comparison."""
     if output.exists():
@@ -31,6 +33,9 @@ def calibrate_generation(
     if (limit < 2 or repeats < 3 or not math.isfinite(tolerance) or tolerance < 0
             or bool(model_path) != bool(sampler_path)):
         raise ValueError("至少两条样本、三次重复；恢复需提供配对的 Train 和 Sampler 路径")
+    encoder = encode_position if template_version is None else position_encoder(template_version)
+    active_template = TEMPLATE_VERSION if template_version is None else template_version
+    policy_options = {} if template_version is None else {"template_version": template_version}
     samples = read_jsonl(data)
     if len(samples) < limit:
         raise ValueError("样本数量不足")
@@ -40,7 +45,7 @@ def calibrate_generation(
         validate_sample(sample)
     report: dict[str, Any] = {
         "status": "running", "artifact_kind": "calibration-only", "base_model": base_model,
-        "template_version": TEMPLATE_VERSION, "symbols": SYMBOLS,
+        "template_version": active_template, "symbols": SYMBOLS,
         "scoring_mode": GENERATION_MODE, "calibration_kind": GENERATION_CALIBRATION,
         "generation_settings": dict(GENERATION_SETTINGS), "repeat_count": repeats,
         "source_model_path": model_path, "source_sampler_path": sampler_path,
@@ -59,7 +64,7 @@ def calibrate_generation(
     tokenizer = training.get_tokenizer()
     before_forward = []
     for sample in selected:
-        encoded = encode_position(tokenizer, tuple(sample["board"]), sample["turn"])
+        encoded = encoder(tokenizer, tuple(sample["board"]), sample["turn"])
         if list(encoded.coordinates) != sample["candidates"]:
             raise ValueError("候选排列与训练标签不一致")
         datum = training_datum(encoded, sample["target"])
@@ -71,8 +76,8 @@ def calibrate_generation(
     report.update(model_path=saved.path, sampler_path=sampler_saved.path,
                   source_sampler_path=sampler_path or sampler_saved.path)
     write_json(output, report)
-    original = GenerationPolicy(api_key, base_model, report["source_sampler_path"])
-    restored = GenerationPolicy(api_key, base_model, sampler_saved.path)
+    original = GenerationPolicy(api_key, base_model, report["source_sampler_path"], **policy_options)
+    restored = GenerationPolicy(api_key, base_model, sampler_saved.path, **policy_options)
     started = time.monotonic()
     original.connect()
     restored.connect()
@@ -82,7 +87,7 @@ def calibrate_generation(
               "repeat_selection": True, "sampler_restore_selection": True}
     for sample, encoded, datum, score in before_forward:
         for policy in (original, restored):
-            recovered_encoded = encode_position(policy.tokenizer, tuple(sample["board"]), sample["turn"])
+            recovered_encoded = encoder(policy.tokenizer, tuple(sample["board"]), sample["turn"])
             if (recovered_encoded.prefix != encoded.prefix
                     or recovered_encoded.symbol_tokens != encoded.symbol_tokens):
                 raise ValueError("采样器编码与训练编码不一致")

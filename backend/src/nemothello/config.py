@@ -6,7 +6,7 @@ from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from nemothello.calibration import calibration_passed
-from nemothello.policy import GENERATION_MODE, SYMBOLS
+from nemothello.policy import GENERATION_MODE, SYMBOLS, TEMPLATE_VERSION
 
 
 class Settings(BaseSettings):
@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     pytrio_base_model: str = "Qwen/Qwen3.5-4B"
     pytrio_model_path: str = Field(min_length=1)
     pytrio_policy_mode: Literal["single-token-generation", "candidate-batch-1d"] = GENERATION_MODE
+    pytrio_template_version: Literal[
+        "othello-candidates-v1", "othello-rule-features-v1",
+    ] = TEMPLATE_VERSION
     pytrio_calibration_path: Path = Path("../eval/results/serving-calibration.json")
     token_factory_api_key: SecretStr
     token_factory_base_url: str = "https://api.tokenfactory.nebius.com/v1"
@@ -45,7 +48,8 @@ class Settings(BaseSettings):
         report = json.loads(self.pytrio_calibration_path.read_text(encoding="utf-8"))
         source_key = ("source_sampler_path" if self.pytrio_policy_mode == GENERATION_MODE
                       else "source_model_path")
-        if (not calibration_passed(report, self.pytrio_base_model, self.pytrio_policy_mode)
+        if (not calibration_passed(report, self.pytrio_base_model, self.pytrio_policy_mode,
+                                   self.pytrio_template_version)
                 or report.get("symbols") != SYMBOLS
                 or report.get(source_key) != self.pytrio_model_path
                 or len(report.get("samples", [])) < 2):

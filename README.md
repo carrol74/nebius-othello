@@ -4,7 +4,7 @@ An Othello app with an AI opponent, optional move hints, and post-game review.
 
 The opponent uses Qwen3.5-4B through PyTRIO to generate one candidate symbol per move. The backend validates the symbol against legal moves. Edax supplies training labels, hints, and analysis. NVIDIA Nemotron through Nebius Token Factory explains completed games and answers review questions.
 
-AI games require a trained Sampler checkpoint and its passing generation calibration report. The optional `candidate-batch-1d` policy requires a Train checkpoint and a passing score calibration report instead. Reports must match the configured policy mode.
+AI games require a trained Sampler checkpoint and its passing generation calibration report. The optional `candidate-batch-1d` policy requires a Train checkpoint and a passing score calibration report instead. Reports must match the configured policy mode and input template.
 
 ## Development
 
@@ -23,6 +23,8 @@ uv sync --extra dev
 ```
 
 Configure `backend/.env` and `web/.env.local` from their `.env.example` files. Supply real PyTRIO and Token Factory credentials, the policy checkpoint and calibration report, Edax paths, and a shared backend service token. Model credentials stay on the backend.
+
+Set `PYTRIO_TEMPLATE_VERSION` to the adapter's input template: `othello-candidates-v1` (default) or `othello-rule-features-v1` (generation mode only). Use `calibrate --template-version <template>` when calibrating an explicitly selected template. Startup rejects a report from a different template or checkpoint.
 
 Run the web app from the root:
 

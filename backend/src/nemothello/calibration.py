@@ -7,18 +7,22 @@ from nemothello.policy import (
     SCORING_MODE,
     SYMBOLS,
     TEMPLATE_VERSION,
+    TEMPLATE_VERSIONS,
 )
 
 GENERATION_CALIBRATION = "single-token-generation-v1"
 
 
-def calibration_passed(report: dict[str, Any], base_model: str, mode: str) -> bool:
-    if (report.get("status") != "passed" or report.get("base_model") != base_model
-            or report.get("template_version") != TEMPLATE_VERSION
+def calibration_passed(
+    report: dict[str, Any], base_model: str, mode: str, template_version: str = TEMPLATE_VERSION,
+) -> bool:
+    if (template_version not in TEMPLATE_VERSIONS
+            or report.get("status") != "passed" or report.get("base_model") != base_model
+            or report.get("template_version") != template_version
             or report.get("scoring_mode") != mode):
         return False
     if mode == SCORING_MODE:
-        return report.get("batch_order_checked") is True
+        return template_version == TEMPLATE_VERSION and report.get("batch_order_checked") is True
     if mode != GENERATION_MODE:
         return False
     samples = report.get("samples", [])

@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
         store.recover_tasks()
         policy = create_policy(settings.pytrio_api_key.get_secret_value(),
                                settings.pytrio_base_model, settings.pytrio_model_path,
-                               settings.pytrio_policy_mode)
+                               settings.pytrio_policy_mode, settings.pytrio_template_version)
         edax = Edax(settings.edax_executable, settings.edax_eval_file,
                     settings.edax_version, settings.edax_level, settings.edax_timeout_seconds)
         nemotron = Nemotron(settings.token_factory_api_key.get_secret_value(),

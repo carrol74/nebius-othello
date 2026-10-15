@@ -13,6 +13,8 @@ from nemothello.rules import Board, Color, legal_moves
 
 SYMBOLS = string.ascii_uppercase + string.ascii_lowercase
 TEMPLATE_VERSION = "othello-candidates-v1"
+FEATURE_TEMPLATE_VERSION = "othello-rule-features-v1"
+TEMPLATE_VERSIONS = (TEMPLATE_VERSION, FEATURE_TEMPLATE_VERSION)
 SCORING_MODE = "candidate-batch-1d"
 GENERATION_MODE = "single-token-generation"
 POLICY_MODES = (GENERATION_MODE, SCORING_MODE)
@@ -59,6 +61,16 @@ def encode_position(
 
 def scoring_datums(encoded: EncodedPosition) -> list[trio.Datum]:
     return [training_datum(encoded, coordinate) for coordinate in encoded.coordinates]
+
+
+def position_encoder(template_version: str):
+    if template_version == TEMPLATE_VERSION:
+        return encode_position
+    if template_version == FEATURE_TEMPLATE_VERSION:
+        from nemothello.rule_features import encode_feature_position
+
+        return encode_feature_position
+    raise ValueError("未知的落子输入模板")
 
 
 def training_datum(encoded: EncodedPosition, target: str) -> trio.Datum:
@@ -168,13 +180,18 @@ def generated_coordinate(tokens: list[int], encoded: EncodedPosition) -> str:
 class GenerationPolicy:
     """Choose one legal candidate from one sampling request; invalid outputs fail closed."""
 
-    def __init__(self, api_key: str, base_model: str, model_path: str | None = None) -> None:
+    def __init__(
+        self, api_key: str, base_model: str, model_path: str | None = None,
+        *, template_version: str = TEMPLATE_VERSION,
+    ) -> None:
         self.api_key, self.base_model, self.model_path = api_key, base_model, model_path
+        self.template_version = template_version
+        self.encoder = position_encoder(template_version)
         self.lock = Lock()
         self.service: Any = None
         self.sampler: Any = None
         self.tokenizer: Any = None
-        self.config_id = f"{base_model}|{model_path}|{TEMPLATE_VERSION}|{GENERATION_MODE}|seed42"
+        self.config_id = f"{base_model}|{model_path}|{template_version}|{GENERATION_MODE}|seed42"
 
     def connect(self) -> None:
         if self.sampler is None:
@@ -216,15 +233,18 @@ class GenerationPolicy:
         started = time.monotonic()
         with self.lock:
             self.connect()
-            result = self._generate(encode_position(self.tokenizer, board, turn))
+            result = self._generate(self.encoder(self.tokenizer, board, turn))
         return {**result, "elapsed_ms": round((time.monotonic() - started) * 1000, 2)}
 
 
 def create_policy(
     api_key: str, base_model: str, model_path: str | None, mode: str = GENERATION_MODE,
+    template_version: str = TEMPLATE_VERSION,
 ) -> GenerationPolicy | PytrioPolicy | SamplingPolicy:
     if mode == GENERATION_MODE:
-        return GenerationPolicy(api_key, base_model, model_path)
+        return GenerationPolicy(api_key, base_model, model_path, template_version=template_version)
+    if template_version != TEMPLATE_VERSION:
+        raise ValueError("规则特征模板只支持单 token 生成模式")
     if mode == SCORING_MODE:
         return (PytrioPolicy(api_key, base_model, model_path) if model_path
                 else SamplingPolicy(api_key, base_model))
