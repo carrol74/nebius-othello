@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from nemothello.edax import Edax
 from nemothello.errors import AppError
-from nemothello.policy import GenerationPolicy, PytrioPolicy, SamplingPolicy
+from nemothello.opponents import EdaxOpponent
 from nemothello.rules import Position, opponent
 from nemothello.schemas import GameState
 from nemothello.storage import Store
@@ -48,12 +48,12 @@ def advance(game: dict[str, Any], move: str) -> dict[str, Any]:
 
 class Games:
     def __init__(
-        self, store: Store, policy: GenerationPolicy | PytrioPolicy | SamplingPolicy,
+        self, store: Store, opponent: EdaxOpponent,
         edax: Edax, task_limit: int,
         task_queue_limit: int = 16,
     ) -> None:
         self.store = store
-        self.policy = policy
+        self.opponent = opponent
         self.edax = edax
         self.task_limit = task_limit
         self.task_queue_limit = task_queue_limit
@@ -82,9 +82,9 @@ class Games:
             "turn": initial.turn, "human_color": human_color, "status": "active",
             "legal_moves": list(initial.moves), "history": [], "result": None,
             "initial_board": list(initial.board), "initial_turn": initial.turn,
-            "opponent_config_id": self.policy.config_id,
-            "opponent_config": {"base_model": self.policy.base_model,
-                                "model_path": self.policy.model_path},
+            "opponent_config_id": self.opponent.config_id,
+            "opponent_name": self.opponent.name,
+            "opponent_config": dict(self.opponent.configuration),
             "parent_game_id": None, "parent_revision": None,
         }
 
@@ -114,13 +114,13 @@ class Games:
             self.check_turn(game, revision, human)
             decision = None
             if not human:
-                if game["opponent_config_id"] != self.policy.config_id:
-                    raise AppError("OPPONENT_CHANGED", "原对手权重配置不可用，不能替换后继续对局", 503)
+                if game["opponent_config_id"] != self.opponent.config_id:
+                    raise AppError("OPPONENT_CHANGED", "原对手配置不可用，不能替换后继续对局", 503)
                 moves = position_of(game).moves
                 if len(moves) == 1:
                     coordinate = moves[0]
                 else:
-                    decision = self.policy.score(tuple(game["board"]), game["turn"])
+                    decision = self.opponent.score(tuple(game["board"]), game["turn"])
                     coordinate = decision["coordinate"]
 
             def operation(db: Connection) -> dict[str, Any]:
@@ -193,7 +193,7 @@ class Games:
 
         def operation(db: Connection) -> dict[str, Any]:
             parent = self.store.get("game", game_id, owner, db)
-            if parent["opponent_config_id"] != self.policy.config_id:
+            if parent["opponent_config_id"] != self.opponent.config_id:
                 raise AppError("OPPONENT_CHANGED", "原对手配置不可用，无法重演", 503)
             if revision == 0:
                 initial = Position(tuple(parent["initial_board"]), parent["initial_turn"])

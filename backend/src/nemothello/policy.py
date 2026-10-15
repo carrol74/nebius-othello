@@ -1,5 +1,4 @@
 import math
-import string
 import time
 from dataclasses import dataclass
 from threading import Lock
@@ -9,16 +8,39 @@ import numpy as np
 import pytrio as trio
 
 from nemothello.errors import AppError
+from nemothello.policy_spec import (
+    FEATURE_TEMPLATE_VERSION,
+    GENERATION_MODE,
+    GENERATION_SETTINGS,
+    POLICY_MODES,
+    SCORING_MODE,
+    SYMBOLS,
+    TEMPLATE_VERSION,
+    TEMPLATE_VERSIONS,
+)
 from nemothello.rules import Board, Color, legal_moves
 
-SYMBOLS = string.ascii_uppercase + string.ascii_lowercase
-TEMPLATE_VERSION = "othello-candidates-v1"
-FEATURE_TEMPLATE_VERSION = "othello-rule-features-v1"
-TEMPLATE_VERSIONS = (TEMPLATE_VERSION, FEATURE_TEMPLATE_VERSION)
-SCORING_MODE = "candidate-batch-1d"
-GENERATION_MODE = "single-token-generation"
-POLICY_MODES = (GENERATION_MODE, SCORING_MODE)
-GENERATION_SETTINGS = {"temperature": 0, "seed": 42, "max_tokens": 1}
+__all__ = [
+    "FEATURE_TEMPLATE_VERSION",
+    "GENERATION_MODE",
+    "GENERATION_SETTINGS",
+    "POLICY_MODES",
+    "SCORING_MODE",
+    "SYMBOLS",
+    "TEMPLATE_VERSION",
+    "TEMPLATE_VERSIONS",
+    "EncodedPosition",
+    "GenerationPolicy",
+    "PytrioPolicy",
+    "SamplingPolicy",
+    "complete_scores",
+    "create_policy",
+    "encode_position",
+    "generated_coordinate",
+    "position_encoder",
+    "scoring_datums",
+    "training_datum",
+]
 
 
 @dataclass(frozen=True)

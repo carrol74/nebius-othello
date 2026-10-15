@@ -1,32 +1,38 @@
 # Nemothello
 
-An Othello app with an AI opponent, optional move hints, and post-game review.
+An Othello app with an Edax opponent, optional move hints, and post-game review by NVIDIA Nemotron through Nebius Token Factory.
 
-The opponent uses Qwen3.5-4B through PyTRIO to generate one candidate symbol per move. The backend validates the symbol against legal moves. Edax supplies training labels, hints, and analysis. NVIDIA Nemotron through Nebius Token Factory explains completed games and answers review questions.
+The backend owns board rules, games, hint records, and branch replay. Separate Edax processes provide opponent moves and analysis. Nemotron explains completed games using the saved game and engine evidence, and answers review questions.
 
-AI games require a trained Sampler checkpoint and its passing generation calibration report. The optional `candidate-batch-1d` policy requires a Train checkpoint and a passing score calibration report instead. Reports must match the configured policy mode and input template.
+## Structure
+
+- `web/`: Next.js board, game history, hints, reviews, and backend proxy.
+- `backend/src/nemothello/`: FastAPI service, rules, storage, engine adapters, review tasks, and CLI tools.
+- `backend/tests/`: product and research regression tests.
+- `deploy/`: CPU backend, gateway, and Edax deployment configuration.
+- `data/`, `artifacts/`, `eval/results/`: local datasets, model artifacts, and evaluation outputs; not required to run the app.
 
 ## Development
 
-Requirements: Node.js 20.9+, Python 3.11–3.13, uv, and a compatible Edax executable with evaluation weights.
+Requirements: Node.js 20.9+, Python 3.11–3.13, uv, and an Edax executable with compatible evaluation weights. Obtain the engine and weights separately; use a Linux engine for the container deployment.
 
-Install web dependencies at the repository root:
+Install web dependencies from the repository root:
 
 ```sh
 npm ci
 ```
 
-Install backend dependencies in `backend/`:
+Install the product backend from `backend/`:
 
 ```sh
 uv sync --extra dev
 ```
 
-Configure `backend/.env` and `web/.env.local` from their `.env.example` files. Supply real PyTRIO and Token Factory credentials, the policy checkpoint and calibration report, Edax paths, and a shared backend service token. Model credentials stay on the backend.
+Configure `backend/.env` and `web/.env.local` from their examples. Supply Edax paths and a shared backend service token. `EDAX_OPPONENT_LEVEL` defaults to 2; `EDAX_LEVEL` defaults to 8 for hints and review analysis. The interface identifies the opponent used for each game.
 
-Set `PYTRIO_TEMPLATE_VERSION` to the adapter's input template: `othello-candidates-v1` (default) or `othello-rule-features-v1` (generation mode only). Use `calibrate --template-version <template>` when calibrating an explicitly selected template. Startup rejects a report from a different template or checkpoint.
+Set both `TOKEN_FACTORY_API_KEY` and `TOKEN_FACTORY_MODEL_ID` to enable Nemotron reviews. Leave both empty to use games, hints, and branch replay without language-model calls; review requests then report that the service is not configured. Credentials stay on the backend.
 
-Run the web app from the root:
+Run the frontend from the root:
 
 ```sh
 npm run dev
@@ -38,22 +44,32 @@ Run the backend from `backend/`:
 uv run uvicorn nemothello.main:app --reload
 ```
 
-The backend owns board rules, SQLite games, and the task queue. Use one worker per database. Startup validates resources and requires a passing calibration report for the configured policy. `GET /health` checks process response; it does not validate external model readiness.
+Use one worker per database. Opponent identity includes the engine version, resource hashes, and search settings. Existing games cannot continue or replay against a changed opponent. `GET /health` checks process response; it does not verify external model readiness.
 
 ## Checks and tools
 
 From the root: `npm run typecheck`, `npm run build`, and `npm run check:api-types`.
 
-From `backend/`: `uv run pytest`, `uv run ruff check src tests`, and `uv run nemothello --help`. The CLI provides Edax checks, data preparation, calibration, training, evaluation, adapter backup, API export, and live acceptance checks. Cloud model operations can incur charges.
+From `backend/`:
 
-Training saves weights and optimizer state every 25 batches. Use `train --resume` to continue from the last confirmed checkpoint, or `--max-restarts 2` to enable bounded recovery in fresh processes after transport failures. Batch checkpoints expire after seven days; completed epoch checkpoints are saved without an expiry.
+```sh
+uv run pytest tests/test_rules.py tests/test_history.py tests/test_storage.py tests/test_edax.py tests/test_product_runtime.py
+uv run ruff check src tests
+uv run nemothello --help
+uv run nemothello check-edax --output ../eval/results/edax-check.json
+```
 
-Match evaluation uses 40 fixed openings with both colors. Add `evaluate --pilot-openings 4` to run a 32-game pilot against random play and Edax level 2. Each accepted move is saved; use `evaluate --resume` with the same options and output path after a transport interruption. Invalid model outputs are recorded separately from wins, draws, and losses. Scores and comparisons use complete games and complete opening groups, with completion coverage reported alongside them.
+`verify-demo` exercises the backend game, review, question, and branch APIs. It calls Token Factory and can incur charges. Browser hint display requires a separate UI check.
 
-Use `--edax-level 1 --opponents edax` to select Edax level 1 without repeating random-opponent games. With four pilot openings, this runs 16 games. The opponent selection and engine level must stay unchanged when resuming.
+## Research tools
 
-Use `evaluate --baseline-model-path <saved-model-path>` to compare the candidate with a saved reference model. Without this option, the reference is the untrained base model. Reports retain the `base` label for the reference and record its path; the reference path must stay unchanged when resuming. Generation mode uses sampler paths for both models.
+The CLI also contains policy calibration, cloud training, model evaluation, and adapter backup tools. Install their optional dependencies only when using them:
 
-`analyze-failures --sources REPORT... --dataset DATASET_DIR --output OUTPUT` uses the configured Edax engine to label model decisions in saved losses. It does not call cloud models or modify training data. The default teacher level is 8; use `--resume` to continue an interrupted analysis with unchanged sources and dataset files. Diagnostic positions from evaluation games stay separate from training data.
+```sh
+uv sync --extra dev --extra research
+uv run pytest
+```
 
-`deploy/compose.yaml` provides a CPU backend deployment template; the Next.js app targets Vercel.
+Cloud research commands can incur charges. They use `PYTRIO_API_KEY` and optional `PYTRIO_BASE_MODEL` from the backend environment. Training and evaluation use the checkpoint paths and calibration reports specified through their CLI options. These tools do not configure the app's opponent.
+
+`deploy/compose.yaml` provides a CPU backend deployment template; the Next.js app targets Vercel. Model credentials belong on the backend, never in public frontend variables.

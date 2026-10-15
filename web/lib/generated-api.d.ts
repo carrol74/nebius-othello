@@ -395,6 +395,11 @@ export interface components {
             initial_turn: "X" | "O";
             /** Opponent Config Id */
             opponent_config_id: string;
+            /**
+             * Opponent Name
+             * @default 历史对手
+             */
+            opponent_name: string;
             result: components["schemas"]["GameResult"] | null;
             /** Parent Game Id */
             parent_game_id?: string | null;

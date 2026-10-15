@@ -28,6 +28,7 @@ export interface GameState {
   legal_moves: string[];
   history: HistoryEvent[];
   opponent_config_id: string;
+  opponent_name: string;
   result: GameResult | null;
   parent_game_id: string | null;
   parent_revision: number | null;

@@ -88,6 +88,7 @@ class Tasks:
         raise AppError("BRANCH_LENGTH", "分支超过合法对局步数，请检查棋规", 500)
 
     def review(self, owner: str, game_id: str) -> dict[str, Any]:
+        self.nemotron.ensure_configured()
         game = self.store.get("game", game_id, owner)
         if game["status"] != "finished":
             raise AppError("REVIEW_REQUIRES_END", "对局未结束，不能生成复盘")

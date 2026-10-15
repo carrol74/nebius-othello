@@ -1,10 +1,8 @@
-import json
 from copy import deepcopy
 
 import pytest
 
 from nemothello.calibration import GENERATION_CALIBRATION, calibration_passed
-from nemothello.config import Settings
 from nemothello.policy import (
     FEATURE_TEMPLATE_VERSION,
     GENERATION_MODE,
@@ -143,32 +141,3 @@ def test_feature_selection_preserves_strict_calibration_checks(failure):
     else:
         report["tolerance"] = 0.01
     assert not calibration_passed(report, "test-model", GENERATION_MODE, FEATURE_TEMPLATE_VERSION)
-
-
-def test_settings_require_matching_template_and_sampler(tmp_path):
-    executable = tmp_path / "edax"
-    executable.touch()
-    report_path = tmp_path / "calibration.json"
-    report = feature_gate()
-    report_path.write_text(json.dumps(report))
-    settings = Settings(
-        _env_file=None,
-        pytrio_api_key="unused",
-        pytrio_base_model="test-model",
-        pytrio_model_path=report["source_sampler_path"],
-        pytrio_template_version=TEMPLATE_VERSION,
-        pytrio_calibration_path=report_path,
-        token_factory_api_key="unused",
-        token_factory_model_id="test",
-        edax_executable=executable,
-        edax_eval_file=executable,
-        edax_version="4.6",
-        backend_service_token="unused",
-    )
-    with pytest.raises(ValueError, match="真实校准"):
-        settings.validate_resources()
-    settings.pytrio_template_version = FEATURE_TEMPLATE_VERSION
-    settings.validate_resources()
-    settings.pytrio_model_path = "trio://different/sampler_weights/test"
-    with pytest.raises(ValueError, match="真实校准"):
-        settings.validate_resources()

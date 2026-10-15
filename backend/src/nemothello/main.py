@@ -8,14 +8,13 @@ import httpx
 from fastapi import Depends, FastAPI, Header, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from pytrio.errors.base import PyTrioError
 
 from nemothello.config import Settings
 from nemothello.edax import Edax
 from nemothello.errors import AppError
 from nemothello.games import Games
 from nemothello.nemotron import Nemotron
-from nemothello.policy import create_policy
+from nemothello.opponents import EdaxOpponent
 from nemothello.schemas import (
     Analysis,
     AnalyzeRequest,
@@ -47,14 +46,16 @@ async def lifespan(app: FastAPI):
     store = Store(settings.database_path)
     with store.exclusive_worker():
         store.recover_tasks()
-        policy = create_policy(settings.pytrio_api_key.get_secret_value(),
-                               settings.pytrio_base_model, settings.pytrio_model_path,
-                               settings.pytrio_policy_mode, settings.pytrio_template_version)
         edax = Edax(settings.edax_executable, settings.edax_eval_file,
                     settings.edax_version, settings.edax_level, settings.edax_timeout_seconds)
+        opponent_engine = Edax(settings.edax_executable, settings.edax_eval_file,
+                               settings.edax_version, settings.edax_opponent_level,
+                               settings.edax_timeout_seconds)
+        opponent = EdaxOpponent(opponent_engine)
         nemotron = Nemotron(settings.token_factory_api_key.get_secret_value(),
                             settings.token_factory_base_url, settings.token_factory_model_id)
-        games = Games(store, policy, edax, settings.task_limit_per_session, settings.task_queue_limit)
+        games = Games(store, opponent, edax, settings.task_limit_per_session,
+                      settings.task_queue_limit)
         tasks = Tasks(store, games, nemotron)
         app.state.settings, app.state.games, app.state.store = settings, games, store
         worker = asyncio.create_task(tasks.run())
@@ -66,6 +67,7 @@ async def lifespan(app: FastAPI):
                 await worker
             finally:
                 edax.close()
+                opponent_engine.close()
                 nemotron.close()
 
 
@@ -103,17 +105,6 @@ async def invalid_input(request: Request, exc: RequestValidationError):
     return JSONResponse(status_code=422, content={
         "code": "INVALID_INPUT", "message": "请求字段缺失或格式不正确",
         "request_id": request.headers.get("x-request-id"), "retryable": False,
-    })
-
-
-@app.exception_handler(PyTrioError)
-async def pytrio_error(request: Request, exc: PyTrioError):
-    logger.exception("PyTRIO 请求失败 code=%s", exc.code)
-    upstream = exc.source in ("actor", "control", "event")
-    return JSONResponse(status_code=502 if upstream else 500, content={
-        "code": "PYTRIO_UPSTREAM_FAILED" if upstream else "PYTRIO_CONFIGURATION_ERROR",
-        "message": "模型平台请求失败，请查看日志" if upstream else "模型客户端配置错误，请检查日志",
-        "request_id": request.headers.get("x-request-id"), "retryable": exc.retryable,
     })
 
 

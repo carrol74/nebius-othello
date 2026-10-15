@@ -1,9 +1,7 @@
 FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    HF_HOME=/app/runtime/tokenizers \
-    MODELSCOPE_CACHE=/app/runtime/modelscope
+    PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 COPY pyproject.toml ./
@@ -13,5 +11,5 @@ RUN pip install --no-cache-dir . && useradd --uid 10001 --create-home app \
 USER app
 EXPOSE 8000
 
-# One worker owns the persistent SDK, Edax process, and task queue.
+# One worker owns the Edax processes, database, and task queue.
 CMD ["uvicorn", "nemothello.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

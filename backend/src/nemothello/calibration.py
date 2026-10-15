@@ -1,7 +1,7 @@
 import math
 from typing import Any
 
-from nemothello.policy import (
+from nemothello.policy_spec import (
     GENERATION_MODE,
     GENERATION_SETTINGS,
     SCORING_MODE,

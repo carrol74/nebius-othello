@@ -20,12 +20,18 @@ SYSTEM_PROMPT = (
 class Nemotron:
     def __init__(self, api_key: str, base_url: str, model_id: str) -> None:
         self.model_id = model_id
+        self.configured = bool(api_key.strip() and model_id.strip())
         self.http = httpx.Client(
             base_url=base_url.rstrip("/") + "/", timeout=90,
             headers={"Authorization": f"Bearer {api_key}"},
         )
 
+    def ensure_configured(self) -> None:
+        if not self.configured:
+            raise AppError("REVIEW_NOT_CONFIGURED", "复盘讲解尚未配置 Token Factory", 503)
+
     def explain(self, evidence: dict[str, Any], question: str | None = None) -> dict[str, Any]:
+        self.ensure_configured()
         payload = {"evidence": evidence, "question": question or "请复盘这盘对局，说明关键手与改进。"}
         response = self.http.post("chat/completions", json={
             "model": self.model_id, "temperature": 0.2, "max_tokens": 2400,

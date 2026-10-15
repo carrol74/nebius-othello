@@ -80,6 +80,7 @@ class GameState(BaseModel):
     initial_board: BoardRows
     initial_turn: Color
     opponent_config_id: str
+    opponent_name: str = "历史对手"
     result: GameResult | None
     parent_game_id: str | None = None
     parent_revision: int | None = None

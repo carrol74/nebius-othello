@@ -1253,6 +1253,11 @@
             "type": "string",
             "title": "Opponent Config Id"
           },
+          "opponent_name": {
+            "type": "string",
+            "title": "Opponent Name",
+            "default": "历史对手"
+          },
           "result": {
             "anyOf": [
               {

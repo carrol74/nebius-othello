@@ -5,7 +5,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from nemothello.artifacts import backup_adapter
 from nemothello.contracts import export_openapi
 from nemothello.data import (
     generate_games,
@@ -17,12 +16,7 @@ from nemothello.data import (
 )
 from nemothello.edax import Edax
 from nemothello.edax_verification import verify_edax
-from nemothello.evaluation import evaluate, evaluate_positions
-from nemothello.failure_analysis import analyze_failures
-from nemothello.generation_calibration import calibrate_generation
-from nemothello.policy import GENERATION_MODE, POLICY_MODES, TEMPLATE_VERSIONS
-from nemothello.training import calibrate, train
-from nemothello.training_recovery import supervise_training
+from nemothello.policy_spec import GENERATION_MODE, POLICY_MODES, TEMPLATE_VERSIONS
 from nemothello.verification import verify_demo
 
 
@@ -44,7 +38,7 @@ def engine(level: int) -> Edax:
 
 def main() -> None:
     load_dotenv()
-    parser = argparse.ArgumentParser(description="Nemothello 数据、评分核验、训练与评测")
+    parser = argparse.ArgumentParser(description="Nemothello 产品检查、接口导出与可选研究工具")
     sub = parser.add_subparsers(dest="command", required=True)
     openings = sub.add_parser("openings", help="生成固定共享开局，不调用模型")
     openings.add_argument("--output", type=Path, required=True)
@@ -143,6 +137,9 @@ def main() -> None:
     elif args.command == "prepare":
         prepare_dataset(read_jsonl(args.input), args.output, args.seed)
     elif args.command == "calibrate":
+        from nemothello.generation_calibration import calibrate_generation
+        from nemothello.training import calibrate
+
         if args.template_version is not None and args.mode != GENERATION_MODE:
             parser.error("显式模板选择只支持单 token 生成校准")
         if args.output.exists():
@@ -165,6 +162,9 @@ def main() -> None:
             raise
         print(f"落子校准通过，报告：{args.output}")
     elif args.command == "train":
+        from nemothello.training import train
+        from nemothello.training_recovery import supervise_training
+
         if args.max_restarts < 0:
             parser.error("max-restarts 不能为负")
         if args.max_restarts:
@@ -174,21 +174,29 @@ def main() -> None:
                   json.loads(args.calibration.read_text()), args.rank, args.learning_rate,
                   args.batch_size, args.epochs, args.seed, args.resume, args.checkpoint_every)
     elif args.command == "evaluate-positions":
+        from nemothello.evaluation import evaluate_positions
+
         evaluate_positions(api_key(), base_model, args.model_path, args.dataset,
                            args.output, args.seed, args.limit, args.equivalent_margin, args.mode)
     elif args.command == "analyze-failures":
+        from nemothello.failure_analysis import analyze_failures
+
         edax = engine(args.level)
         try:
             analyze_failures(args.sources, args.dataset, edax, args.output, args.resume)
         finally:
             edax.close()
     elif args.command == "backup":
+        from nemothello.artifacts import backup_adapter
+
         backup_adapter(api_key(), args.metadata, args.output, args.tmp_dir)
     elif args.command == "export-openapi":
         export_openapi(args.output)
     elif args.command == "verify-demo":
         verify_demo(args.url, os.environ["BACKEND_SERVICE_TOKEN"], args.output, args.task_timeout)
     else:
+        from nemothello.evaluation import evaluate
+
         edax = engine(args.edax_level)
         try:
             openings = json.loads(args.openings.read_text())

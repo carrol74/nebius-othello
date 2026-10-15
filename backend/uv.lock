@@ -630,15 +630,9 @@ source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
     { name = "httpx" },
-    { name = "modelscope" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
     { name = "python-dotenv" },
-    { name = "pytrio" },
-    { name = "torch" },
-    { name = "transformers" },
     { name = "uvicorn" },
 ]
 
@@ -648,25 +642,33 @@ dev = [
     { name = "pytest" },
     { name = "ruff" },
 ]
+research = [
+    { name = "modelscope" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "pytrio" },
+    { name = "torch" },
+    { name = "transformers" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115,<1" },
     { name = "httpx", specifier = ">=0.27,<1" },
     { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27,<1" },
-    { name = "modelscope", specifier = ">=1.20,<2" },
-    { name = "numpy", specifier = ">=2,<3" },
+    { name = "modelscope", marker = "extra == 'research'", specifier = ">=1.20,<2" },
+    { name = "numpy", marker = "extra == 'research'", specifier = ">=2,<3" },
     { name = "pydantic", specifier = ">=2,<3" },
     { name = "pydantic-settings", specifier = ">=2,<3" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8,<10" },
     { name = "python-dotenv", specifier = ">=1,<2" },
-    { name = "pytrio", specifier = "==0.2.9" },
+    { name = "pytrio", marker = "extra == 'research'", specifier = "==0.2.9" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.9,<1" },
-    { name = "torch", specifier = ">=2.6,<3" },
-    { name = "transformers", specifier = ">=4.57,<6" },
+    { name = "torch", marker = "extra == 'research'", specifier = ">=2.6,<3" },
+    { name = "transformers", marker = "extra == 'research'", specifier = ">=4.57,<6" },
     { name = "uvicorn", specifier = ">=0.30,<1" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["research", "dev"]
 
 [[package]]
 name = "networkx"
