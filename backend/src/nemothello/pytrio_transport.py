@@ -1,14 +1,29 @@
-"""Bounded retries for read-only Actor polling in the pinned PyTRIO SDK."""
+"""Bounded Actor retries for the pinned PyTRIO SDK."""
 
 import asyncio
 import functools
 import importlib.metadata
 import logging
 
-from pytrio.errors.actor import ActorEventGetError
+from pytrio.errors.actor import ActorEventGetError, ActorEventSubmitError
+from pytrio.protocol.actor.events.event import EventType
 from pytrio.transport.actor.event.get import EventGetActorMixin
+from pytrio.transport.actor.event.submit import EventSubmitActorMixin
 
 logger = logging.getLogger(__name__)
+RETRIED_SUBMIT_TYPES = frozenset({EventType.TRAINER_FORWARD_BACKWARD,
+                                EventType.TRAINER_OPTIMIZE_STEP})
+
+
+def _check_sdk_version() -> None:
+    if importlib.metadata.version("pytrio") != "0.2.9":
+        raise RuntimeError("事件重试适配器只验证了 PyTRIO 0.2.9，请先检查 SDK 兼容性")
+
+
+def _transient(error: ActorEventGetError | ActorEventSubmitError) -> bool:
+    # The SDK's generic actor.request_failed code can mark even a permanent
+    # HTTP error retryable. Require a transport failure or a transient status.
+    return error.retryable and error.status_code in (0, 408, 429, 500, 502, 503, 504)
 
 
 def enable_event_get_retries() -> None:
@@ -19,8 +34,7 @@ def enable_event_get_retries() -> None:
     This version-checked compatibility wrapper keeps transient GET failures
     inside the coordinator's existing future, querying the same event ID.
     """
-    if importlib.metadata.version("pytrio") != "0.2.9":
-        raise RuntimeError("事件查询重试适配器只验证了 PyTRIO 0.2.9，请先检查 SDK 兼容性")
+    _check_sdk_version()
     original = EventGetActorMixin.get_event
     if getattr(original, "_nemothello_read_retry", False):
         return
@@ -31,10 +45,42 @@ def enable_event_get_retries() -> None:
             try:
                 return await original(self, event_id, wait_timeout_seconds=wait_timeout_seconds)
             except ActorEventGetError as error:
-                if not error.retryable or attempt == 3:
+                if not _transient(error) or attempt == 3:
                     raise
                 logger.warning("重试读取训练事件 %s，下一次查询 %s/3", event_id, attempt + 1)
                 await asyncio.sleep(attempt)
 
     get_with_retries._nemothello_read_retry = True
     EventGetActorMixin.get_event = get_with_retries
+
+
+def enable_training_event_retries() -> None:
+    """Retry gradient/optimizer submissions using the identical event envelope.
+
+    Live duplicate probes verified these two event types return event_exists,
+    which the pinned SDK converts to acceptance of the original event. Saves
+    returned checkpoint-name conflict instead, so they remain single-attempt.
+    Neither an event ID nor its payload/sequence is regenerated on retry.
+    """
+    _check_sdk_version()
+    enable_event_get_retries()
+    original = EventSubmitActorMixin.submit_event
+    if getattr(original, "_nemothello_submit_retry", False):
+        return
+
+    @functools.wraps(original)
+    async def submit_with_retries(self, envelope):
+        if envelope.type not in RETRIED_SUBMIT_TYPES:
+            return await original(self, envelope)
+        for attempt in range(1, 4):
+            try:
+                return await original(self, envelope)
+            except ActorEventSubmitError as error:
+                if not _transient(error) or attempt == 3:
+                    raise
+                logger.warning("重试提交同一训练事件 %s，下一次提交 %s/3",
+                               envelope.event_id, attempt + 1)
+                await asyncio.sleep(attempt)
+
+    submit_with_retries._nemothello_submit_retry = True
+    EventSubmitActorMixin.submit_event = submit_with_retries
