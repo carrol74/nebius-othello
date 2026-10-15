@@ -23,6 +23,7 @@ from nemothello.policy import (
     scoring_datums,
     training_datum,
 )
+from nemothello.pytrio_transport import enable_event_get_retries
 from nemothello.training_recovery import atomic_json, recoverable_error, validate_progress
 from nemothello.validation_cache import validate_cache, validation_signature
 
@@ -238,6 +239,7 @@ def train(
                    training_event_queue_capacity=1, request_timeout_seconds=90,
                    actor_event_submit_timeout_seconds=90, actor_event_polling_timeout_seconds=90,
                    control_retry_timeout_seconds=30, actor_capacity_wait_timeout_seconds=90)
+    enable_event_get_retries()
     service = trio.ServiceClient(api_key=api_key)
     training = service.create_lora_training_client(base_model=base_model, rank=rank, seed=seed)
     if checkpoint_path:
@@ -267,6 +269,7 @@ def train(
         **identity, "epochs": epochs, "resumed_from": checkpoint_path,
         "checkpoint_every": checkpoint_every, "batch_checkpoint_ttl_seconds": 604800,
         "training_event_retry_timeout_seconds": 0,
+        "event_get_max_attempts": 3,
         "token_lengths": {"min": min(lengths), "max": max(lengths),
                           "p50": float(np.percentile(lengths, 50)),
                           "p95": float(np.percentile(lengths, 95)), "total": sum(lengths)},
