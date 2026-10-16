@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { attachSession, sessionId } from "@/lib/session";
+import { sameOrigin } from "@/lib/request-origin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +22,9 @@ async function forward(request: NextRequest, context: { params: Promise<{ path: 
     return NextResponse.json({ code: "NOT_FOUND", message: "接口不存在" }, { status: 404 });
   }
   const origin = request.headers.get("origin");
-  if (request.method === "POST" && origin !== request.nextUrl.origin) {
+  // NextURL normalizes loopback IPs to localhost; Host retains the browser's authority.
+  if (request.method === "POST"
+    && !sameOrigin(origin, request.headers.get("host"), request.nextUrl.protocol)) {
     return NextResponse.json({ code: "INVALID_ORIGIN", message: "请求来源不匹配" }, { status: 403 });
   }
   const backendUrl = process.env.BACKEND_URL;

@@ -48,7 +48,7 @@ Use one worker per database. Opponent identity includes the engine version, reso
 
 ## Checks and tools
 
-From the root: `npm run typecheck`, `npm run build`, and `npm run check:api-types`.
+From the root: `npm run test:web`, `npm run typecheck`, `npm run build`, and `npm run check:api-types`.
 
 From `backend/`:
 
