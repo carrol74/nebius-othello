@@ -5,6 +5,7 @@
   "workspaces": ["web"],
   "engines": { "node": ">=20.9.0" },
   "scripts": {
+    "dev:local": "./start.command",
     "test:web": "npm run test --workspace @nemothello/web",
     "dev": "npm run dev --workspace @nemothello/web",
     "build": "npm run build --workspace @nemothello/web",
