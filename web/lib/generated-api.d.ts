@@ -349,6 +349,12 @@ export interface components {
              * @enum {string}
              */
             human_color: "X" | "O";
+            /**
+             * Difficulty
+             * @default medium
+             * @enum {string}
+             */
+            difficulty: "easy" | "medium" | "hard";
         };
         /** GameResult */
         GameResult: {
@@ -400,6 +406,8 @@ export interface components {
              * @default 历史对手
              */
             opponent_name: string;
+            /** Difficulty */
+            difficulty?: ("easy" | "medium" | "hard") | null;
             result: components["schemas"]["GameResult"] | null;
             /** Parent Game Id */
             parent_game_id?: string | null;

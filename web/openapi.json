@@ -1127,6 +1127,16 @@
               "O"
             ],
             "title": "Human Color"
+          },
+          "difficulty": {
+            "type": "string",
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ],
+            "title": "Difficulty",
+            "default": "medium"
           }
         },
         "additionalProperties": false,
@@ -1257,6 +1267,22 @@
             "type": "string",
             "title": "Opponent Name",
             "default": "历史对手"
+          },
+          "difficulty": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "easy",
+                  "medium",
+                  "hard"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Difficulty"
           },
           "result": {
             "anyOf": [

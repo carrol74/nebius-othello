@@ -28,7 +28,7 @@ Install the product backend from `backend/`:
 uv sync --extra dev
 ```
 
-Configure `backend/.env` and `web/.env.local` from their examples. Supply Edax paths and a shared backend service token. `EDAX_OPPONENT_LEVEL` defaults to 2; `EDAX_LEVEL` defaults to 8 for hints and review analysis. The interface identifies the opponent used for each game.
+Configure `backend/.env` and `web/.env.local` from their examples. Supply Edax paths and a shared backend service token. Choose beginner, intermediate, or advanced when starting a game (Edax levels 1, 4, and 8). Intermediate is the default. Difficulty is saved per game and inherited by branches; changing the selector applies to new games. `EDAX_LEVEL` defaults to 8 for hints and review analysis. `EDAX_OPPONENT_LEVEL` is retained for compatibility with earlier engine configurations. The interface identifies the opponent used for each game.
 
 Set both `TOKEN_FACTORY_API_KEY` and `TOKEN_FACTORY_MODEL_ID` to enable Nemotron reviews. Leave both empty to use games, hints, and branch replay without language-model calls; review requests then report that the service is not configured. Credentials stay on the backend.
 

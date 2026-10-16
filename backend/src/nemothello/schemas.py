@@ -2,6 +2,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from nemothello.opponents import Difficulty
 from nemothello.rules import Color
 
 BoardRows = Annotated[
@@ -20,6 +21,7 @@ class WriteRequest(RequestModel):
 
 class CreateGame(WriteRequest):
     human_color: Color
+    difficulty: Difficulty = "medium"
 
 
 class RevisionRequest(WriteRequest):
@@ -81,6 +83,7 @@ class GameState(BaseModel):
     initial_turn: Color
     opponent_config_id: str
     opponent_name: str = "历史对手"
+    difficulty: Difficulty | None = None
     result: GameResult | None
     parent_game_id: str | None = None
     parent_revision: int | None = None

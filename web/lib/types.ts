@@ -1,4 +1,5 @@
 export type Color = "X" | "O";
+export type Difficulty = "easy" | "medium" | "hard";
 
 export interface GameResult {
   black_count: number;
@@ -29,6 +30,7 @@ export interface GameState {
   history: HistoryEvent[];
   opponent_config_id: string;
   opponent_name: string;
+  difficulty: Difficulty | null;
   result: GameResult | null;
   parent_game_id: string | null;
   parent_revision: number | null;

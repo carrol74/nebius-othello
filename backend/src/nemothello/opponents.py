@@ -2,10 +2,13 @@ import hashlib
 import json
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from nemothello.edax import Edax
 from nemothello.rules import Board, Color
+
+Difficulty = Literal["easy", "medium", "hard"]
+DIFFICULTY_LEVELS: dict[Difficulty, int] = {"easy": 1, "medium": 4, "hard": 8}
 
 
 def file_digest(path: Path) -> str:

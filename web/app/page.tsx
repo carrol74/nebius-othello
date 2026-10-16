@@ -4,9 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError, requestId } from "@/lib/api";
 import { ReviewDetails } from "@/components/review-details";
 import { TaskList } from "@/components/task-list";
-import type { Color, GameState, Hint, Review, Task, TrackedTask } from "@/lib/types";
+import type { Color, Difficulty, GameState, Hint, Review, Task, TrackedTask } from "@/lib/types";
 
 type RecentGame = { game_id: string; label: string };
+const difficultyName: Record<Difficulty, string> = { easy: "初级", medium: "中级", hard: "高级" };
 const colorName = (color: Color) => color === "X" ? "黑方" : "白方";
 
 function message(error: unknown) {
@@ -17,6 +18,7 @@ function message(error: unknown) {
 export default function Home() {
   const [game, setGame] = useState<GameState | null>(null);
   const [humanColor, setHumanColor] = useState<Color>("X");
+  const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [recent, setRecent] = useState<RecentGame[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -252,8 +254,8 @@ export default function Home() {
   return (
     <main className="workspace">
       <header className="masthead"><a className="wordmark" href="/">Nemo<span>thello</span><span className="brand-dot" /></a><p>与 AI 对战，在复盘中理解每一步。</p><span className="header-tag">翻转棋 · 8 × 8</span></header>
-      {game && <p className="board-note">对手：{game.opponent_name} · 提示与复盘分析由 Edax 提供，复盘讲解由 Nemotron 生成。</p>}
-      <section className="game-toolbar" aria-label="对局设置"><div className="color-picker"><span>你的颜色</span><button aria-pressed={humanColor === "X"} onClick={() => setHumanColor("X")} disabled={!!busy}><i className="mini-disc black" />执黑</button><button aria-pressed={humanColor === "O"} onClick={() => setHumanColor("O")} disabled={!!busy}><i className="mini-disc white" />执白</button></div><button className="primary" disabled={!!busy || !loaded} onClick={() => void perform("创建对局", async () => acceptGame(await api<GameState>("/games", { human_color: humanColor, request_id: requestId() })))}>开始新对局 <span aria-hidden="true">↗</span></button>{recent.length > 0 && <label className="recent-picker">最近对局<select value={game?.game_id ?? ""} disabled={!!busy} onChange={(event) => { const id = event.target.value; if (id) void perform("载入对局", async () => acceptGame(await api<GameState>(`/games/${id}`))); }}><option value="" disabled>选择对局</option>{recent.map((item) => <option key={item.game_id} value={item.game_id}>{item.label}</option>)}</select></label>}</section>
+      {game && <p className="board-note">对手：{game.difficulty ? `${difficultyName[game.difficulty]} · ` : ""}{game.opponent_name} · 提示与复盘分析由 Edax 提供，复盘讲解由 Nemotron 生成。</p>}
+      <section className="game-toolbar" aria-label="对局设置"><div className="color-picker"><span>你的颜色</span><button aria-pressed={humanColor === "X"} onClick={() => setHumanColor("X")} disabled={!!busy}><i className="mini-disc black" />执黑</button><button aria-pressed={humanColor === "O"} onClick={() => setHumanColor("O")} disabled={!!busy}><i className="mini-disc white" />执白</button></div><label className="difficulty-picker">新对局难度<select value={difficulty} disabled={!!busy} onChange={(event) => setDifficulty(event.target.value as Difficulty)}><option value="easy">初级</option><option value="medium">中级</option><option value="hard">高级</option></select></label><button className="primary" disabled={!!busy || !loaded} onClick={() => void perform("创建对局", async () => acceptGame(await api<GameState>("/games", { human_color: humanColor, difficulty, request_id: requestId() })))}>开始新对局 <span aria-hidden="true">↗</span></button>{recent.length > 0 && <label className="recent-picker">最近对局<select value={game?.game_id ?? ""} disabled={!!busy} onChange={(event) => { const id = event.target.value; if (id) void perform("载入对局", async () => acceptGame(await api<GameState>(`/games/${id}`))); }}><option value="" disabled>选择对局</option>{recent.map((item) => <option key={item.game_id} value={item.game_id}>{item.label}</option>)}</select></label>}</section>
       {error && <div className="error-banner" role="alert"><span>{error}</span><button aria-label="关闭错误提示" onClick={() => setError(null)}>×</button></div>}
       {!loaded && !busy && bootStarted.current && <button className="primary connection-retry" onClick={() => {
         bootStarted.current = false;

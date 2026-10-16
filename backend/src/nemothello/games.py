@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from nemothello.edax import Edax
 from nemothello.errors import AppError
-from nemothello.opponents import EdaxOpponent
+from nemothello.opponents import Difficulty, EdaxOpponent
 from nemothello.rules import Position, opponent
 from nemothello.schemas import GameState
 from nemothello.storage import Store
@@ -51,9 +51,14 @@ class Games:
         self, store: Store, opponent: EdaxOpponent,
         edax: Edax, task_limit: int,
         task_queue_limit: int = 16,
+        difficulty_opponents: dict[Difficulty, EdaxOpponent] | None = None,
     ) -> None:
         self.store = store
         self.opponent = opponent
+        self.difficulty_opponents = difficulty_opponents or {}
+        self.opponents_by_id = {
+            item.config_id: item for item in [opponent, *self.difficulty_opponents.values()]
+        }
         self.edax = edax
         self.task_limit = task_limit
         self.task_queue_limit = task_queue_limit
@@ -62,17 +67,29 @@ class Games:
     def get(self, game_id: str, owner: str) -> dict[str, Any]:
         return public_game(self.store.get("game", game_id, owner))
 
-    def create(self, owner: str, request_id: str, human_color: str) -> dict[str, Any]:
-        payload = {"operation": "create_game", "human_color": human_color}
+    def create(
+        self, owner: str, request_id: str, human_color: str, difficulty: Difficulty | None = None,
+    ) -> dict[str, Any]:
+        selected = self.opponent
+        if difficulty is not None:
+            if difficulty not in self.difficulty_opponents:
+                raise AppError("DIFFICULTY_UNAVAILABLE", "所选难度不可用", 422)
+            selected = self.difficulty_opponents[difficulty]
+        payload = {"operation": "create_game", "human_color": human_color,
+                   "difficulty": difficulty}
 
         def operation(db: Connection) -> dict[str, Any]:
-            game = self.new_game(human_color)
+            game = self.new_game(human_color, selected=selected, difficulty=difficulty)
             self.store.save(db, "game", game["game_id"], owner, game)
             return public_game(game)
 
         return self.store.mutate(owner, request_id, payload, operation)
 
-    def new_game(self, human_color: str, initial: Position | None = None) -> dict[str, Any]:
+    def new_game(
+        self, human_color: str, initial: Position | None = None,
+        selected: EdaxOpponent | None = None, difficulty: Difficulty | None = None,
+    ) -> dict[str, Any]:
+        selected = selected or self.opponent
         if initial is None:
             initial = Position()
         if initial.turn is None or not initial.moves:
@@ -82,11 +99,17 @@ class Games:
             "turn": initial.turn, "human_color": human_color, "status": "active",
             "legal_moves": list(initial.moves), "history": [], "result": None,
             "initial_board": list(initial.board), "initial_turn": initial.turn,
-            "opponent_config_id": self.opponent.config_id,
-            "opponent_name": self.opponent.name,
-            "opponent_config": dict(self.opponent.configuration),
+            "opponent_config_id": selected.config_id,
+            "opponent_name": selected.name, "difficulty": difficulty,
+            "opponent_config": dict(selected.configuration),
             "parent_game_id": None, "parent_revision": None,
         }
+
+    def opponent_of(self, game: dict[str, Any]) -> EdaxOpponent:
+        selected = self.opponents_by_id.get(game["opponent_config_id"])
+        if selected is None:
+            raise AppError("OPPONENT_CHANGED", "原对手配置不可用，不能替换后继续或重演", 503)
+        return selected
 
     def check_turn(self, game: dict[str, Any], revision: int, human: bool) -> None:
         if game["revision"] != revision:
@@ -114,13 +137,12 @@ class Games:
             self.check_turn(game, revision, human)
             decision = None
             if not human:
-                if game["opponent_config_id"] != self.opponent.config_id:
-                    raise AppError("OPPONENT_CHANGED", "原对手配置不可用，不能替换后继续对局", 503)
+                selected = self.opponent_of(game)
                 moves = position_of(game).moves
                 if len(moves) == 1:
                     coordinate = moves[0]
                 else:
-                    decision = self.opponent.score(tuple(game["board"]), game["turn"])
+                    decision = selected.score(tuple(game["board"]), game["turn"])
                     coordinate = decision["coordinate"]
 
             def operation(db: Connection) -> dict[str, Any]:
@@ -193,8 +215,7 @@ class Games:
 
         def operation(db: Connection) -> dict[str, Any]:
             parent = self.store.get("game", game_id, owner, db)
-            if parent["opponent_config_id"] != self.opponent.config_id:
-                raise AppError("OPPONENT_CHANGED", "原对手配置不可用，无法重演", 503)
+            selected = self.opponent_of(parent)
             if revision == 0:
                 initial = Position(tuple(parent["initial_board"]), parent["initial_turn"])
             else:
@@ -202,7 +223,8 @@ class Games:
                 if not events:
                     raise AppError("BRANCH_REVISION", "未找到该分支起点", 422)
                 initial = Position(tuple(events[0]["board"]), events[0]["turn"])
-            branch = self.new_game(parent["human_color"], initial)
+            branch = self.new_game(parent["human_color"], initial, selected,
+                                   parent.get("difficulty"))
             branch.update(parent_game_id=game_id, parent_revision=revision)
             branch["auto_play"] = mode == "follow_hints"
             branch["branch_mode"] = mode

@@ -34,6 +34,7 @@ p { line-height: 1.7; }
 .color-picker button[aria-pressed="true"] { border-color: var(--accent); background: #283425; }
 .primary { background: var(--accent); border-color: var(--accent); color: #182012; font-weight: 600; }
 .primary:hover:not(:disabled) { background: #ddffb8; border-color: #ddffb8; }
+.difficulty-picker { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 13px; }
 .recent-picker { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 12px; margin-left: auto; }
 select { max-width: 250px; padding: 10px; color: #e9eee4; background: var(--background); }
 .error-banner { display: flex; align-items: center; justify-content: space-between; gap: 15px; border: 1px solid #936052; background: #36231e; padding: 8px 16px; border-radius: 10px; margin-bottom: 24px; line-height: 1.6; }

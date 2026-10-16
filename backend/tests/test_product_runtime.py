@@ -8,8 +8,9 @@ from nemothello.edax import Edax
 from nemothello.errors import AppError
 from nemothello.games import Games
 from nemothello.nemotron import Nemotron
-from nemothello.opponents import EdaxOpponent
+from nemothello.opponents import DIFFICULTY_LEVELS, EdaxOpponent
 from nemothello.rules import INITIAL_BOARD
+from nemothello.schemas import CreateGame
 from nemothello.storage import Store
 
 
@@ -121,3 +122,49 @@ def test_engine_failure_preserves_board(tmp_path, monkeypatch):
     with pytest.raises(AppError):
         games.move("owner", game["game_id"], "ai-move", 0)
     assert games.get(game["game_id"], "owner") == game
+
+
+def test_difficulty_is_persisted_and_routes_each_game_and_branch(tmp_path, monkeypatch):
+    executable, weights = resources(tmp_path)
+    presets = {
+        name: EdaxOpponent(Edax(executable, weights, "4.6", level))
+        for name, level in DIFFICULTY_LEVELS.items()
+    }
+    analysis = Edax(executable, weights, "4.6", 8)
+    games = Games(Store(tmp_path / "games.sqlite3"), presets["medium"], analysis, 3,
+                  difficulty_opponents=presets)
+    calls = []
+
+    def score_for(name):
+        def score(board, turn):
+            calls.append(name)
+            return {"coordinate": "d3"}
+        return score
+
+    for name, selected in presets.items():
+        monkeypatch.setattr(selected, "score", score_for(name))
+    created = {
+        name: games.create("owner", f"create-{name}", "O", name) for name in presets
+    }
+    for name in ("hard", "easy", "medium"):
+        game = created[name]
+        assert game["difficulty"] == name
+        games.move("owner", game["game_id"], f"move-{name}", 0)
+        branch = games.branch("owner", game["game_id"], f"branch-{name}", 0, "manual")
+        assert branch["difficulty"] == name
+        assert branch["opponent_config_id"] == game["opponent_config_id"]
+        games.move("owner", branch["game_id"], f"branch-move-{name}", 0)
+    assert calls == ["hard", "hard", "easy", "easy", "medium", "medium"]
+    assert analysis.level == 8
+    # Reusing a create ID with a changed difficulty must not return the earlier game.
+    with pytest.raises(AppError) as error:
+        games.create("owner", "create-easy", "O", "hard")
+    assert error.value.code == "REQUEST_CONFLICT"
+
+
+def test_create_schema_rejects_unknown_difficulty():
+    from pydantic import ValidationError
+
+    assert CreateGame(request_id="test-create", human_color="X").difficulty == "medium"
+    with pytest.raises(ValidationError):
+        CreateGame(request_id="test-create", human_color="X", difficulty="unbounded")
