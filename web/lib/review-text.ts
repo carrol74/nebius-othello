@@ -1,5 +1,5 @@
 import type { Locale } from "./locale";
-import type { Review, ReviewEvidence, ReviewFact } from "./types";
+import type { Review, ReviewFact } from "./types";
 
 export function factText(fact: ReviewFact, review: Review, locale: Locale): string {
   if (locale === "en") return fact.text;
@@ -39,29 +39,4 @@ export function factText(fact: ReviewFact, review: Review, locale: Locale): stri
   if (candidate && kind.startsWith("line_")) return `一条搜索续着：${candidate.principal_variation.map((item) => item === "pass" ? "跳过" : item).join(" → ")}。它没有涵盖对手的全部合法回应。`;
   if (candidate) return `${candidate.coordinate} 是合法落点，从${color(entry.actor)}视角评分 ${candidate.score}。`;
   return fact.text;
-}
-
-export function compareMoves(entry: ReviewEvidence, move: string, locale: Locale, lessonId?: string): string[] {
-  const zh = locale === "zh";
-  const best = entry.analysis.candidates.find((candidate) => candidate.coordinate === entry.recommended_move)!;
-  const selected = entry.analysis.candidates.find((candidate) => candidate.coordinate === move)!;
-  const recommended = entry.comparisons?.find((candidate) => candidate.coordinate === best.coordinate);
-  const alternative = entry.comparisons?.find((candidate) => candidate.coordinate === move);
-  const color = zh ? entry.actor === "X" ? "黑方" : "白方" : entry.actor === "X" ? "Black" : "White";
-  const gap = best.score - selected.score;
-  const exact = best.score_kind === "exact" && selected.score_kind === "exact";
-  const lines = [gap === 0
-    ? zh ? `${move} 与最佳评分相同（${selected.score}），同样可以选择。` : `${move} matches the best score (${selected.score}) and is an equally rated choice.`
-    : zh ? `${best.coordinate} 的评分为 ${best.score}，比 ${move}（${selected.score}）高 ${gap}。${exact ? "这是双方最佳应对下的最终子差" : "这是搜索后续应对后的估计"}，评分从${color}视角计算。`
-      : `${best.coordinate} scores ${best.score}, ${gap} above ${move} (${selected.score}). ${exact ? "This is the final disc difference under best play" : "This estimate includes searched replies"}, from ${color}'s perspective.`];
-  if (recommended && alternative && move !== best.coordinate) {
-    if (recommended.corner) lines.push(zh ? `${best.coordinate} 占据角落，角落棋子无法被翻转。` : `${best.coordinate} takes a corner, where its disc cannot be flipped.`);
-    else if (alternative.opponent_corners.length > recommended.opponent_corners.length) {
-      lines.push(zh ? `${move} 后对手可立即占据的角落：${alternative.opponent_corners.join("、")}；${best.coordinate} 后：${recommended.opponent_corners.join("、") || "没有"}。` : `Immediate corner replies after ${move}: ${alternative.opponent_corners.join(", ")}; after ${best.coordinate}: ${recommended.opponent_corners.join(", ") || "none"}.`);
-    } else if (recommended.opponent_moves === 0 && recommended.own_moves > 0) lines.push(zh ? `${best.coordinate} 让对手无合法落点，必须跳过回合。` : `${best.coordinate} leaves the opponent no legal move, forcing a pass.`);
-    else if (lessonId === "frontier") lines.push(zh ? `${best.coordinate} 后双方前沿棋子的数量差为 ${recommended.frontier_difference}，${move} 后为 ${alternative.frontier_difference}，均按${color}减去对手计算。前沿棋子邻接空位，这项特征不能单独决定优劣。` : `The frontier-disc difference is ${recommended.frontier_difference} after ${best.coordinate}, versus ${alternative.frontier_difference} after ${move}, counting ${color} minus the opponent. Frontier discs touch empty squares; this feature alone does not decide the best move.`);
-    else lines.push(zh ? `${best.coordinate} 后对手有 ${recommended.opponent_moves} 个合法落点，${move} 后有 ${alternative.opponent_moves} 个。落点数量只是局面的一部分，最终推荐取决于后续搜索。` : `The opponent has ${recommended.opponent_moves} legal replies after ${best.coordinate}, versus ${alternative.opponent_moves} after ${move}. Reply count is one feature; the recommendation depends on the searched continuation.`);
-  }
-  if (!exact) lines.push(zh ? "搜索评分不代表胜率，也不保证获胜。" : "Search scores are not win probabilities or a guaranteed win.");
-  return lines;
 }

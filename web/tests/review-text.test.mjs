@@ -5,24 +5,10 @@ import ts from "typescript";
 
 const source = readFileSync(new URL("../lib/review-text.ts", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, {compilerOptions: {module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022}}).outputText;
-const {compareMoves, factText} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const {factText} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const {review} = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/review-native-positions.json", import.meta.url), "utf8"));
 
-test("both languages preserve scores and omit unavailable mobility data", () => {
-  const entry = review.evidence.find((item) => item.revision === 16);
-  const english = compareMoves(entry, "b1", "en").join(" ");
-  const chinese = compareMoves(entry, "b1", "zh").join(" ");
-  for (const text of [english, chinese]) {
-    for (const number of ["-10", "-30", "20"]) assert.ok(text.includes(number));
-  }
-  assert.doesNotMatch(english, /legal replies/);
-  assert.doesNotMatch(chinese, /合法落点/);
-});
-
-test("tied endgame choices stay equally rated and use the right player perspective", () => {
-  const entry = review.evidence.find((item) => item.revision === 47);
-  assert.match(compareMoves(entry, "b8", "en").join(" "), /equally rated/);
-  assert.match(compareMoves(entry, "b8", "zh").join(" "), /同样可以选择/);
+test("saved exact scores use the correct player perspective", () => {
   assert.match(factText({id:"p47:score",revision:47,text:"",topic:"comparison"}, review, "zh"), /白方视角/);
 });
 

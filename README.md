@@ -34,7 +34,7 @@ For manual startup, configure `backend/.env` and `web/.env.local` from their exa
 
 Set both `TOKEN_FACTORY_API_KEY` and `TOKEN_FACTORY_MODEL_ID` to enable Nemotron reviews. Leave both empty to use games, hints, and branch replay without language-model calls; review requests then report that the service is not configured. Credentials stay on the backend.
 
-Switch between English and Chinese with the header buttons; the app remembers your language. After a game, select a decision and compare any legal move with the engine recommendation. A short explanation shows the score difference and relevant board facts. Practice, search continuations, full analysis, and questions remain available as optional controls. Tied best-scoring alternatives count as equally rated.
+Switch between English and Chinese with the header buttons; the app remembers your language. After a game, compare a move with the engine recommendation through step-by-step board demonstrations. Each step highlights the played square and flipped discs. Corner lessons show the exact capture line; when a corner threat cannot be stopped, every legal defense can be inspected on the board. Search scores, full analysis, and questions remain optional. Demonstrations use saved engine lines and verified legal moves without additional model calls.
 
 Coaching uses a checked JSON lesson plan with thinking disabled. Invalid or incomplete plans report an error; saved analysis and practice remain available, and coaching can be retried separately. Opening saved reviews, practising moves, and exploring continuations make no model calls. Hint-adoption and result queries use saved facts when they can be answered directly.
 

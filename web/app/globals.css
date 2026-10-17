@@ -38,6 +38,31 @@ p { line-height: 1.7; }
 .comparison-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
 .comparison-actions > details { padding: 10px 14px; }
 .review-more { margin-top: 22px; }
+.teaching-choices { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 18px; }
+.teaching-choices button { text-align: left; min-width: 140px; }
+.teaching-choices button span { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+.teaching-choices button[aria-pressed="true"] { border-color: var(--accent); background: #283425; }
+.concrete-lesson { max-width: 66ch; font-size: 15px; }
+.concrete-lesson p { margin: 10px 0; }
+.teaching-steps { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; }
+.teaching-steps button { display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-size: 13px; }
+.teaching-steps small { color: var(--muted); font-size: 11px; }
+.teaching-steps button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.concrete-takeaway { border-left: 2px solid var(--accent); padding-left: 16px; max-width: 66ch; font-size: 14px; }
+.line-attribution { font-size: 11px; color: var(--muted); margin: 16px 0; }
+.checked-defenses { max-width: 66ch; margin: 14px 0; }
+.defense-list { display: flex; flex-wrap: wrap; gap: 12px; color: var(--accent); }
+.comparison-scores { margin: 18px 0; max-width: 680px; }
+.comparison-scores p { color: var(--muted); font-size: 12px; }
+.continue-comparison { margin-top: 6px; }
+.lesson-flipped .disc { outline: 3px solid #d7f3ba; outline-offset: 2px; }
+.lesson-placed { box-shadow: inset 0 0 0 3px var(--accent); }
+.lesson-ray { background: #6b7545 !important; }
+.lesson-target { box-shadow: inset 0 0 0 3px #f3c66e; }
+.lesson-coordinate { position: absolute; left: 3px; bottom: 2px; font-size: clamp(9px, 1.2vw, 12px); color: #fff5d6; background: #19221ce8; border-radius: 3px; padding: 1px 3px; }
+.board-teaching-text { flex-basis: 100%; margin: 4px 0; font-size: 14px; color: #f0f3e9; }
+.capture-explanation { display: block; font-size: 14px; line-height: 1.7; margin-top: 8px; }
+.board-teaching-text small { display: block; color: var(--muted); margin-top: 6px; font-size: 11px; }
 .branch-options { margin-top: 20px; }
 .branch-options .branch-panel { border: 0; margin-top: 12px; padding: 0; background: transparent; }
 .game-toolbar { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; margin: 30px 0; }

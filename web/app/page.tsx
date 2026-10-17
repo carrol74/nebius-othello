@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError, requestId } from "@/lib/api";
 import { LanguageSwitch, useLocale } from "@/lib/locale";
+import { captureLineText, stepText } from "@/lib/teaching-text";
 import { ReviewDetails } from "@/components/review-details";
 import { ReviewCoach } from "@/components/review-coach";
 import type { Practice, Variation } from "@/components/review-coach";
@@ -15,6 +16,10 @@ const colorName = (color: Color) => color === "X" ? "Black" : "White";
 function message(error: unknown) {
   if (error instanceof ApiError) return `${error.message}${error.detail.request_id ? ` · Request ${error.detail.request_id}` : ""}`;
   return error instanceof Error ? error.message : "Request failed. Please try again.";
+}
+
+function firstReviewPosition(review: Review) {
+  return [...review.key_moves].sort((a, b) => b.score_loss - a.score_loss)[0]?.revision ?? null;
 }
 
 export default function Home() {
@@ -204,13 +209,13 @@ export default function Home() {
     if (entry.task.kind === "review" && entry.game_id === gameRef.current?.game_id) {
       if (entry.task.status === "succeeded" && entry.task.result) {
         setReview(entry.task.result);
-        const first = entry.task.result.key_moves[0]?.revision ?? null;
+        const first = firstReviewPosition(entry.task.result);
         setHistoryRevision((current) => current ?? first);
       } else if (entry.task.status === "running" || entry.task.status === "failed") {
         void api<Review | { task: Task | null }>(`/games/${entry.game_id}/review`).then((result) => {
           if (!("task" in result) && gameRef.current?.game_id === entry.game_id) {
             setReview(result);
-            setHistoryRevision((current) => current ?? result.key_moves[0]?.revision ?? null);
+            setHistoryRevision((current) => current ?? firstReviewPosition(result));
           }
         }).catch((failure) => { if (gameRef.current?.game_id === entry.game_id) setError(message(failure)); });
       }
@@ -252,7 +257,7 @@ export default function Home() {
       if ("task" in result) { if (result.task) trackTask({ task: result.task, purpose: "review", game_id: gameId }); }
       else {
         setReview(result);
-        setHistoryRevision((current) => current ?? result.key_moves[0]?.revision ?? null);
+        setHistoryRevision((current) => current ?? firstReviewPosition(result));
       }
     }).catch((failure) => {
       if (!controller.signal.aborted && !(failure instanceof ApiError && failure.detail.code === "REVIEW_NOT_FOUND")) setError(message(failure));
@@ -279,7 +284,9 @@ export default function Home() {
   const selectedEvent = game?.history.find((event) => event.revision === historyRevision);
   const selectedEvidence = review?.evidence.find((entry) => entry.revision === historyRevision);
   const variationComparison = variation && review?.evidence.find((entry) => entry.revision === variation.revision)?.comparisons?.find((entry) => entry.coordinate === variation.coordinate);
-  const variationFrame = variation && variationComparison?.frames[variation.frame];
+  const variationFrames = variation?.lesson_frames ?? variationComparison?.frames;
+  const teachingFrame = variation?.lesson_frames?.[variation.frame];
+  const variationFrame = variation && variationFrames?.[variation.frame];
   const board = variationFrame?.board ?? selectedEvidence?.analysis.board ?? (historyRevision === 0 ? game?.initial_board : selectedEvent?.board ?? game?.board);
   const displayedTurn = variationFrame ? variationFrame.turn : selectedEvidence?.actor ?? (historyRevision === 0 ? game?.initial_turn : selectedEvent ? selectedEvent.turn : game?.turn);
   const live = historyRevision === null;
@@ -355,11 +362,16 @@ export default function Home() {
             const coordinate = `${"abcdefgh"[column]}${row + 1}`, cell = board?.[row]?.[column] ?? ".";
             const legal = canPractice ? !!selectedEvidence?.analysis.candidates.some((entry) => entry.coordinate === coordinate) : live && !!game?.legal_moves.includes(coordinate);
             const recommended = !variation && (practice?.coordinate ? selectedEvidence?.recommended_move === coordinate : visibleHint?.recommended_move === coordinate);
-            return <button key={coordinate} className={`square ${recommended ? "recommended" : ""}`} disabled={!canMove || !legal} aria-label={`${coordinate}, ${cell === "X" ? t("black disc", "黑棋") : cell === "O" ? t("white disc", "白棋") : t("empty", "空位")}${legal ? t(", legal move", "，合法落点") : ""}${recommended ? t(", recommended move", "，推荐落点") : ""}`} onClick={() => { if (canPractice && practice) { setPractice({...practice, coordinate}); document.getElementById("review-coaching")?.scrollIntoView({block: "start", behavior: "instant"}); return; } if (game) void perform("Playing move", async () => acceptGame(await api<GameState>(`/games/${game.game_id}/moves`, { coordinate, expected_revision: game.revision, request_id: requestId() }))); }}>{cell !== "." && <span className={`disc ${cell === "X" ? "black" : "white"}`} />}{cell === "." && legal && <span className="legal-marker" />}{recommended && <span className="hint-ring" />}</button>;
+            const flipped = teachingFrame?.flipped.includes(coordinate);
+            const placed = teachingFrame?.coordinate === coordinate;
+            const target = !!teachingFrame && variation?.focus_square === coordinate;
+            const ray = !!teachingFrame && variation!.frame === 2 && variation?.capture_lines?.some((line) => line.includes(coordinate));
+            return <button key={coordinate} className={`square ${recommended ? "recommended" : ""} ${flipped ? "lesson-flipped" : ""} ${placed ? "lesson-placed" : ""} ${ray ? "lesson-ray" : ""} ${target ? "lesson-target" : ""}`} disabled={!canMove || !legal} aria-label={`${coordinate}, ${cell === "X" ? t("black disc", "黑棋") : cell === "O" ? t("white disc", "白棋") : t("empty", "空位")}${legal ? t(", legal move", "，合法落点") : ""}${recommended ? t(", recommended move", "，推荐落点") : ""}${flipped ? t(", flipped this step", "，本步翻转") : ""}${placed ? t(", played this step", "，本步落子") : ""}${target ? t(", corner to watch", "，需要观察的角落") : ""}`} onClick={() => { if (canPractice && practice) { setPractice({...practice, coordinate}); document.getElementById("review-coaching")?.scrollIntoView({block: "start", behavior: "instant"}); return; } if (game) void perform("Playing move", async () => acceptGame(await api<GameState>(`/games/${game.game_id}/moves`, { coordinate, expected_revision: game.revision, request_id: requestId() }))); }}>{cell !== "." && <span className={`disc ${cell === "X" ? "black" : "white"}`} />}{cell === "." && legal && <span className="legal-marker" />}{recommended && <span className="hint-ring" />}{(placed || target || ray) && <span className="lesson-coordinate">{coordinate}</span>}</button>;
           })}</div></div></div>
           {game && (game.auto_play || !live || (game.status === "active" && game.turn !== game.human_color && !busy)) && <div className="board-footer">
             {!live && !variation && <><span>{historyRevision === 0 ? t("Starting position", "初始局面") : t(`Position ${historyRevision}`, `局面 ${historyRevision}`)}</span><button onClick={() => selectPosition(null)}>{t("Back to final position", "返回终局")}</button></>}
-            {variation && variationComparison && <><span>{t("Search line", "搜索续着")} · {variationComparison.frames.slice(1, variation.frame + 1).map((frame) => frame.coordinate).join(" → ") || t("Starting position", "初始局面")}</span><button aria-label={t("Previous search move", "上一步搜索落子")} disabled={variation.frame === 0} onClick={() => setVariation({...variation, frame: variation.frame - 1})}>{t("Previous", "上一步")}</button><span>{variation.frame} / {variationComparison.frames.length - 1}</span><button aria-label={t("Next search move", "下一步搜索落子")} disabled={variation.frame === variationComparison.frames.length - 1} onClick={() => setVariation({...variation, frame: variation.frame + 1})}>{t("Next", "下一步")}</button><button onClick={() => setVariation(null)}>{t("Back to position", "返回局面")}</button></>}
+            {variation && variationFrames && <><span>{variation.lesson_frames ? t("Demonstration", "落子演示") : t("Search line", "搜索续着")} · {variationFrames.slice(1, variation.frame + 1).map((frame) => frame.coordinate === "pass" ? t("Pass", "跳过") : frame.coordinate).join(" → ") || t("Starting position", "初始局面")}</span><button aria-label={t("Previous search move", "上一步搜索落子")} disabled={variation.frame === 0} onClick={() => setVariation({...variation, frame: variation.frame - 1})}>{t("Previous", "上一步")}</button><span>{variation.frame} / {variationFrames.length - 1}</span><button aria-label={t("Next search move", "下一步搜索落子")} disabled={variation.frame === variationFrames.length - 1} onClick={() => setVariation({...variation, frame: variation.frame + 1})}>{t("Next", "下一步")}</button><button onClick={() => setVariation(null)}>{t("Back to position", "返回局面")}</button></>}
+            {teachingFrame && <p className="board-teaching-text" role="status">{stepText(teachingFrame, locale)}{variation && variation.frame === 2 && variation.capture_lines?.length ? <span className="capture-explanation">{captureLineText(variation.capture_lines, variation.lesson_frames![2].actor!, locale)}</span> : null}{variation?.focus_square && <small>{t(`Gold outline: watch ${variation.focus_square}. Bright disc outlines mark flips.`, `金色框：观察 ${variation.focus_square}；亮边：本步翻转的棋子。`)}</small>}</p>}
             {game.auto_play && <span>{t("Replaying with hints", "正在按提示回放")}</span>}
             {game.status === "active" && !game.auto_play && game.turn !== game.human_color && !busy && <button className="primary" onClick={() => void requestAi(game)}>{t("Retry AI move", "重试 AI 落子")}</button>}
           </div>}
