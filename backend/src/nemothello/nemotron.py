@@ -39,6 +39,8 @@ class Nemotron:
             "messages": [{"role": "system", "content": SYSTEM_PROMPT},
                          {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}],
         })
+        if response.status_code == 401:
+            raise AppError("TOKEN_FACTORY_AUTH", "复盘服务密钥认证失败，请维护者检查 Token Factory 配置", 503)
         response.raise_for_status()
         output = response.json()
         explanation = output["choices"][0]["message"]["content"]
