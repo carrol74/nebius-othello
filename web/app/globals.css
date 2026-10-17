@@ -78,13 +78,11 @@ select { max-width: 250px; padding: 10px; color: #e9eee4; background: var(--back
 .score-line small { font-size: 10px; color: var(--muted); margin-left: 5px; }
 .result-label { border-top: 1px solid var(--border); padding-top: 14px; color: var(--accent); font-size: 14px; margin-bottom: 0; }
 .result-label span { float: right; }
-.tips-card h2 { font-size: 17px; margin-bottom: 0; }
-.tips-card p { font-size: 13px; color: var(--muted); }
 .toggle { width: 48px; height: 28px; padding: 3px; border-radius: 999px; background: #465146; flex-shrink: 0; }
 .toggle span { display: block; width: 20px; height: 20px; border-radius: 50%; background: #d7ded0; transition: transform 150ms; }
 .toggle.on { background: var(--accent); border-color: var(--accent); }
 .toggle.on span { transform: translateX(19px); background: #23301a; }
-.tip-status { border-top: 1px solid var(--border); padding-top: 12px; font-size: 12px; color: var(--muted); line-height: 1.8; }
+.tip-status { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; font-size: 12px; color: var(--muted); line-height: 1.8; }
 .tip-status button { padding: 4px 8px; margin: 4px 0; }
 .history-card { flex: 1; min-height: 170px; }
 .history-list { max-height: 270px; overflow-y: auto; margin-top: 12px; scrollbar-color: #455343 transparent; }
@@ -145,8 +143,6 @@ textarea::placeholder { color: #7b8b7c; }
   .score-card, .tips-card, .history-card { padding: 16px; }
   .history-card { grid-column: 1 / -1; }
   .history-list { max-height: 180px; }
-  .tips-card .card-heading { align-items: flex-start; }
-  .tips-card h2 { font-size: 15px; }
   .toggle { width: 43px; }
   .toggle.on span { transform: translateX(14px); }
   .score-line { gap: 10px; }

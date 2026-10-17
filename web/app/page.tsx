@@ -52,6 +52,8 @@ export default function Home() {
     setHint(null);
     setHintConfirmed(false);
     if (isNew) {
+      setHumanColor(next.human_color);
+      if (next.difficulty) setDifficulty(next.difficulty);
       setReview(null);
       setQuestion("");
       setTips(false);
@@ -81,10 +83,16 @@ export default function Home() {
     } finally { busyRef.current = false; setBusy(null); }
   }, [acceptGame]);
 
+  const createGame = useCallback(async (color: Color, level: Difficulty) => {
+    acceptGame(await api<GameState>("/games", {
+      human_color: color, difficulty: level, request_id: requestId(),
+    }));
+  }, [acceptGame]);
+
   useEffect(() => {
     if (bootStarted.current) return;
     bootStarted.current = true;
-    void perform("恢复会话", async () => {
+    void perform("准备对局", async () => {
       await api<{ ready: boolean }>("/session");
       const saved = localStorage.getItem("nemothello_recent_games");
       if (saved) {
@@ -94,8 +102,7 @@ export default function Home() {
           setRecent(parsed);
         } catch (failure) { setError(message(failure)); }
       }
-      setLoaded(true);
-      const gameId = new URLSearchParams(window.location.search).get("game") ?? localStorage.getItem("nemothello_active_game");
+      const gameId = new URLSearchParams(window.location.search).get("game");
       if (gameId) {
         try {
           acceptGame(await api<GameState>(`/games/${encodeURIComponent(gameId)}`));
@@ -107,9 +114,10 @@ export default function Home() {
           }
           throw failure;
         }
-      }
+      } else await createGame("X", "medium");
+      setLoaded(true);
     });
-  }, [acceptGame, perform, bootRetry]);
+  }, [acceptGame, createGame, perform, bootRetry]);
 
   useEffect(() => { if (loaded) localStorage.setItem("nemothello_recent_games", JSON.stringify(recent)); }, [recent, loaded]);
 
@@ -250,19 +258,33 @@ export default function Home() {
   const branchRevision = historyRevision ?? game?.revision;
   const awaitingPass = !!selectedEvent && !!game?.history.some((event) => event.kind === "pass" && event.revision === selectedEvent.revision + 1);
   const branchUnavailable = branchRevision === undefined || displayedTurn === null || awaitingPass || !!game?.auto_play;
+  const canChangeOpening = !!game && !game.parent_game_id && !game.auto_play && game.status === "active"
+    && !game.history.some((event) => event.kind === "move" && event.actor === game.human_color);
+
+  function changeSettings(color: Color, level: Difficulty) {
+    if (busyRef.current) return;
+    if (canChangeOpening) {
+      if (color !== game?.human_color || level !== game?.difficulty) {
+        void perform("更新新对局", () => createGame(color, level));
+      }
+    } else {
+      setHumanColor(color);
+      setDifficulty(level);
+    }
+  }
 
   return (
     <main className="workspace">
       <header className="masthead"><a className="wordmark" href="/">Nemo<span>thello</span><span className="brand-dot" /></a><p>与 AI 对战，在复盘中理解每一步。</p><span className="header-tag">翻转棋 · 8 × 8</span></header>
       {game && <p className="board-note">对手：{game.difficulty ? `${difficultyName[game.difficulty]} · ` : ""}{game.opponent_name} · 提示与复盘分析由 Edax 提供，复盘讲解由 Nemotron 生成。</p>}
-      <section className="game-toolbar" aria-label="对局设置"><div className="color-picker"><span>你的颜色</span><button aria-pressed={humanColor === "X"} onClick={() => setHumanColor("X")} disabled={!!busy}><i className="mini-disc black" />执黑</button><button aria-pressed={humanColor === "O"} onClick={() => setHumanColor("O")} disabled={!!busy}><i className="mini-disc white" />执白</button></div><label className="difficulty-picker">新对局难度<select value={difficulty} disabled={!!busy} onChange={(event) => setDifficulty(event.target.value as Difficulty)}><option value="easy">初级</option><option value="medium">中级</option><option value="hard">高级</option></select></label><button className="primary" disabled={!!busy || !loaded} onClick={() => void perform("创建对局", async () => acceptGame(await api<GameState>("/games", { human_color: humanColor, difficulty, request_id: requestId() })))}>开始新对局 <span aria-hidden="true">↗</span></button>{recent.length > 0 && <label className="recent-picker">最近对局<select value={game?.game_id ?? ""} disabled={!!busy} onChange={(event) => { const id = event.target.value; if (id) void perform("载入对局", async () => acceptGame(await api<GameState>(`/games/${id}`))); }}><option value="" disabled>选择对局</option>{recent.map((item) => <option key={item.game_id} value={item.game_id}>{item.label}</option>)}</select></label>}</section>
+      <section className="game-toolbar" aria-label="对局设置"><div className="color-picker"><span>{canChangeOpening ? "你的颜色" : "新对局颜色"}</span><button aria-pressed={humanColor === "X"} onClick={() => changeSettings("X", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc black" />执黑</button><button aria-pressed={humanColor === "O"} onClick={() => changeSettings("O", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc white" />执白</button></div><label className="difficulty-picker">{canChangeOpening ? "对局难度" : "新对局难度"}<select value={difficulty} disabled={!!busy || !loaded} onChange={(event) => changeSettings(humanColor, event.target.value as Difficulty)}><option value="easy">初级</option><option value="medium">中级</option><option value="hard">高级</option></select></label><button className="primary" disabled={!!busy || !loaded} onClick={() => void perform("创建对局", () => createGame(humanColor, difficulty))}>新对局 <span aria-hidden="true">↗</span></button>{recent.length > 0 && <label className="recent-picker">最近对局<select value={game?.game_id ?? ""} disabled={!!busy} onChange={(event) => { const id = event.target.value; if (id) void perform("载入对局", async () => acceptGame(await api<GameState>(`/games/${id}`))); }}><option value="" disabled>选择对局</option>{recent.map((item) => <option key={item.game_id} value={item.game_id}>{item.label}</option>)}</select></label>}</section>
       {error && <div className="error-banner" role="alert"><span>{error}</span><button aria-label="关闭错误提示" onClick={() => setError(null)}>×</button></div>}
       {!loaded && !busy && bootStarted.current && <button className="primary connection-retry" onClick={() => {
         bootStarted.current = false;
         setBootRetry((attempt) => attempt + 1);
       }}>重试连接</button>}
       <div className="play-layout">
-        <section className="board-panel" aria-label="翻转棋棋盘"><div className="board-topline"><span className="section-label">对局</span><span className="turn-label" aria-live="polite">{busy ?? (game ? live && game.status === "finished" ? "对局结束" : displayedTurn ? `${colorName(displayedTurn)}行动${live ? game.turn === game.human_color ? " · 轮到你" : " · AI" : " · 历史局面"}` : "对局结束" : "选择颜色，开始一盘")}</span></div>
+        <section className="board-panel" aria-label="翻转棋棋盘"><div className="board-topline"><span className="section-label">对局</span><span className="turn-label" aria-live="polite">{busy ?? (game ? live && game.status === "finished" ? "对局结束" : displayedTurn ? `${colorName(displayedTurn)}行动${live ? game.turn === game.human_color ? " · 轮到你" : " · AI" : " · 历史局面"}` : "对局结束" : "正在准备新对局…")}</span></div>
           <div className="board-with-labels"><div className="column-labels" aria-hidden="true">{"abcdefgh".split("").map((column) => <span key={column}>{column}</span>)}</div><div className="board-rows"><div className="row-labels" aria-hidden="true">{Array.from({ length: 8 }, (_, row) => <span key={row}>{row + 1}</span>)}</div><div className={`board ${board ? "" : "empty-board"}`} role="group" aria-label={board ? "棋盘，坐标 a1 位于左上" : "尚未开始对局"}>{Array.from({ length: 64 }, (_, index) => {
             const row = Math.floor(index / 8), column = index % 8;
             const coordinate = `${"abcdefgh"[column]}${row + 1}`, cell = board?.[row]?.[column] ?? ".";
@@ -279,13 +301,12 @@ export default function Home() {
         <aside className="side-panel"><section className="score-card"><span className="section-label">{live ? "棋子数" : "所选局面棋子数"}</span><div className="score-line"><div><i className="mini-disc black" /><span>黑方 {game?.human_color === "X" && <small>你</small>}</span><strong>{board ? board.join("").split("X").length - 1 : "—"}</strong></div><div><i className="mini-disc white" /><span>白方 {game?.human_color === "O" && <small>你</small>}</span><strong>{board ? board.join("").split("O").length - 1 : "—"}</strong></div></div>{game?.result && <p className="result-label">{!live && "本盘终局 · "}{game.result.winner === "draw" ? "双方和棋" : game.result.winner === game.human_color ? "你赢了这盘" : "AI 赢了这盘"}<span>{game.result.black_count} : {game.result.white_count}</span></p>}</section>
           <section className="tips-card">
             <div className="card-heading">
-              <div><span className="section-label">推荐点</span><h2>由你决定怎么下</h2></div>
+              <span className="section-label">推荐点</span>
               <button className={`toggle ${tips ? "on" : ""}`} role="switch" aria-checked={tips} aria-label="推荐点提示" disabled={!game || game.auto_play || game.status !== "active"} onClick={() => { tipsRef.current = !tips; setTips(!tips); }}><span /></button>
             </div>
-            <p>开启后高亮推荐点，对局结束后可以查看是否采用。</p>
-            <div className="tip-status" aria-live="polite">
-              {hintError ? <><span className="inline-error">{hintError}</span><button onClick={() => hint ? setDisplayRetry((value) => value + 1) : setHintRetry((value) => value + 1)}>重试提示</button></> : !tips ? "提示已关闭" : !live ? "返回当前局面查看提示" : game?.turn !== game?.human_color ? "等待你的回合" : visibleHint ? `推荐 ${visibleHint.recommended_move}${hintConfirmed ? "" : " · 记录展示中"}` : "正在获取推荐点…"}
-            </div>
+            {tips && <div className="tip-status" aria-live="polite">
+              {hintError ? <><span className="inline-error">{hintError}</span><button onClick={() => hint ? setDisplayRetry((value) => value + 1) : setHintRetry((value) => value + 1)}>重试提示</button></> : !live ? "返回当前局面查看提示" : game?.turn !== game?.human_color ? "等待你的回合" : visibleHint ? `推荐 ${visibleHint.recommended_move}${hintConfirmed ? "" : " · 记录展示中"}` : "正在获取推荐点…"}
+            </div>}
           </section>
           <section className="history-card"><div className="card-heading"><span className="section-label">棋谱</span><span className="muted">{game?.history.length ?? 0} 个事件</span></div><div className="history-list">{game ? <><button className={historyRevision === 0 ? "selected" : ""} onClick={() => setHistoryRevision(0)}><span>初始局面</span><span>开始</span></button>{game.history.map((event) => <button key={event.event_index} className={historyRevision === event.revision ? "selected" : ""} onClick={() => setHistoryRevision(event.revision)}><span><small>{event.event_index + 1}</small>{colorName(event.actor)}</span><strong>{event.kind === "pass" ? "跳过回合" : event.coordinate}</strong></button>)}</> : <p className="muted">对局开始后，落子会保存在这里。</p>}</div></section>
         </aside>
