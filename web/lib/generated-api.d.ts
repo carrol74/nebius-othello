@@ -340,6 +340,16 @@ export interface components {
              */
             score_kind: "estimate" | "exact";
         };
+        /** CoachingCard */
+        CoachingCard: {
+            /** Revision */
+            revision: number;
+            /** Facts */
+            facts: components["schemas"]["ReviewFact"][];
+            /** Lesson Id */
+            lesson_id: string;
+            lesson: components["schemas"]["Lesson"];
+        };
         /** CreateGame */
         CreateGame: {
             /** Request Id */
@@ -491,6 +501,38 @@ export interface components {
             /** Turn */
             turn: ("X" | "O") | null;
         };
+        /** Lesson */
+        Lesson: {
+            /** Title */
+            title: string;
+            /** Text */
+            text: string;
+            /** Question */
+            question: string;
+        };
+        /** MoveComparison */
+        MoveComparison: {
+            /** Coordinate */
+            coordinate: string;
+            /** Corner */
+            corner: number;
+            /** Empty Corner Neighbor */
+            empty_corner_neighbor: number;
+            /** Opponent Moves */
+            opponent_moves: number;
+            /** Own Moves */
+            own_moves: number;
+            /** Frontier Difference */
+            frontier_difference: number;
+            /** Disc Difference */
+            disc_difference: number;
+            /** Opponent Legal Moves */
+            opponent_legal_moves: string[];
+            /** Opponent Corners */
+            opponent_corners: string[];
+            /** Frames */
+            frames: components["schemas"]["VariationFrame"][];
+        };
         /** MoveRequest */
         MoveRequest: {
             /** Request Id */
@@ -512,11 +554,15 @@ export interface components {
             /** Answer */
             answer: string;
             /** Model Id */
-            model_id: string;
+            model_id: string | null;
             /** Usage */
             usage: {
                 [key: string]: unknown;
             } | null;
+            /** Coaching */
+            coaching?: components["schemas"]["CoachingCard"][];
+            /** Format Version */
+            format_version?: string | null;
         };
         /** Review */
         Review: {
@@ -557,11 +603,25 @@ export interface components {
             /** Evidence */
             evidence: components["schemas"]["ReviewEvidence"][];
             /** Model Id */
-            model_id: string;
+            model_id: string | null;
             /** Usage */
             usage: {
                 [key: string]: unknown;
             } | null;
+            /** Format Version */
+            format_version?: string | null;
+            /** Summary Facts */
+            summary_facts?: components["schemas"]["ReviewFact"][];
+            /** Coaching */
+            coaching?: components["schemas"]["CoachingCard"][];
+            /** Coaching Status */
+            coaching_status?: ("pending" | "ready" | "failed") | null;
+            /** Coaching Error */
+            coaching_error?: string | null;
+            /** Branch Results */
+            branch_results?: {
+                [key: string]: unknown;
+            }[];
         };
         /** ReviewEvent */
         ReviewEvent: {
@@ -602,6 +662,21 @@ export interface components {
             shown_hint_ids: string[];
             /** Adopted Hint */
             adopted_hint: boolean;
+            /** Stage */
+            stage?: string | null;
+            /** Comparisons */
+            comparisons?: components["schemas"]["MoveComparison"][];
+        };
+        /** ReviewFact */
+        ReviewFact: {
+            /** Id */
+            id: string;
+            /** Text */
+            text: string;
+            /** Topic */
+            topic: string;
+            /** Revision */
+            revision?: number | null;
         };
         /** ReviewHint */
         ReviewHint: {
@@ -646,6 +721,10 @@ export interface components {
             error?: {
                 [key: string]: string;
             } | null;
+            /** Usage */
+            usage?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -659,6 +738,15 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** VariationFrame */
+        VariationFrame: {
+            /** Board */
+            board: string[];
+            /** Turn */
+            turn: ("X" | "O") | null;
+            /** Coordinate */
+            coordinate: string | null;
         };
         /** WriteRequest */
         WriteRequest: {

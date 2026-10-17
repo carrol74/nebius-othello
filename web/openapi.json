@@ -1112,6 +1112,36 @@
         ],
         "title": "Candidate"
       },
+      "CoachingCard": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewFact"
+            },
+            "type": "array",
+            "title": "Facts"
+          },
+          "lesson_id": {
+            "type": "string",
+            "title": "Lesson Id"
+          },
+          "lesson": {
+            "$ref": "#/components/schemas/Lesson"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revision",
+          "facts",
+          "lesson_id",
+          "lesson"
+        ],
+        "title": "CoachingCard"
+      },
       "CreateGame": {
         "properties": {
           "request_id": {
@@ -1559,6 +1589,99 @@
         ],
         "title": "HistoryEvent"
       },
+      "Lesson": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "question": {
+            "type": "string",
+            "title": "Question"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "text",
+          "question"
+        ],
+        "title": "Lesson"
+      },
+      "MoveComparison": {
+        "properties": {
+          "coordinate": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Coordinate"
+          },
+          "corner": {
+            "type": "integer",
+            "title": "Corner"
+          },
+          "empty_corner_neighbor": {
+            "type": "integer",
+            "title": "Empty Corner Neighbor"
+          },
+          "opponent_moves": {
+            "type": "integer",
+            "title": "Opponent Moves"
+          },
+          "own_moves": {
+            "type": "integer",
+            "title": "Own Moves"
+          },
+          "frontier_difference": {
+            "type": "integer",
+            "title": "Frontier Difference"
+          },
+          "disc_difference": {
+            "type": "integer",
+            "title": "Disc Difference"
+          },
+          "opponent_legal_moves": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Opponent Legal Moves"
+          },
+          "opponent_corners": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Opponent Corners"
+          },
+          "frames": {
+            "items": {
+              "$ref": "#/components/schemas/VariationFrame"
+            },
+            "type": "array",
+            "title": "Frames"
+          }
+        },
+        "type": "object",
+        "required": [
+          "coordinate",
+          "corner",
+          "empty_corner_neighbor",
+          "opponent_moves",
+          "own_moves",
+          "frontier_difference",
+          "disc_difference",
+          "opponent_legal_moves",
+          "opponent_corners",
+          "frames"
+        ],
+        "title": "MoveComparison"
+      },
       "MoveRequest": {
         "properties": {
           "request_id": {
@@ -1617,7 +1740,14 @@
             "title": "Answer"
           },
           "model_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Model Id"
           },
           "usage": {
@@ -1631,6 +1761,24 @@
               }
             ],
             "title": "Usage"
+          },
+          "coaching": {
+            "items": {
+              "$ref": "#/components/schemas/CoachingCard"
+            },
+            "type": "array",
+            "title": "Coaching"
+          },
+          "format_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Format Version"
           }
         },
         "type": "object",
@@ -1760,7 +1908,14 @@
             "title": "Evidence"
           },
           "model_id": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Model Id"
           },
           "usage": {
@@ -1774,6 +1929,66 @@
               }
             ],
             "title": "Usage"
+          },
+          "format_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Format Version"
+          },
+          "summary_facts": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewFact"
+            },
+            "type": "array",
+            "title": "Summary Facts"
+          },
+          "coaching": {
+            "items": {
+              "$ref": "#/components/schemas/CoachingCard"
+            },
+            "type": "array",
+            "title": "Coaching"
+          },
+          "coaching_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "ready",
+                  "failed"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coaching Status"
+          },
+          "coaching_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coaching Error"
+          },
+          "branch_results": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Branch Results"
           }
         },
         "type": "object",
@@ -1889,6 +2104,24 @@
           "adopted_hint": {
             "type": "boolean",
             "title": "Adopted Hint"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage"
+          },
+          "comparisons": {
+            "items": {
+              "$ref": "#/components/schemas/MoveComparison"
+            },
+            "type": "array",
+            "title": "Comparisons"
           }
         },
         "type": "object",
@@ -1903,6 +2136,40 @@
           "adopted_hint"
         ],
         "title": "ReviewEvidence"
+      },
+      "ReviewFact": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "topic": {
+            "type": "string",
+            "title": "Topic"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "text",
+          "topic"
+        ],
+        "title": "ReviewFact"
       },
       "ReviewHint": {
         "properties": {
@@ -2038,6 +2305,18 @@
               }
             ],
             "title": "Error"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage"
           }
         },
         "type": "object",
@@ -2088,6 +2367,53 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VariationFrame": {
+        "properties": {
+          "board": {
+            "items": {
+              "type": "string",
+              "pattern": "^[.XO]{8}$"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 8,
+            "title": "Board"
+          },
+          "turn": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "X",
+                  "O"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turn"
+          },
+          "coordinate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coordinate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "board",
+          "turn",
+          "coordinate"
+        ],
+        "title": "VariationFrame"
       },
       "WriteRequest": {
         "properties": {

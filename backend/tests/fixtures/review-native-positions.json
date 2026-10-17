@@ -1,0 +1,4407 @@
+{
+  "source": "Actual Edax analysis and saved game used in the 2026-10-17 Token Factory smoke test",
+  "scope": "Selected original positions; complete game history. Generated prose, account metadata, model usage, and raw process output removed. No scores or moves altered.",
+  "review": {
+    "result": {
+      "black_count": 3,
+      "white_count": 58,
+      "winner": "O"
+    },
+    "human_color": "X",
+    "initial_board": [
+      "........",
+      "........",
+      "........",
+      "...OX...",
+      "...XO...",
+      "........",
+      "........",
+      "........"
+    ],
+    "initial_turn": "X",
+    "history": [
+      {
+        "event_index": 0,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "d3",
+        "revision": 1
+      },
+      {
+        "event_index": 1,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "c5",
+        "revision": 2
+      },
+      {
+        "event_index": 2,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "b6",
+        "revision": 3
+      },
+      {
+        "event_index": 3,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "f3",
+        "revision": 4
+      },
+      {
+        "event_index": 4,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "f4",
+        "revision": 5
+      },
+      {
+        "event_index": 5,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "e3",
+        "revision": 6
+      },
+      {
+        "event_index": 6,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "d2",
+        "revision": 7
+      },
+      {
+        "event_index": 7,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "e2",
+        "revision": 8
+      },
+      {
+        "event_index": 8,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "f1",
+        "revision": 9
+      },
+      {
+        "event_index": 9,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "f5",
+        "revision": 10
+      },
+      {
+        "event_index": 10,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "f2",
+        "revision": 11
+      },
+      {
+        "event_index": 11,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "c4",
+        "revision": 12
+      },
+      {
+        "event_index": 12,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "c3",
+        "revision": 13
+      },
+      {
+        "event_index": 13,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "c1",
+        "revision": 14
+      },
+      {
+        "event_index": 14,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "d1",
+        "revision": 15
+      },
+      {
+        "event_index": 15,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "c2",
+        "revision": 16
+      },
+      {
+        "event_index": 16,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "b1",
+        "revision": 17
+      },
+      {
+        "event_index": 17,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "e1",
+        "revision": 18
+      },
+      {
+        "event_index": 18,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "b2",
+        "revision": 19
+      },
+      {
+        "event_index": 19,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "b3",
+        "revision": 20
+      },
+      {
+        "event_index": 20,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "a4",
+        "revision": 21
+      },
+      {
+        "event_index": 21,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "a2",
+        "revision": 22
+      },
+      {
+        "event_index": 22,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "a3",
+        "revision": 23
+      },
+      {
+        "event_index": 23,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "a1",
+        "revision": 24
+      },
+      {
+        "event_index": 24,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "g3",
+        "revision": 25
+      },
+      {
+        "event_index": 25,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "a5",
+        "revision": 26
+      },
+      {
+        "event_index": 26,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "b5",
+        "revision": 27
+      },
+      {
+        "event_index": 27,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "b4",
+        "revision": 28
+      },
+      {
+        "event_index": 28,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "g5",
+        "revision": 29
+      },
+      {
+        "event_index": 29,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "g1",
+        "revision": 30
+      },
+      {
+        "event_index": 30,
+        "actor": "X",
+        "kind": "pass",
+        "coordinate": null,
+        "revision": 31
+      },
+      {
+        "event_index": 31,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "g2",
+        "revision": 32
+      },
+      {
+        "event_index": 32,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "h1",
+        "revision": 33
+      },
+      {
+        "event_index": 33,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "a6",
+        "revision": 34
+      },
+      {
+        "event_index": 34,
+        "actor": "X",
+        "kind": "pass",
+        "coordinate": null,
+        "revision": 35
+      },
+      {
+        "event_index": 35,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "h2",
+        "revision": 36
+      },
+      {
+        "event_index": 36,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "h3",
+        "revision": 37
+      },
+      {
+        "event_index": 37,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "g4",
+        "revision": 38
+      },
+      {
+        "event_index": 38,
+        "actor": "X",
+        "kind": "pass",
+        "coordinate": null,
+        "revision": 39
+      },
+      {
+        "event_index": 39,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "b7",
+        "revision": 40
+      },
+      {
+        "event_index": 40,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "a7",
+        "revision": 41
+      },
+      {
+        "event_index": 41,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "c7",
+        "revision": 42
+      },
+      {
+        "event_index": 42,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "d7",
+        "revision": 43
+      },
+      {
+        "event_index": 43,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "h6",
+        "revision": 44
+      },
+      {
+        "event_index": 44,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "h5",
+        "revision": 45
+      },
+      {
+        "event_index": 45,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "a8",
+        "revision": 46
+      },
+      {
+        "event_index": 46,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "h7",
+        "revision": 47
+      },
+      {
+        "event_index": 47,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "c6",
+        "revision": 48
+      },
+      {
+        "event_index": 48,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "d6",
+        "revision": 49
+      },
+      {
+        "event_index": 49,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "d8",
+        "revision": 50
+      },
+      {
+        "event_index": 50,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "b8",
+        "revision": 51
+      },
+      {
+        "event_index": 51,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "e6",
+        "revision": 52
+      },
+      {
+        "event_index": 52,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "e7",
+        "revision": 53
+      },
+      {
+        "event_index": 53,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "f6",
+        "revision": 54
+      },
+      {
+        "event_index": 54,
+        "actor": "X",
+        "kind": "move",
+        "coordinate": "f7",
+        "revision": 55
+      },
+      {
+        "event_index": 55,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "h4",
+        "revision": 56
+      },
+      {
+        "event_index": 56,
+        "actor": "X",
+        "kind": "pass",
+        "coordinate": null,
+        "revision": 57
+      },
+      {
+        "event_index": 57,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "c8",
+        "revision": 58
+      },
+      {
+        "event_index": 58,
+        "actor": "X",
+        "kind": "pass",
+        "coordinate": null,
+        "revision": 59
+      },
+      {
+        "event_index": 59,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "e8",
+        "revision": 60
+      },
+      {
+        "event_index": 60,
+        "actor": "X",
+        "kind": "pass",
+        "coordinate": null,
+        "revision": 61
+      },
+      {
+        "event_index": 61,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "g6",
+        "revision": 62
+      },
+      {
+        "event_index": 62,
+        "actor": "X",
+        "kind": "pass",
+        "coordinate": null,
+        "revision": 63
+      },
+      {
+        "event_index": 63,
+        "actor": "O",
+        "kind": "move",
+        "coordinate": "h8",
+        "revision": 64
+      }
+    ],
+    "key_moves": [
+      {
+        "revision": 16,
+        "actor": "X",
+        "actual_move": "b1",
+        "recommended_move": "b3",
+        "score_loss": 20,
+        "analysis": {
+          "board": [
+            "..OX.X..",
+            "..OXXX..",
+            "..XOOO..",
+            "..XOOO..",
+            "..XOOO..",
+            ".X......",
+            "........",
+            "........"
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "b1",
+              "score": -30,
+              "principal_variation": [
+                "b1",
+                "e1",
+                "b2",
+                "b4",
+                "a3",
+                "b5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b2",
+              "score": -34,
+              "principal_variation": [
+                "b2",
+                "a1",
+                "b1",
+                "e1",
+                "g4",
+                "g5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b3",
+              "score": -10,
+              "principal_variation": [
+                "b3",
+                "b4",
+                "a3",
+                "b5",
+                "g3",
+                "a4"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g3",
+              "score": -14,
+              "principal_variation": [
+                "g3",
+                "e1",
+                "g4",
+                "g1",
+                "g6",
+                "f6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g4",
+              "score": -18,
+              "principal_variation": [
+                "g4",
+                "g5",
+                "d6",
+                "b4",
+                "e6",
+                "b3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g5",
+              "score": -34,
+              "principal_variation": [
+                "g5",
+                "b5",
+                "g4",
+                "b3",
+                "a5",
+                "d6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "d6",
+              "score": -13,
+              "principal_variation": [
+                "d6",
+                "e1",
+                "b1",
+                "c6",
+                "e6",
+                "b5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "e6",
+              "score": -20,
+              "principal_variation": [
+                "e6",
+                "e1",
+                "b1",
+                "d7",
+                "g5",
+                "c6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "f6",
+              "score": -28,
+              "principal_variation": [
+                "f6",
+                "e6",
+                "e7",
+                "e1",
+                "b1",
+                "g2"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "b3",
+          "score_perspective": "X",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 18.65
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 22,
+        "actor": "X",
+        "actual_move": "a3",
+        "recommended_move": "g6",
+        "score_loss": 12,
+        "analysis": {
+          "board": [
+            ".XXXOX..",
+            "OOOOOX..",
+            ".OOOOO..",
+            "X.OOOO..",
+            "..XOOO..",
+            ".X......",
+            "........",
+            "........"
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "a3",
+              "score": -48,
+              "principal_variation": [
+                "a3",
+                "a1",
+                "b5",
+                "b4",
+                "d6",
+                "e6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b4",
+              "score": -52,
+              "principal_variation": [
+                "b4",
+                "a1",
+                "b5",
+                "a3",
+                "d6",
+                "e6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g4",
+              "score": -40,
+              "principal_variation": [
+                "g4",
+                "a1",
+                "b4",
+                "g1",
+                "c6",
+                "d6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b5",
+              "score": -41,
+              "principal_variation": [
+                "b5",
+                "a1",
+                "g6",
+                "b4",
+                "c6",
+                "f6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g5",
+              "score": -54,
+              "principal_variation": [
+                "g5",
+                "a1",
+                "b5",
+                "b4",
+                "a5",
+                "g3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "d6",
+              "score": -37,
+              "principal_variation": [
+                "d6",
+                "a1",
+                "b5",
+                "b4",
+                "a5",
+                "g3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "f6",
+              "score": -46,
+              "principal_variation": [
+                "f6",
+                "a1",
+                "c6",
+                "b5",
+                "d6",
+                "g1"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g6",
+              "score": -36,
+              "principal_variation": [
+                "g6",
+                "a1",
+                "g4",
+                "g3",
+                "b4",
+                "f6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "g6",
+          "score_perspective": "X",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 11.3
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 2,
+        "actor": "X",
+        "actual_move": "b6",
+        "recommended_move": "e6",
+        "score_loss": 10,
+        "analysis": {
+          "board": [
+            "........",
+            "........",
+            "...X....",
+            "...XX...",
+            "..OOO...",
+            "........",
+            "........",
+            "........"
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "b6",
+              "score": -10,
+              "principal_variation": [
+                "b6",
+                "f3",
+                "f4",
+                "e3",
+                "f6",
+                "e6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "c6",
+              "score": -4,
+              "principal_variation": [
+                "c6",
+                "e3",
+                "c4",
+                "d6",
+                "e6",
+                "c3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "d6",
+              "score": -1,
+              "principal_variation": [
+                "d6",
+                "e3",
+                "f4",
+                "c6",
+                "f5",
+                "f3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "e6",
+              "score": 0,
+              "principal_variation": [
+                "e6",
+                "d2",
+                "c3",
+                "e3",
+                "f3",
+                "f6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "f6",
+              "score": 0,
+              "principal_variation": [
+                "f6",
+                "e3",
+                "c3",
+                "d2",
+                "c4",
+                "b5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "e6",
+          "score_perspective": "X",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 6.15
+        },
+        "shown_hint_ids": [
+          "cd43e43d-cb29-4ba7-a927-068ed3344550"
+        ],
+        "adopted_hint": false
+      },
+      {
+        "revision": 20,
+        "actor": "X",
+        "actual_move": "a4",
+        "recommended_move": "g4",
+        "score_loss": 10,
+        "analysis": {
+          "board": [
+            ".XXXOX..",
+            ".XXXOX..",
+            ".OOOOO..",
+            "..OOOO..",
+            "..XOOO..",
+            ".X......",
+            "........",
+            "........"
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "a4",
+              "score": -37,
+              "principal_variation": [
+                "a4",
+                "a2",
+                "d6",
+                "a1",
+                "b4",
+                "g3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b4",
+              "score": -35,
+              "principal_variation": [
+                "b4",
+                "a1",
+                "a2",
+                "g3",
+                "b5",
+                "g1"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g4",
+              "score": -27,
+              "principal_variation": [
+                "g4",
+                "a1",
+                "c6",
+                "d6",
+                "e7",
+                "b5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b5",
+              "score": -29,
+              "principal_variation": [
+                "b5",
+                "b4",
+                "d6",
+                "a1",
+                "e6",
+                "f6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g5",
+              "score": -47,
+              "principal_variation": [
+                "g5",
+                "a1",
+                "g3",
+                "g1",
+                "b4",
+                "h3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "d6",
+              "score": -28,
+              "principal_variation": [
+                "d6",
+                "e6",
+                "b5",
+                "b4",
+                "g4",
+                "g3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "f6",
+              "score": -57,
+              "principal_variation": [
+                "f6",
+                "a1",
+                "a4",
+                "c6",
+                "b4",
+                "a6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g6",
+              "score": -43,
+              "principal_variation": [
+                "g6",
+                "a2",
+                "g5",
+                "a1",
+                "g3",
+                "c6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "g4",
+          "score_perspective": "X",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 14.68
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 24,
+        "actor": "X",
+        "actual_move": "g3",
+        "recommended_move": "b5",
+        "score_loss": 8,
+        "analysis": {
+          "board": [
+            "OOOOOX..",
+            "OOOOOX..",
+            "XOOOOO..",
+            "X.OOOO..",
+            "..XOOO..",
+            ".X......",
+            "........",
+            "........"
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "g3",
+              "score": -59,
+              "principal_variation": [
+                "g3",
+                "a5",
+                "c6",
+                "b4",
+                "g4",
+                "g5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b5",
+              "score": -51,
+              "principal_variation": [
+                "b5",
+                "b4",
+                "d6",
+                "g3",
+                "g4",
+                "g1"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g5",
+              "score": -63,
+              "principal_variation": [
+                "g5",
+                "g1",
+                "g3",
+                "b4",
+                "b5",
+                "a5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "f6",
+              "score": -62,
+              "principal_variation": [
+                "f6",
+                "c6",
+                "b4",
+                "a5",
+                "e6",
+                "c7"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "b5",
+          "score_perspective": "X",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 7.28
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 19,
+        "actor": "O",
+        "actual_move": "b3",
+        "recommended_move": "g3",
+        "score_loss": 4,
+        "analysis": {
+          "board": [
+            ".XXXOX..",
+            ".XXXOX..",
+            "..XOOO..",
+            "..XOOO..",
+            "..XOOO..",
+            ".X......",
+            "........",
+            "........"
+          ],
+          "turn": "O",
+          "candidates": [
+            {
+              "coordinate": "a1",
+              "score": 26,
+              "principal_variation": [
+                "a1",
+                "g4",
+                "b5",
+                "a6",
+                "g5",
+                "b4"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g1",
+              "score": -17,
+              "principal_variation": [
+                "g1",
+                "h1",
+                "b3",
+                "g2",
+                "a1",
+                "a3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "a2",
+              "score": -37,
+              "principal_variation": [
+                "a2",
+                "a1",
+                "b4",
+                "a3",
+                "a5",
+                "b3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g2",
+              "score": 12,
+              "principal_variation": [
+                "g2",
+                "g3",
+                "b4",
+                "a3",
+                "a1",
+                "b5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b3",
+              "score": 25,
+              "principal_variation": [
+                "b3",
+                "g4",
+                "g3",
+                "d6",
+                "a1",
+                "g6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g3",
+              "score": 29,
+              "principal_variation": [
+                "g3",
+                "g4",
+                "b4",
+                "a3",
+                "a1",
+                "h3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b4",
+              "score": 27,
+              "principal_variation": [
+                "b4",
+                "a3",
+                "a1",
+                "b5",
+                "b3",
+                "e6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b5",
+              "score": 24,
+              "principal_variation": [
+                "b5",
+                "c6",
+                "b4",
+                "d6",
+                "e6",
+                "a3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "a7",
+              "score": 8,
+              "principal_variation": [
+                "a7",
+                "c6",
+                "d6",
+                "e6",
+                "f6",
+                "d7"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "g3",
+          "score_perspective": "O",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 13.48
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 26,
+        "actor": "X",
+        "actual_move": "b5",
+        "recommended_move": "c6",
+        "score_loss": 4,
+        "analysis": {
+          "board": [
+            "OOOOOX..",
+            "OOOOOX..",
+            "OXXXXXX.",
+            "O.OOOO..",
+            "O.XOOO..",
+            ".X......",
+            "........",
+            "........"
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "b5",
+              "score": -61,
+              "principal_variation": [
+                "b5",
+                "b4",
+                "c6",
+                "a6",
+                "g4",
+                "a7"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g5",
+              "score": -63,
+              "principal_variation": [
+                "g5",
+                "b4",
+                "b5",
+                "a6",
+                "pass",
+                "g1",
+                "pass",
+                "a7"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "c6",
+              "score": -57,
+              "principal_variation": [
+                "c6",
+                "b4",
+                "g4",
+                "g5",
+                "d6",
+                "f6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "d6",
+              "score": -63,
+              "principal_variation": [
+                "d6",
+                "b4",
+                "f6",
+                "g1",
+                "b5",
+                "a6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "e6",
+              "score": -63,
+              "principal_variation": [
+                "e6",
+                "g1",
+                "f6",
+                "b4",
+                "b5",
+                "a6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "f6",
+              "score": -63,
+              "principal_variation": [
+                "f6",
+                "b4",
+                "c6",
+                "g1",
+                "b5",
+                "a6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g6",
+              "score": -59,
+              "principal_variation": [
+                "g6",
+                "b4",
+                "g4",
+                "b5",
+                "e6",
+                "g1"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "c6",
+          "score_perspective": "X",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 12.06
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 11,
+        "actor": "O",
+        "actual_move": "c4",
+        "recommended_move": "c1",
+        "score_loss": 2,
+        "analysis": {
+          "board": [
+            ".....X..",
+            "...XXX..",
+            "...XXO..",
+            "...XOO..",
+            "..XOOO..",
+            ".X......",
+            "........",
+            "........"
+          ],
+          "turn": "O",
+          "candidates": [
+            {
+              "coordinate": "c1",
+              "score": 10,
+              "principal_variation": [
+                "c1",
+                "d1",
+                "b5",
+                "g3",
+                "c4",
+                "g6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "d1",
+              "score": -9,
+              "principal_variation": [
+                "d1",
+                "e6",
+                "e7",
+                "f6",
+                "b5",
+                "d6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "e1",
+              "score": 5,
+              "principal_variation": [
+                "e1",
+                "d1",
+                "b5",
+                "g6",
+                "c4",
+                "g5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "c2",
+              "score": 4,
+              "principal_variation": [
+                "c2",
+                "c4",
+                "c1",
+                "d1",
+                "e1",
+                "b1"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "c3",
+              "score": 4,
+              "principal_variation": [
+                "c3",
+                "b4",
+                "b3",
+                "c4",
+                "c1",
+                "e1"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "c4",
+              "score": 8,
+              "principal_variation": [
+                "c4",
+                "c3",
+                "c2",
+                "c1",
+                "b4",
+                "b5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b5",
+              "score": 9,
+              "principal_variation": [
+                "b5",
+                "g4",
+                "e1",
+                "e6",
+                "c1",
+                "f6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "c1",
+          "score_perspective": "O",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 10.98
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      }
+    ],
+    "hints": [
+      {
+        "hint_id": "fab83bf1-54ec-4295-b4b6-11ed76934aa6",
+        "revision": 0,
+        "recommended_move": "d3",
+        "analysis_settings": {
+          "level": 8,
+          "minimum_depth": 8,
+          "threads": 1,
+          "book": false,
+          "selectivity": 5
+        }
+      },
+      {
+        "hint_id": "cd43e43d-cb29-4ba7-a927-068ed3344550",
+        "revision": 2,
+        "recommended_move": "e6",
+        "analysis_settings": {
+          "level": 8,
+          "minimum_depth": 8,
+          "threads": 1,
+          "book": false,
+          "selectivity": 5
+        }
+      }
+    ],
+    "hint_adoption": {
+      "shown_turns": 2,
+      "adopted_turns": 1
+    },
+    "evidence": [
+      {
+        "revision": 0,
+        "actor": "X",
+        "actual_move": "d3",
+        "recommended_move": "d3",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            "........",
+            "........",
+            "........",
+            "...OX...",
+            "...XO...",
+            "........",
+            "........",
+            "........"
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "d3",
+              "score": -3,
+              "principal_variation": [
+                "d3",
+                "e3",
+                "f3",
+                "e2",
+                "f4",
+                "g3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "c4",
+              "score": -3,
+              "principal_variation": [
+                "c4",
+                "c5",
+                "c6",
+                "b5",
+                "d6",
+                "c7"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "f5",
+              "score": -3,
+              "principal_variation": [
+                "f5",
+                "f4",
+                "f3",
+                "g4",
+                "e3",
+                "f2"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "e6",
+              "score": -3,
+              "principal_variation": [
+                "e6",
+                "d6",
+                "c6",
+                "d7",
+                "c5",
+                "b6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "d3",
+          "score_perspective": "X",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 154.27
+        },
+        "shown_hint_ids": [
+          "fab83bf1-54ec-4295-b4b6-11ed76934aa6"
+        ],
+        "adopted_hint": true
+      },
+      {
+        "revision": 2,
+        "actor": "X",
+        "actual_move": "b6",
+        "recommended_move": "e6",
+        "score_loss": 10,
+        "analysis": {
+          "board": [
+            "........",
+            "........",
+            "...X....",
+            "...XX...",
+            "..OOO...",
+            "........",
+            "........",
+            "........"
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "b6",
+              "score": -10,
+              "principal_variation": [
+                "b6",
+                "f3",
+                "f4",
+                "e3",
+                "f6",
+                "e6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "c6",
+              "score": -4,
+              "principal_variation": [
+                "c6",
+                "e3",
+                "c4",
+                "d6",
+                "e6",
+                "c3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "d6",
+              "score": -1,
+              "principal_variation": [
+                "d6",
+                "e3",
+                "f4",
+                "c6",
+                "f5",
+                "f3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "e6",
+              "score": 0,
+              "principal_variation": [
+                "e6",
+                "d2",
+                "c3",
+                "e3",
+                "f3",
+                "f6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "f6",
+              "score": 0,
+              "principal_variation": [
+                "f6",
+                "e3",
+                "c3",
+                "d2",
+                "c4",
+                "b5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "e6",
+          "score_perspective": "X",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 6.15
+        },
+        "shown_hint_ids": [
+          "cd43e43d-cb29-4ba7-a927-068ed3344550"
+        ],
+        "adopted_hint": false
+      },
+      {
+        "revision": 11,
+        "actor": "O",
+        "actual_move": "c4",
+        "recommended_move": "c1",
+        "score_loss": 2,
+        "analysis": {
+          "board": [
+            ".....X..",
+            "...XXX..",
+            "...XXO..",
+            "...XOO..",
+            "..XOOO..",
+            ".X......",
+            "........",
+            "........"
+          ],
+          "turn": "O",
+          "candidates": [
+            {
+              "coordinate": "c1",
+              "score": 10,
+              "principal_variation": [
+                "c1",
+                "d1",
+                "b5",
+                "g3",
+                "c4",
+                "g6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "d1",
+              "score": -9,
+              "principal_variation": [
+                "d1",
+                "e6",
+                "e7",
+                "f6",
+                "b5",
+                "d6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "e1",
+              "score": 5,
+              "principal_variation": [
+                "e1",
+                "d1",
+                "b5",
+                "g6",
+                "c4",
+                "g5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "c2",
+              "score": 4,
+              "principal_variation": [
+                "c2",
+                "c4",
+                "c1",
+                "d1",
+                "e1",
+                "b1"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "c3",
+              "score": 4,
+              "principal_variation": [
+                "c3",
+                "b4",
+                "b3",
+                "c4",
+                "c1",
+                "e1"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "c4",
+              "score": 8,
+              "principal_variation": [
+                "c4",
+                "c3",
+                "c2",
+                "c1",
+                "b4",
+                "b5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b5",
+              "score": 9,
+              "principal_variation": [
+                "b5",
+                "g4",
+                "e1",
+                "e6",
+                "c1",
+                "f6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "c1",
+          "score_perspective": "O",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 10.98
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 16,
+        "actor": "X",
+        "actual_move": "b1",
+        "recommended_move": "b3",
+        "score_loss": 20,
+        "analysis": {
+          "board": [
+            "..OX.X..",
+            "..OXXX..",
+            "..XOOO..",
+            "..XOOO..",
+            "..XOOO..",
+            ".X......",
+            "........",
+            "........"
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "b1",
+              "score": -30,
+              "principal_variation": [
+                "b1",
+                "e1",
+                "b2",
+                "b4",
+                "a3",
+                "b5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b2",
+              "score": -34,
+              "principal_variation": [
+                "b2",
+                "a1",
+                "b1",
+                "e1",
+                "g4",
+                "g5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b3",
+              "score": -10,
+              "principal_variation": [
+                "b3",
+                "b4",
+                "a3",
+                "b5",
+                "g3",
+                "a4"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g3",
+              "score": -14,
+              "principal_variation": [
+                "g3",
+                "e1",
+                "g4",
+                "g1",
+                "g6",
+                "f6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g4",
+              "score": -18,
+              "principal_variation": [
+                "g4",
+                "g5",
+                "d6",
+                "b4",
+                "e6",
+                "b3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g5",
+              "score": -34,
+              "principal_variation": [
+                "g5",
+                "b5",
+                "g4",
+                "b3",
+                "a5",
+                "d6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "d6",
+              "score": -13,
+              "principal_variation": [
+                "d6",
+                "e1",
+                "b1",
+                "c6",
+                "e6",
+                "b5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "e6",
+              "score": -20,
+              "principal_variation": [
+                "e6",
+                "e1",
+                "b1",
+                "d7",
+                "g5",
+                "c6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "f6",
+              "score": -28,
+              "principal_variation": [
+                "f6",
+                "e6",
+                "e7",
+                "e1",
+                "b1",
+                "g2"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "b3",
+          "score_perspective": "X",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 18.65
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 19,
+        "actor": "O",
+        "actual_move": "b3",
+        "recommended_move": "g3",
+        "score_loss": 4,
+        "analysis": {
+          "board": [
+            ".XXXOX..",
+            ".XXXOX..",
+            "..XOOO..",
+            "..XOOO..",
+            "..XOOO..",
+            ".X......",
+            "........",
+            "........"
+          ],
+          "turn": "O",
+          "candidates": [
+            {
+              "coordinate": "a1",
+              "score": 26,
+              "principal_variation": [
+                "a1",
+                "g4",
+                "b5",
+                "a6",
+                "g5",
+                "b4"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g1",
+              "score": -17,
+              "principal_variation": [
+                "g1",
+                "h1",
+                "b3",
+                "g2",
+                "a1",
+                "a3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "a2",
+              "score": -37,
+              "principal_variation": [
+                "a2",
+                "a1",
+                "b4",
+                "a3",
+                "a5",
+                "b3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g2",
+              "score": 12,
+              "principal_variation": [
+                "g2",
+                "g3",
+                "b4",
+                "a3",
+                "a1",
+                "b5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b3",
+              "score": 25,
+              "principal_variation": [
+                "b3",
+                "g4",
+                "g3",
+                "d6",
+                "a1",
+                "g6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g3",
+              "score": 29,
+              "principal_variation": [
+                "g3",
+                "g4",
+                "b4",
+                "a3",
+                "a1",
+                "h3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b4",
+              "score": 27,
+              "principal_variation": [
+                "b4",
+                "a3",
+                "a1",
+                "b5",
+                "b3",
+                "e6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b5",
+              "score": 24,
+              "principal_variation": [
+                "b5",
+                "c6",
+                "b4",
+                "d6",
+                "e6",
+                "a3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "a7",
+              "score": 8,
+              "principal_variation": [
+                "a7",
+                "c6",
+                "d6",
+                "e6",
+                "f6",
+                "d7"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "g3",
+          "score_perspective": "O",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 13.48
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 20,
+        "actor": "X",
+        "actual_move": "a4",
+        "recommended_move": "g4",
+        "score_loss": 10,
+        "analysis": {
+          "board": [
+            ".XXXOX..",
+            ".XXXOX..",
+            ".OOOOO..",
+            "..OOOO..",
+            "..XOOO..",
+            ".X......",
+            "........",
+            "........"
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "a4",
+              "score": -37,
+              "principal_variation": [
+                "a4",
+                "a2",
+                "d6",
+                "a1",
+                "b4",
+                "g3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b4",
+              "score": -35,
+              "principal_variation": [
+                "b4",
+                "a1",
+                "a2",
+                "g3",
+                "b5",
+                "g1"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g4",
+              "score": -27,
+              "principal_variation": [
+                "g4",
+                "a1",
+                "c6",
+                "d6",
+                "e7",
+                "b5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b5",
+              "score": -29,
+              "principal_variation": [
+                "b5",
+                "b4",
+                "d6",
+                "a1",
+                "e6",
+                "f6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g5",
+              "score": -47,
+              "principal_variation": [
+                "g5",
+                "a1",
+                "g3",
+                "g1",
+                "b4",
+                "h3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "d6",
+              "score": -28,
+              "principal_variation": [
+                "d6",
+                "e6",
+                "b5",
+                "b4",
+                "g4",
+                "g3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "f6",
+              "score": -57,
+              "principal_variation": [
+                "f6",
+                "a1",
+                "a4",
+                "c6",
+                "b4",
+                "a6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g6",
+              "score": -43,
+              "principal_variation": [
+                "g6",
+                "a2",
+                "g5",
+                "a1",
+                "g3",
+                "c6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "g4",
+          "score_perspective": "X",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 14.68
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 22,
+        "actor": "X",
+        "actual_move": "a3",
+        "recommended_move": "g6",
+        "score_loss": 12,
+        "analysis": {
+          "board": [
+            ".XXXOX..",
+            "OOOOOX..",
+            ".OOOOO..",
+            "X.OOOO..",
+            "..XOOO..",
+            ".X......",
+            "........",
+            "........"
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "a3",
+              "score": -48,
+              "principal_variation": [
+                "a3",
+                "a1",
+                "b5",
+                "b4",
+                "d6",
+                "e6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b4",
+              "score": -52,
+              "principal_variation": [
+                "b4",
+                "a1",
+                "b5",
+                "a3",
+                "d6",
+                "e6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g4",
+              "score": -40,
+              "principal_variation": [
+                "g4",
+                "a1",
+                "b4",
+                "g1",
+                "c6",
+                "d6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b5",
+              "score": -41,
+              "principal_variation": [
+                "b5",
+                "a1",
+                "g6",
+                "b4",
+                "c6",
+                "f6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g5",
+              "score": -54,
+              "principal_variation": [
+                "g5",
+                "a1",
+                "b5",
+                "b4",
+                "a5",
+                "g3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "d6",
+              "score": -37,
+              "principal_variation": [
+                "d6",
+                "a1",
+                "b5",
+                "b4",
+                "a5",
+                "g3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "f6",
+              "score": -46,
+              "principal_variation": [
+                "f6",
+                "a1",
+                "c6",
+                "b5",
+                "d6",
+                "g1"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g6",
+              "score": -36,
+              "principal_variation": [
+                "g6",
+                "a1",
+                "g4",
+                "g3",
+                "b4",
+                "f6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "g6",
+          "score_perspective": "X",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 11.3
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 24,
+        "actor": "X",
+        "actual_move": "g3",
+        "recommended_move": "b5",
+        "score_loss": 8,
+        "analysis": {
+          "board": [
+            "OOOOOX..",
+            "OOOOOX..",
+            "XOOOOO..",
+            "X.OOOO..",
+            "..XOOO..",
+            ".X......",
+            "........",
+            "........"
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "g3",
+              "score": -59,
+              "principal_variation": [
+                "g3",
+                "a5",
+                "c6",
+                "b4",
+                "g4",
+                "g5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b5",
+              "score": -51,
+              "principal_variation": [
+                "b5",
+                "b4",
+                "d6",
+                "g3",
+                "g4",
+                "g1"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g5",
+              "score": -63,
+              "principal_variation": [
+                "g5",
+                "g1",
+                "g3",
+                "b4",
+                "b5",
+                "a5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "f6",
+              "score": -62,
+              "principal_variation": [
+                "f6",
+                "c6",
+                "b4",
+                "a5",
+                "e6",
+                "c7"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "b5",
+          "score_perspective": "X",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 7.28
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 26,
+        "actor": "X",
+        "actual_move": "b5",
+        "recommended_move": "c6",
+        "score_loss": 4,
+        "analysis": {
+          "board": [
+            "OOOOOX..",
+            "OOOOOX..",
+            "OXXXXXX.",
+            "O.OOOO..",
+            "O.XOOO..",
+            ".X......",
+            "........",
+            "........"
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "b5",
+              "score": -61,
+              "principal_variation": [
+                "b5",
+                "b4",
+                "c6",
+                "a6",
+                "g4",
+                "a7"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g5",
+              "score": -63,
+              "principal_variation": [
+                "g5",
+                "b4",
+                "b5",
+                "a6",
+                "pass",
+                "g1",
+                "pass",
+                "a7"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "c6",
+              "score": -57,
+              "principal_variation": [
+                "c6",
+                "b4",
+                "g4",
+                "g5",
+                "d6",
+                "f6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "d6",
+              "score": -63,
+              "principal_variation": [
+                "d6",
+                "b4",
+                "f6",
+                "g1",
+                "b5",
+                "a6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "e6",
+              "score": -63,
+              "principal_variation": [
+                "e6",
+                "g1",
+                "f6",
+                "b4",
+                "b5",
+                "a6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "f6",
+              "score": -63,
+              "principal_variation": [
+                "f6",
+                "b4",
+                "c6",
+                "g1",
+                "b5",
+                "a6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g6",
+              "score": -59,
+              "principal_variation": [
+                "g6",
+                "b4",
+                "g4",
+                "b5",
+                "e6",
+                "g1"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "c6",
+          "score_perspective": "X",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 12.06
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 47,
+        "actor": "O",
+        "actual_move": "c6",
+        "recommended_move": "c6",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOXOOOX",
+            "OOOOOOO.",
+            "OOXXXXXX",
+            "OO.....X",
+            "OXXX...X",
+            "O......."
+          ],
+          "turn": "O",
+          "candidates": [
+            {
+              "coordinate": "c6",
+              "score": 58,
+              "principal_variation": [
+                "c6",
+                "d6",
+                "d8",
+                "b8",
+                "c8",
+                "pass",
+                "e7",
+                "pass",
+                "f6",
+                "e6",
+                "f7",
+                "f8",
+                "h4",
+                "pass",
+                "h8",
+                "pass",
+                "g8",
+                "pass",
+                "e8",
+                "pass",
+                "g6"
+              ],
+              "depth": 16,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "d6",
+              "score": 54,
+              "principal_variation": [
+                "d6",
+                "c6",
+                "g6",
+                "f6",
+                "f7",
+                "e6",
+                "h4",
+                "f8",
+                "b8",
+                "c8",
+                "e8",
+                "d8",
+                "h8",
+                "pass",
+                "g8",
+                "pass",
+                "e7",
+                "pass",
+                "g7"
+              ],
+              "depth": 16,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "e6",
+              "score": 34,
+              "principal_variation": [
+                "e6",
+                "c6",
+                "d6",
+                "h4",
+                "g6",
+                "e7",
+                "f6",
+                "f7",
+                "b8",
+                "pass",
+                "e8",
+                "d8",
+                "f8",
+                "g7",
+                "h8",
+                "g8",
+                "c8"
+              ],
+              "depth": 16,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "f6",
+              "score": 52,
+              "principal_variation": [
+                "f6",
+                "g6",
+                "h4",
+                "d6",
+                "b8",
+                "e6",
+                "c6",
+                "pass",
+                "d8",
+                "c8",
+                "f7",
+                "g7",
+                "h8",
+                "e8",
+                "g8",
+                "pass",
+                "f8",
+                "pass",
+                "e7"
+              ],
+              "depth": 16,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "g6",
+              "score": 50,
+              "principal_variation": [
+                "g6",
+                "f6",
+                "b8",
+                "h4",
+                "c6",
+                "d6",
+                "c8",
+                "e6",
+                "d8",
+                "pass",
+                "e7",
+                "pass",
+                "f7",
+                "e8",
+                "f8",
+                "pass",
+                "g7"
+              ],
+              "depth": 16,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "e7",
+              "score": 42,
+              "principal_variation": [
+                "e7",
+                "pass",
+                "c6",
+                "d6",
+                "f6",
+                "g6",
+                "h4",
+                "e6",
+                "g7",
+                "f7",
+                "f8",
+                "g8",
+                "h8",
+                "e8",
+                "d8",
+                "c8",
+                "b8"
+              ],
+              "depth": 16,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "b8",
+              "score": 58,
+              "principal_variation": [
+                "b8",
+                "pass",
+                "c6",
+                "d6",
+                "d8",
+                "pass",
+                "e6",
+                "c8",
+                "h4",
+                "e8",
+                "h8",
+                "pass",
+                "f8",
+                "pass",
+                "e7",
+                "pass",
+                "f6"
+              ],
+              "depth": 16,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "c8",
+              "score": 58,
+              "principal_variation": [
+                "c8",
+                "pass",
+                "c6",
+                "d6",
+                "d8",
+                "b8",
+                "e6",
+                "e8",
+                "f8",
+                "e7",
+                "f6",
+                "f7",
+                "h4",
+                "pass",
+                "h8",
+                "pass",
+                "g7"
+              ],
+              "depth": 16,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "d8",
+              "score": 54,
+              "principal_variation": [
+                "d8",
+                "pass",
+                "b8",
+                "pass",
+                "c6",
+                "d6",
+                "f6",
+                "g6",
+                "h4",
+                "e6",
+                "e8",
+                "c8",
+                "h8",
+                "f8",
+                "e7",
+                "f7",
+                "g8",
+                "pass",
+                "g7"
+              ],
+              "depth": 16,
+              "score_kind": "exact"
+            }
+          ],
+          "recommended_move": "c6",
+          "score_perspective": "O",
+          "score_kind": "exact",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 16,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 16,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 8.58
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 48,
+        "actor": "X",
+        "actual_move": "d6",
+        "recommended_move": "d6",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOXOOOX",
+            "OOOOOOO.",
+            "OOOOXXXX",
+            "OOO....X",
+            "OOXX...X",
+            "O......."
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "d6",
+              "score": -58,
+              "principal_variation": [
+                "d6",
+                "d8",
+                "b8",
+                "c8",
+                "pass",
+                "e7",
+                "pass",
+                "f6",
+                "e6",
+                "f7",
+                "f8",
+                "h4",
+                "pass",
+                "h8",
+                "pass",
+                "g8",
+                "pass",
+                "e8",
+                "pass",
+                "g6"
+              ],
+              "depth": 15,
+              "score_kind": "exact"
+            }
+          ],
+          "recommended_move": "d6",
+          "score_perspective": "X",
+          "score_kind": "exact",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 15,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 15,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 3.74
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 49,
+        "actor": "O",
+        "actual_move": "d8",
+        "recommended_move": "d8",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOXOOOX",
+            "OOOXOOO.",
+            "OOOXXXXX",
+            "OOOX...X",
+            "OOXX...X",
+            "O......."
+          ],
+          "turn": "O",
+          "candidates": [
+            {
+              "coordinate": "e6",
+              "score": 32,
+              "principal_variation": [
+                "e6",
+                "g6",
+                "f6",
+                "h4",
+                "b8",
+                "f7",
+                "d8",
+                "e7",
+                "g7",
+                "e8",
+                "f8",
+                "g8",
+                "h8",
+                "c8"
+              ],
+              "depth": 14,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "f6",
+              "score": 48,
+              "principal_variation": [
+                "f6",
+                "e7",
+                "g7",
+                "g6",
+                "h4",
+                "e6",
+                "h8",
+                "g8",
+                "b8",
+                "pass",
+                "c8",
+                "d8",
+                "f8",
+                "e8",
+                "f7"
+              ],
+              "depth": 14,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "g6",
+              "score": 36,
+              "principal_variation": [
+                "g6",
+                "h4",
+                "f6",
+                "e7",
+                "e6",
+                "g7",
+                "b8",
+                "f7",
+                "d8",
+                "c8",
+                "e8",
+                "f8",
+                "g8",
+                "h8"
+              ],
+              "depth": 14,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "e7",
+              "score": 28,
+              "principal_variation": [
+                "e7",
+                "h4",
+                "e6",
+                "f6",
+                "g7",
+                "f8",
+                "h8",
+                "b8",
+                "c8",
+                "g6",
+                "f7",
+                "g8",
+                "e8",
+                "d8"
+              ],
+              "depth": 14,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "b8",
+              "score": 44,
+              "principal_variation": [
+                "b8",
+                "f6",
+                "g7",
+                "e7",
+                "e8",
+                "h8",
+                "f8",
+                "d8",
+                "c8",
+                "pass",
+                "g6",
+                "f7",
+                "e6",
+                "h4",
+                "g8"
+              ],
+              "depth": 14,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "c8",
+              "score": 50,
+              "principal_variation": [
+                "c8",
+                "h4",
+                "d8",
+                "b8",
+                "e6",
+                "e8",
+                "f8",
+                "e7",
+                "f7",
+                "pass",
+                "f6",
+                "pass",
+                "g6"
+              ],
+              "depth": 14,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "d8",
+              "score": 58,
+              "principal_variation": [
+                "d8",
+                "b8",
+                "c8",
+                "pass",
+                "e7",
+                "pass",
+                "f6",
+                "e6",
+                "f7",
+                "f8",
+                "h4",
+                "pass",
+                "h8",
+                "pass",
+                "g8",
+                "pass",
+                "e8",
+                "pass",
+                "g6"
+              ],
+              "depth": 14,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "e8",
+              "score": 48,
+              "principal_variation": [
+                "e8",
+                "h4",
+                "e7",
+                "d8",
+                "b8",
+                "f8",
+                "e6",
+                "f6",
+                "c8",
+                "pass",
+                "g8",
+                "pass",
+                "g7",
+                "f7",
+                "h8",
+                "pass",
+                "g6"
+              ],
+              "depth": 14,
+              "score_kind": "exact"
+            }
+          ],
+          "recommended_move": "d8",
+          "score_perspective": "O",
+          "score_kind": "exact",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 14,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 14,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 5.8
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 50,
+        "actor": "X",
+        "actual_move": "b8",
+        "recommended_move": "b8",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOO.",
+            "OOOOXXXX",
+            "OOOO...X",
+            "OOOO...X",
+            "O..O...."
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "b8",
+              "score": -58,
+              "principal_variation": [
+                "b8",
+                "c8",
+                "pass",
+                "e7",
+                "pass",
+                "f6",
+                "e6",
+                "f7",
+                "f8",
+                "h4",
+                "pass",
+                "h8",
+                "pass",
+                "g8",
+                "pass",
+                "e8",
+                "pass",
+                "g6"
+              ],
+              "depth": 13,
+              "score_kind": "exact"
+            }
+          ],
+          "recommended_move": "b8",
+          "score_perspective": "X",
+          "score_kind": "exact",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 13,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 13,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 4.09
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 51,
+        "actor": "O",
+        "actual_move": "e6",
+        "recommended_move": "e6",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOO.",
+            "OOOOXXXX",
+            "OOOX...X",
+            "OOXO...X",
+            "OX.O...."
+          ],
+          "turn": "O",
+          "candidates": [
+            {
+              "coordinate": "e6",
+              "score": 58,
+              "principal_variation": [
+                "e6",
+                "c8",
+                "h4",
+                "e8",
+                "h8",
+                "pass",
+                "f8",
+                "pass",
+                "e7",
+                "pass",
+                "f6"
+              ],
+              "depth": 12,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "f6",
+              "score": 58,
+              "principal_variation": [
+                "f6",
+                "e6",
+                "c8",
+                "g6",
+                "h4",
+                "pass",
+                "e7",
+                "f7",
+                "f8",
+                "e8",
+                "g7",
+                "g8",
+                "h8"
+              ],
+              "depth": 12,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "g6",
+              "score": 50,
+              "principal_variation": [
+                "g6",
+                "f6",
+                "c8",
+                "h4",
+                "e6",
+                "pass",
+                "f7",
+                "e7",
+                "f8",
+                "e8",
+                "g7",
+                "g8",
+                "h8"
+              ],
+              "depth": 12,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "e7",
+              "score": 58,
+              "principal_variation": [
+                "e7",
+                "f7",
+                "c8",
+                "pass",
+                "e8",
+                "pass",
+                "f8",
+                "pass",
+                "e6",
+                "pass",
+                "f6",
+                "pass",
+                "h4",
+                "pass",
+                "h8"
+              ],
+              "depth": 12,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "c8",
+              "score": 58,
+              "principal_variation": [
+                "c8",
+                "pass",
+                "e7",
+                "pass",
+                "f6",
+                "e6",
+                "f7",
+                "f8",
+                "h4",
+                "pass",
+                "h8",
+                "pass",
+                "g8",
+                "pass",
+                "e8",
+                "pass",
+                "g6"
+              ],
+              "depth": 12,
+              "score_kind": "exact"
+            }
+          ],
+          "recommended_move": "e6",
+          "score_perspective": "O",
+          "score_kind": "exact",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 12,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 12,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 3.98
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 52,
+        "actor": "X",
+        "actual_move": "e7",
+        "recommended_move": "e7",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOO.",
+            "OOOOOOXX",
+            "OOOOO..X",
+            "OOXO...X",
+            "OX.O...."
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "e7",
+              "score": -58,
+              "principal_variation": [
+                "e7",
+                "c8",
+                "pass",
+                "f8",
+                "pass",
+                "g6",
+                "f6",
+                "f7",
+                "e8",
+                "g7",
+                "g8",
+                "h8",
+                "pass",
+                "h4"
+              ],
+              "depth": 11,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "c8",
+              "score": -58,
+              "principal_variation": [
+                "c8",
+                "h4",
+                "e8",
+                "h8",
+                "pass",
+                "f8",
+                "pass",
+                "e7",
+                "pass",
+                "f6"
+              ],
+              "depth": 11,
+              "score_kind": "exact"
+            }
+          ],
+          "recommended_move": "e7",
+          "score_perspective": "X",
+          "score_kind": "exact",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 11,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 11,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 3.44
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 53,
+        "actor": "O",
+        "actual_move": "f6",
+        "recommended_move": "f6",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOO.",
+            "OOOOOOXX",
+            "OOOOO..X",
+            "OOXXX..X",
+            "OX.O...."
+          ],
+          "turn": "O",
+          "candidates": [
+            {
+              "coordinate": "f6",
+              "score": 58,
+              "principal_variation": [
+                "f6",
+                "f7",
+                "c8",
+                "pass",
+                "h4",
+                "pass",
+                "h8",
+                "pass",
+                "e8",
+                "pass",
+                "g8"
+              ],
+              "depth": 10,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "g6",
+              "score": 54,
+              "principal_variation": [
+                "g6",
+                "f6",
+                "f7",
+                "c8",
+                "e8",
+                "g8",
+                "h4",
+                "f8",
+                "h8",
+                "pass",
+                "g7"
+              ],
+              "depth": 10,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "f7",
+              "score": 58,
+              "principal_variation": [
+                "f7",
+                "c8",
+                "e8",
+                "f8",
+                "g8",
+                "pass",
+                "h4",
+                "pass",
+                "h8",
+                "pass",
+                "f6"
+              ],
+              "depth": 10,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "c8",
+              "score": 58,
+              "principal_variation": [
+                "c8",
+                "pass",
+                "f8",
+                "pass",
+                "g6",
+                "f6",
+                "f7",
+                "e8",
+                "g7",
+                "g8",
+                "h8",
+                "pass",
+                "h4"
+              ],
+              "depth": 10,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "e8",
+              "score": 58,
+              "principal_variation": [
+                "e8",
+                "c8",
+                "h4",
+                "f8",
+                "g8",
+                "f7",
+                "h8",
+                "pass",
+                "g7",
+                "pass",
+                "f6"
+              ],
+              "depth": 10,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "f8",
+              "score": 58,
+              "principal_variation": [
+                "f8",
+                "f7",
+                "c8",
+                "pass",
+                "e8",
+                "pass",
+                "f6",
+                "pass",
+                "h4",
+                "pass",
+                "h8"
+              ],
+              "depth": 10,
+              "score_kind": "exact"
+            }
+          ],
+          "recommended_move": "f6",
+          "score_perspective": "O",
+          "score_kind": "exact",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 10,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 10,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 3.67
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 54,
+        "actor": "X",
+        "actual_move": "f7",
+        "recommended_move": "f7",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOO.",
+            "OOOOOOXX",
+            "OOOOOO.X",
+            "OOXXO..X",
+            "OX.O...."
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "f7",
+              "score": -58,
+              "principal_variation": [
+                "f7",
+                "c8",
+                "pass",
+                "h4",
+                "pass",
+                "h8",
+                "pass",
+                "e8",
+                "pass",
+                "g8"
+              ],
+              "depth": 9,
+              "score_kind": "exact"
+            }
+          ],
+          "recommended_move": "f7",
+          "score_perspective": "X",
+          "score_kind": "exact",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 9,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 9,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 4.34
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 55,
+        "actor": "O",
+        "actual_move": "h4",
+        "recommended_move": "h4",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOO.",
+            "OOOOOOXX",
+            "OOOOOO.X",
+            "OOXXXX.X",
+            "OX.O...."
+          ],
+          "turn": "O",
+          "candidates": [
+            {
+              "coordinate": "h4",
+              "score": 58,
+              "principal_variation": [
+                "h4",
+                "pass",
+                "h8",
+                "pass",
+                "c8",
+                "pass",
+                "e8",
+                "pass",
+                "g8"
+              ],
+              "depth": 8,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "g6",
+              "score": 50,
+              "principal_variation": [
+                "g6",
+                "h4",
+                "c8",
+                "g7",
+                "e8",
+                "pass",
+                "f8",
+                "pass",
+                "g8"
+              ],
+              "depth": 8,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "g7",
+              "score": 50,
+              "principal_variation": [
+                "g7",
+                "c8",
+                "g6",
+                "e8",
+                "f8",
+                "g8",
+                "h8",
+                "pass",
+                "h4"
+              ],
+              "depth": 8,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "c8",
+              "score": 58,
+              "principal_variation": [
+                "c8",
+                "pass",
+                "h4",
+                "pass",
+                "h8",
+                "pass",
+                "e8",
+                "pass",
+                "g8"
+              ],
+              "depth": 8,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "e8",
+              "score": 46,
+              "principal_variation": [
+                "e8",
+                "c8",
+                "h4",
+                "g6",
+                "g7",
+                "g8",
+                "f8",
+                "pass",
+                "h8"
+              ],
+              "depth": 8,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "f8",
+              "score": 58,
+              "principal_variation": [
+                "f8",
+                "g7",
+                "c8",
+                "pass",
+                "h8",
+                "pass",
+                "h4",
+                "pass",
+                "g8",
+                "pass",
+                "e8"
+              ],
+              "depth": 8,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "g8",
+              "score": 58,
+              "principal_variation": [
+                "g8",
+                "g7",
+                "c8",
+                "pass",
+                "h4",
+                "pass",
+                "h8",
+                "pass",
+                "f8"
+              ],
+              "depth": 8,
+              "score_kind": "exact"
+            }
+          ],
+          "recommended_move": "h4",
+          "score_perspective": "O",
+          "score_kind": "exact",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 4.13
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 57,
+        "actor": "O",
+        "actual_move": "c8",
+        "recommended_move": "c8",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOOO",
+            "OOOOOOOX",
+            "OOOOOO.X",
+            "OOXXXX.X",
+            "OX.O...."
+          ],
+          "turn": "O",
+          "candidates": [
+            {
+              "coordinate": "g7",
+              "score": 48,
+              "principal_variation": [
+                "g7",
+                "c8",
+                "g6",
+                "f8",
+                "e8",
+                "g8",
+                "h8"
+              ],
+              "depth": 7,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "c8",
+              "score": 58,
+              "principal_variation": [
+                "c8",
+                "pass",
+                "h8",
+                "pass",
+                "e8",
+                "pass",
+                "g8"
+              ],
+              "depth": 7,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "e8",
+              "score": 46,
+              "principal_variation": [
+                "e8",
+                "c8",
+                "h8",
+                "g6",
+                "g7",
+                "g8",
+                "f8"
+              ],
+              "depth": 7,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "f8",
+              "score": 58,
+              "principal_variation": [
+                "f8",
+                "g7",
+                "h8",
+                "pass",
+                "c8",
+                "pass",
+                "g8",
+                "pass",
+                "e8"
+              ],
+              "depth": 7,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "g8",
+              "score": 58,
+              "principal_variation": [
+                "g8",
+                "g7",
+                "h8",
+                "pass",
+                "c8",
+                "pass",
+                "f8"
+              ],
+              "depth": 7,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "h8",
+              "score": 58,
+              "principal_variation": [
+                "h8",
+                "pass",
+                "c8",
+                "pass",
+                "e8",
+                "pass",
+                "g8"
+              ],
+              "depth": 7,
+              "score_kind": "exact"
+            }
+          ],
+          "recommended_move": "c8",
+          "score_perspective": "O",
+          "score_kind": "exact",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 7,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 7,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 3.81
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 59,
+        "actor": "O",
+        "actual_move": "e8",
+        "recommended_move": "e8",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOOO",
+            "OOOOOOOX",
+            "OOOOOO.X",
+            "OOOOXX.X",
+            "OOOO...."
+          ],
+          "turn": "O",
+          "candidates": [
+            {
+              "coordinate": "g7",
+              "score": 56,
+              "principal_variation": [
+                "g7",
+                "f8",
+                "h8"
+              ],
+              "depth": 6,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "e8",
+              "score": 58,
+              "principal_variation": [
+                "e8",
+                "pass",
+                "h8",
+                "pass",
+                "g8"
+              ],
+              "depth": 6,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "f8",
+              "score": 58,
+              "principal_variation": [
+                "f8",
+                "pass",
+                "h8"
+              ],
+              "depth": 6,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "g8",
+              "score": 58,
+              "principal_variation": [
+                "g8",
+                "g7",
+                "h8",
+                "pass",
+                "f8"
+              ],
+              "depth": 6,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "h8",
+              "score": 58,
+              "principal_variation": [
+                "h8",
+                "pass",
+                "e8",
+                "pass",
+                "g8"
+              ],
+              "depth": 6,
+              "score_kind": "exact"
+            }
+          ],
+          "recommended_move": "e8",
+          "score_perspective": "O",
+          "score_kind": "exact",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 6,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 6,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 3.79
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 61,
+        "actor": "O",
+        "actual_move": "g6",
+        "recommended_move": "g6",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOOO",
+            "OOOOOOOX",
+            "OOOOOO.X",
+            "OOOOOX.X",
+            "OOOOO..."
+          ],
+          "turn": "O",
+          "candidates": [
+            {
+              "coordinate": "g6",
+              "score": 58,
+              "principal_variation": [
+                "g6",
+                "pass",
+                "h8"
+              ],
+              "depth": 5,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "g7",
+              "score": 58,
+              "principal_variation": [
+                "g7",
+                "f8",
+                "h8",
+                "pass",
+                "g8"
+              ],
+              "depth": 5,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "f8",
+              "score": 58,
+              "principal_variation": [
+                "f8",
+                "pass",
+                "h8"
+              ],
+              "depth": 5,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "g8",
+              "score": 58,
+              "principal_variation": [
+                "g8",
+                "pass",
+                "h8"
+              ],
+              "depth": 5,
+              "score_kind": "exact"
+            },
+            {
+              "coordinate": "h8",
+              "score": 58,
+              "principal_variation": [
+                "h8",
+                "pass",
+                "g8"
+              ],
+              "depth": 5,
+              "score_kind": "exact"
+            }
+          ],
+          "recommended_move": "g6",
+          "score_perspective": "O",
+          "score_kind": "exact",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 5,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 5,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 4.41
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      },
+      {
+        "revision": 63,
+        "actor": "O",
+        "actual_move": "h8",
+        "recommended_move": "h8",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOOOO",
+            "OOOOOOOX",
+            "OOOOOOOX",
+            "OOOOOO.X",
+            "OOOOO..."
+          ],
+          "turn": "O",
+          "candidates": [
+            {
+              "coordinate": "h8",
+              "score": 58,
+              "principal_variation": [
+                "h8"
+              ],
+              "depth": 4,
+              "score_kind": "exact"
+            }
+          ],
+          "recommended_move": "h8",
+          "score_perspective": "O",
+          "score_kind": "exact",
+          "engine_version": "4.6",
+          "eval_file": "redacted/eval.dat",
+          "depth": 4,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 4,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 4.01
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false
+      }
+    ],
+    "automatic_hint_moves": []
+  }
+}

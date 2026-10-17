@@ -136,6 +136,45 @@ class HintDisplayResult(BaseModel):
     displayed: bool
 
 
+class VariationFrame(BaseModel):
+    board: BoardRows
+    turn: Color | None
+    coordinate: str | None
+
+
+class MoveComparison(BaseModel):
+    coordinate: Coordinate
+    corner: int
+    empty_corner_neighbor: int
+    opponent_moves: int
+    own_moves: int
+    frontier_difference: int
+    disc_difference: int
+    opponent_legal_moves: list[Coordinate]
+    opponent_corners: list[Coordinate]
+    frames: list[VariationFrame]
+
+
+class ReviewFact(BaseModel):
+    id: str
+    text: str
+    topic: str
+    revision: int | None = None
+
+
+class Lesson(BaseModel):
+    title: str
+    text: str
+    question: str
+
+
+class CoachingCard(BaseModel):
+    revision: int
+    facts: list[ReviewFact]
+    lesson_id: str
+    lesson: Lesson
+
+
 class ReviewEvidence(BaseModel):
     revision: int
     actor: Color
@@ -145,6 +184,8 @@ class ReviewEvidence(BaseModel):
     analysis: Analysis
     shown_hint_ids: list[str]
     adopted_hint: bool
+    stage: str | None = None
+    comparisons: list[MoveComparison] = Field(default_factory=list)
 
 
 class ReviewHint(BaseModel):
@@ -191,8 +232,14 @@ class Review(BaseModel):
     hint_adoption: HintAdoption
     explanation: str
     evidence: list[ReviewEvidence]
-    model_id: str
+    model_id: str | None
     usage: dict[str, Any] | None
+    format_version: str | None = None
+    summary_facts: list[ReviewFact] = Field(default_factory=list)
+    coaching: list[CoachingCard] = Field(default_factory=list)
+    coaching_status: Literal["pending", "ready", "failed"] | None = None
+    coaching_error: str | None = None
+    branch_results: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class BranchResult(BaseModel):
@@ -202,8 +249,10 @@ class BranchResult(BaseModel):
 
 class QuestionResult(BaseModel):
     answer: str
-    model_id: str
+    model_id: str | None
     usage: dict[str, Any] | None
+    coaching: list[CoachingCard] = Field(default_factory=list)
+    format_version: str | None = None
 
 
 class Task(BaseModel):
@@ -213,6 +262,7 @@ class Task(BaseModel):
     status: Literal["queued", "running", "succeeded", "failed"]
     result: Review | BranchResult | QuestionResult | None = None
     error: dict[str, str] | None = None
+    usage: dict[str, Any] | None = None
 
     @model_validator(mode="after")
     def check_result(self) -> "Task":

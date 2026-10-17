@@ -1,5 +1,7 @@
 # Native output fixtures
 
+`review-native-positions.json` contains 22 original positions and the complete 64-event history from the actual Edax-backed game used in the 2026-10-17 review API checks. It includes displayed-hint adoption, both player perspectives, tied opening moves, and exact endgames. Generated prose and model/account metadata were removed; scores, boards, variations, and played moves were preserved. It tests evidence selection, rule-derived comparisons, legal variation replay, and rejection of unsupported coaching references.
+
 `edax-4.6-macos-initial-hint.txt` contains the `hint 4` output and following prompt from a terminal transcript supplied on 2026-10-11. Candidate moves, scores, depths, variations, and durations are unchanged.
 
 - Environment: macOS ARM64, clang, Edax v4.6 source `713a434f13b3d15fb69c61b9ba3641aed82c496c`, with the repository's hash-table allocation patch.

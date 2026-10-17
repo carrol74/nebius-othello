@@ -4,6 +4,7 @@ from threading import RLock
 from typing import Any
 from uuid import uuid4
 
+from nemothello.coaching import REVIEW_VERSION, summary_facts
 from nemothello.edax import Edax
 from nemothello.errors import AppError
 from nemothello.opponents import Difficulty, EdaxOpponent
@@ -291,9 +292,14 @@ class Games:
             if question:
                 self.store.get("review", game_id, owner, db)
             else:
+                saved = next((item for item in self.store.list_records("review", owner, db)
+                              if item["game_id"] == game_id), None)
                 existing = [t for t in self.store.list_records("task", owner, db)
                             if t["game_id"] == game_id and t["kind"] == "review"
-                            and t["status"] in ("queued", "running", "succeeded")]
+                            and (t["status"] in ("queued", "running")
+                                 or (t["status"] == "succeeded" and saved
+                                     and saved.get("format_version") == REVIEW_VERSION
+                                     and saved.get("coaching_status") == "ready"))]
                 if existing:
                     return self.public_task(existing[-1])
             task = self.make_task(db, owner, game_id, kind, {"question": question})
@@ -307,6 +313,15 @@ class Games:
             reviews = self.store.list_records("review", owner, db)
             for review in reviews:
                 if review["game_id"] == game_id:
+                    if review.get("format_version") == REVIEW_VERSION:
+                        review["branch_results"] = [
+                            {key: item[key] for key in ("game_id", "parent_revision", "result")}
+                            for item in self.store.list_records("game", owner, db)
+                            if item.get("parent_game_id") == game_id and item["status"] == "finished"
+                            and item.get("branch_mode") == "follow_hints"
+                            and item["opponent_config_id"] == review["opponent_config_id"]
+                        ]
+                        review["summary_facts"] = summary_facts(review)
                     return review
             tasks = [t for t in self.store.list_records("task", owner, db)
                      if t["game_id"] == game_id and t["kind"] == "review"]

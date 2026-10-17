@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import Any
 
+from nemothello.coaching import REVIEW_VERSION, enrich_evidence, select_key_moves, summary_facts
 from nemothello.errors import AppError
 from nemothello.games import Games
 from nemothello.nemotron import Nemotron
@@ -47,17 +48,19 @@ class Tasks:
             elif task["kind"] == "review":
                 result = self.review(owner, task["game_id"])
             else:
-                review = self.store.get("review", task["game_id"], owner)
+                review = self.games.review(owner, task["game_id"])
                 response = self.nemotron.explain(review, task["inputs"]["question"])
                 result = {"answer": response["text"], "model_id": response["model_id"],
-                          "usage": response["usage"]}
-            task.update(status="succeeded", result=result, error=None)
+                          "usage": response["usage"], "coaching": response["coaching"],
+                          "format_version": REVIEW_VERSION}
+            task.update(status="succeeded", result=result, error=None, usage=result.get("usage"))
         except Exception as exc:
             logger.exception("Task failed task_id=%s", task["task_id"])
             task.update(status="failed", error={
                 "code": exc.code if isinstance(exc, AppError) else "TASK_FAILED",
                 "message": exc.message if isinstance(exc, AppError) else "Task failed. Check service logs before retrying",
             })
+            task["usage"] = getattr(exc, "usage", None)
         finally:
             with self.store.transaction() as db:
                 if task["kind"] == "branch":
@@ -88,7 +91,28 @@ class Tasks:
         raise AppError("BRANCH_LENGTH", "Branch exceeded the legal game length. Check the rules", 500)
 
     def review(self, owner: str, game_id: str) -> dict[str, Any]:
-        self.nemotron.ensure_configured()
+        existing = next((item for item in self.store.list_records("review", owner)
+                         if item["game_id"] == game_id and item.get("format_version") == REVIEW_VERSION), None)
+        review = existing or self.analyze_review(owner, game_id)
+        review.update(coaching_status="pending", coaching_error=None)
+        with self.store.transaction() as db:
+            self.store.save(db, "review", game_id, owner, review)
+        try:
+            response = self.nemotron.explain(review)
+        except Exception as exc:
+            review.update(coaching_status="failed", coaching_error=(exc.message if isinstance(exc, AppError)
+                          else "Coaching request failed. Retry coaching"),
+                          usage=getattr(exc, "usage", None))
+            with self.store.transaction() as db:
+                self.store.save(db, "review", game_id, owner, review)
+            raise
+        review.update(explanation=response["text"], coaching=response["coaching"],
+                      model_id=response["model_id"], usage=response["usage"], coaching_status="ready")
+        with self.store.transaction() as db:
+            self.store.save(db, "review", game_id, owner, review)
+        return review
+
+    def analyze_review(self, owner: str, game_id: str) -> dict[str, Any]:
         game = self.store.get("game", game_id, owner)
         if game["status"] != "finished":
             raise AppError("REVIEW_REQUIRES_END", "Review requires a finished game")
@@ -109,18 +133,18 @@ class Tasks:
             actual = next(c for c in candidates if c["coordinate"] == event["coordinate"])
             best = max(candidates, key=lambda c: c["score"])
             shown = [hint for hint in hints if hint["revision"] == revision]
-            evidence.append({
+            evidence.append(enrich_evidence({
                 "revision": revision, "actor": event["actor"], "actual_move": event["coordinate"],
                 "recommended_move": best["coordinate"], "score_loss": best["score"] - actual["score"],
                 "analysis": evidence_analysis(analysis),
                 "shown_hint_ids": [hint["hint_id"] for hint in shown],
                 "adopted_hint": any(hint["recommended_move"] == event["coordinate"] for hint in shown),
-            })
+            }))
             position, _ = position.play(event["coordinate"])
             revision = event["revision"]
         if list(position.board) != game["board"] or position.result() != game["result"]:
             raise AppError("REPLAY_MISMATCH", "History replay does not match the saved final position", 500)
-        key_moves = sorted(evidence, key=lambda item: item["score_loss"], reverse=True)[:8]
+        key_moves = select_key_moves(evidence, game["human_color"])
         summary = {
             "game_id": game_id, "result": game["result"], "human_color": game["human_color"],
             "initial_board": game["initial_board"], "initial_turn": game["initial_turn"],
@@ -138,9 +162,14 @@ class Tasks:
             "hint_adoption": {"shown_turns": sum(bool(item["shown_hint_ids"]) for item in evidence),
                               "adopted_turns": sum(item["adopted_hint"] for item in evidence)},
         }
-        response = self.nemotron.explain(summary)
-        review = {**summary, "explanation": response["text"], "evidence": evidence,
-                  "model_id": response["model_id"], "usage": response["usage"]}
-        with self.store.transaction() as db:
-            self.store.save(db, "review", game_id, owner, review)
+        branches = [item for item in self.store.list_records("game", owner)
+                    if item.get("parent_game_id") == game_id and item["status"] == "finished"
+                    and item.get("branch_mode") == "follow_hints"
+                    and item["opponent_config_id"] == game["opponent_config_id"]]
+        review = {**summary, "explanation": "", "evidence": evidence, "model_id": None,
+                  "usage": None, "coaching": [], "coaching_status": "pending",
+                  "format_version": REVIEW_VERSION, "coaching_error": None,
+                  "branch_results": [{key: item[key] for key in ("game_id", "parent_revision", "result")}
+                                     for item in branches]}
+        review["summary_facts"] = summary_facts(review)
         return review
