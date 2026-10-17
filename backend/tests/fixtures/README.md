@@ -1,5 +1,7 @@
 # Native output fixtures
 
+`teaching-native-cases.json` contains rules-derived demonstrations for positions 16 and 22 of `review-native-positions.json`. Position 16 checks all nine defenses after b1–e1 and demonstrates the unavoidable a1 corner; position 22 has shared corner access, which must not be described as the cause of the score difference. No model output is used in this fixture.
+
 `review-native-positions.json` contains 22 original positions and the complete 64-event history from the actual Edax-backed game used in the 2026-10-17 review API checks. It includes displayed-hint adoption, both player perspectives, tied opening moves, and exact endgames. Generated prose and model/account metadata were removed; scores, boards, variations, and played moves were preserved. It tests evidence selection, rule-derived comparisons, legal variation replay, and rejection of unsupported coaching references.
 
 `edax-4.6-macos-initial-hint.txt` contains the `hint 4` output and following prompt from a terminal transcript supplied on 2026-10-11. Candidate moves, scores, depths, variations, and durations are unchanged.

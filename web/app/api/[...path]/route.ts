@@ -8,7 +8,7 @@ export const maxDuration = 300;
 
 const id = "[A-Za-z0-9_-]{1,100}";
 const endpoints: Record<string, RegExp[]> = {
-  GET: [new RegExp(`^games/${id}$`), new RegExp(`^games/${id}/review$`), new RegExp(`^tasks/${id}$`)],
+  GET: [new RegExp(`^games/${id}$`), new RegExp(`^games/${id}/review(/lesson)?$`), new RegExp(`^tasks/${id}$`)],
   POST: [
     /^games$/,
     new RegExp(`^games/${id}/(moves|ai-move|hint|hint-displays|reviews|branches)$`),

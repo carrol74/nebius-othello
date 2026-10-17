@@ -687,6 +687,85 @@
         }
       }
     },
+    "/games/{game_id}/review/lesson": {
+      "get": {
+        "summary": "Teaching Lesson",
+        "operationId": "teaching_lesson_games__game_id__review_lesson_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "revision",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "title": "Revision"
+            }
+          },
+          {
+            "name": "move",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$",
+              "title": "Move"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeachingComparison"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/games/{game_id}/branches": {
       "post": {
         "summary": "Branch",
@@ -2345,6 +2424,263 @@
           "status"
         ],
         "title": "Task"
+      },
+      "TeachingComparison": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "actor": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Actor"
+          },
+          "selected_move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Selected Move"
+          },
+          "recommended_move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Recommended Move"
+          },
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/TeachingMove"
+            },
+            "type": "array",
+            "title": "Choices"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revision",
+          "actor",
+          "selected_move",
+          "recommended_move",
+          "choices"
+        ],
+        "title": "TeachingComparison"
+      },
+      "TeachingDefense": {
+        "properties": {
+          "coordinate": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Coordinate"
+          },
+          "frames": {
+            "items": {
+              "$ref": "#/components/schemas/TeachingFrame"
+            },
+            "type": "array",
+            "title": "Frames"
+          }
+        },
+        "type": "object",
+        "required": [
+          "coordinate",
+          "frames"
+        ],
+        "title": "TeachingDefense"
+      },
+      "TeachingFrame": {
+        "properties": {
+          "board": {
+            "items": {
+              "type": "string",
+              "pattern": "^[.XO]{8}$"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 8,
+            "title": "Board"
+          },
+          "turn": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "X",
+                  "O"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Turn"
+          },
+          "coordinate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coordinate"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "X",
+                  "O"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          },
+          "flipped": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Flipped"
+          }
+        },
+        "type": "object",
+        "required": [
+          "board",
+          "turn",
+          "coordinate",
+          "actor",
+          "flipped"
+        ],
+        "title": "TeachingFrame"
+      },
+      "TeachingMove": {
+        "properties": {
+          "coordinate": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Coordinate"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "score_kind": {
+            "type": "string",
+            "enum": [
+              "estimate",
+              "exact"
+            ],
+            "title": "Score Kind"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "line",
+              "corner_taken",
+              "corner_given",
+              "corner_forced",
+              "pass"
+            ],
+            "title": "Kind"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "opponent_reply": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opponent Reply"
+          },
+          "checked_defenses": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Checked Defenses"
+          },
+          "defense_lines": {
+            "items": {
+              "$ref": "#/components/schemas/TeachingDefense"
+            },
+            "type": "array",
+            "title": "Defense Lines"
+          },
+          "capture_lines": {
+            "items": {
+              "items": {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Capture Lines"
+          },
+          "opponent_corner_moves_after_reply": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Opponent Corner Moves After Reply"
+          },
+          "line_source": {
+            "type": "string",
+            "enum": [
+              "engine",
+              "rules"
+            ],
+            "title": "Line Source"
+          },
+          "frames": {
+            "items": {
+              "$ref": "#/components/schemas/TeachingFrame"
+            },
+            "type": "array",
+            "title": "Frames"
+          }
+        },
+        "type": "object",
+        "required": [
+          "coordinate",
+          "score",
+          "score_kind",
+          "kind",
+          "target",
+          "opponent_reply",
+          "checked_defenses",
+          "defense_lines",
+          "capture_lines",
+          "opponent_corner_moves_after_reply",
+          "line_source",
+          "frames"
+        ],
+        "title": "TeachingMove"
       },
       "ValidationError": {
         "properties": {

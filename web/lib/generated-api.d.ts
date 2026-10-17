@@ -191,6 +191,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/games/{game_id}/review/lesson": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Teaching Lesson */
+        get: operations["teaching_lesson_games__game_id__review_lesson_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/games/{game_id}/branches": {
         parameters: {
             query?: never;
@@ -730,6 +747,78 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /** TeachingComparison */
+        TeachingComparison: {
+            /** Revision */
+            revision: number;
+            /**
+             * Actor
+             * @enum {string}
+             */
+            actor: "X" | "O";
+            /** Selected Move */
+            selected_move: string;
+            /** Recommended Move */
+            recommended_move: string;
+            /** Choices */
+            choices: components["schemas"]["TeachingMove"][];
+        };
+        /** TeachingDefense */
+        TeachingDefense: {
+            /** Coordinate */
+            coordinate: string;
+            /** Frames */
+            frames: components["schemas"]["TeachingFrame"][];
+        };
+        /** TeachingFrame */
+        TeachingFrame: {
+            /** Board */
+            board: string[];
+            /** Turn */
+            turn: ("X" | "O") | null;
+            /** Coordinate */
+            coordinate: string | null;
+            /** Actor */
+            actor: ("X" | "O") | null;
+            /** Flipped */
+            flipped: string[];
+        };
+        /** TeachingMove */
+        TeachingMove: {
+            /** Coordinate */
+            coordinate: string;
+            /** Score */
+            score: number;
+            /**
+             * Score Kind
+             * @enum {string}
+             */
+            score_kind: "estimate" | "exact";
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "line" | "corner_taken" | "corner_given" | "corner_forced" | "pass";
+            /** Target */
+            target: string | null;
+            /** Opponent Reply */
+            opponent_reply: string | null;
+            /** Checked Defenses */
+            checked_defenses: string[];
+            /** Defense Lines */
+            defense_lines: components["schemas"]["TeachingDefense"][];
+            /** Capture Lines */
+            capture_lines: string[][];
+            /** Opponent Corner Moves After Reply */
+            opponent_corner_moves_after_reply: string[];
+            /**
+             * Line Source
+             * @enum {string}
+             */
+            line_source: "engine" | "rules";
+            /** Frames */
+            frames: components["schemas"]["TeachingFrame"][];
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -1143,6 +1232,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Task"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    teaching_lesson_games__game_id__review_lesson_get: {
+        parameters: {
+            query: {
+                revision: number;
+                move: string;
+            };
+            header: {
+                authorization: string;
+                "x-session-id": string;
+            };
+            path: {
+                game_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeachingComparison"];
                 };
             };
             /** @description Validation Error */

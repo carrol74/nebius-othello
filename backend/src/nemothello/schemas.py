@@ -142,6 +142,39 @@ class VariationFrame(BaseModel):
     coordinate: str | None
 
 
+class TeachingFrame(VariationFrame):
+    actor: Color | None
+    flipped: list[Coordinate]
+
+
+class TeachingDefense(BaseModel):
+    coordinate: Coordinate
+    frames: list[TeachingFrame]
+
+
+class TeachingMove(BaseModel):
+    coordinate: Coordinate
+    score: float
+    score_kind: Literal["estimate", "exact"]
+    kind: Literal["line", "corner_taken", "corner_given", "corner_forced", "pass"]
+    target: Coordinate | None
+    opponent_reply: Coordinate | None
+    checked_defenses: list[Coordinate]
+    defense_lines: list[TeachingDefense]
+    capture_lines: list[list[Coordinate]]
+    opponent_corner_moves_after_reply: list[Coordinate]
+    line_source: Literal["engine", "rules"]
+    frames: list[TeachingFrame]
+
+
+class TeachingComparison(BaseModel):
+    revision: int
+    actor: Color
+    selected_move: Coordinate
+    recommended_move: Coordinate
+    choices: list[TeachingMove]
+
+
 class MoveComparison(BaseModel):
     coordinate: Coordinate
     corner: int

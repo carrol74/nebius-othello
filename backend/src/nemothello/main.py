@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 
 import httpx
-from fastapi import Depends, FastAPI, Header, Request
+from fastapi import Depends, FastAPI, Header, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -31,10 +31,12 @@ from nemothello.schemas import (
     ReviewLookup,
     RevisionRequest,
     Task,
+    TeachingComparison,
     WriteRequest,
 )
 from nemothello.storage import Store
 from nemothello.tasks import Tasks
+from nemothello.teaching import compare_lesson
 
 logger = logging.getLogger(__name__)
 
@@ -189,6 +191,16 @@ def get_review(game_id: str, owner: Owner, request: Request):
 @app.post("/games/{game_id}/review/questions", response_model=Task)
 def question(game_id: str, body: QuestionRequest, owner: Owner, request: Request):
     return request.app.state.games.create_review_task(owner, game_id, body.request_id, body.question)
+
+
+@app.get("/games/{game_id}/review/lesson", response_model=TeachingComparison)
+def teaching_lesson(game_id: str, owner: Owner, request: Request,
+                    revision: Annotated[int, Query(ge=0)],
+                    move: Annotated[str, Query(pattern=r"^[a-h][1-8]$")]):
+    saved = request.app.state.games.review(owner, game_id)
+    if "evidence" not in saved:
+        raise AppError("REVIEW_NOT_FOUND", "Analyze the game before requesting a lesson", 409)
+    return compare_lesson(saved, revision, move)
 
 
 @app.post("/games/{game_id}/branches", response_model=GameState | Task)
