@@ -15,7 +15,7 @@ def verify_edax(edax: Edax, output: Path) -> dict[str, Any]:
     ), "X")
     after_pass, passed = endgame.play("a1")
     if passed != "O" or after_pass.turn != "X":
-        raise ValueError("验证残局应在 a1 后由白方跳过、黑方继续行动")
+        raise ValueError("Verification endgame must pass White after a1 and return the turn to Black")
     cases = (
         ("initial_black", initial), ("after_d3_white", white),
         ("forced_pass_endgame", endgame), ("after_forced_pass", after_pass),
@@ -24,7 +24,7 @@ def verify_edax(edax: Edax, output: Path) -> dict[str, Any]:
         "status": "running", "source": "live-edax-pipe",
         "executable": str(edax.executable), "eval_file": str(edax.eval_file),
         "engine_version": edax.version, "level": edax.level, "cases": [],
-        "limits": "检查本地适配器与有限局面；不代表批量生成稳定性或棋力评测。",
+        "limits": "Checks the local adapter on a limited set of positions; does not measure generation stability or playing strength.",
     }
     try:
         write_json(output, report)
@@ -37,13 +37,13 @@ def verify_edax(edax: Edax, output: Path) -> dict[str, Any]:
                 process_id = edax.process.pid
                 report["process_id"] = process_id
             if edax.process.pid != process_id:
-                raise ValueError("连续分析应复用同一个 Edax 进程")
+                raise ValueError("Consecutive analyses must reuse one Edax process")
             if (analysis["board"] != list(position.board)
                     or analysis["turn"] != position.turn
                     or analysis["score_perspective"] != position.turn
                     or [item["coordinate"] for item in analysis["candidates"]]
                     != list(position.moves)):
-                raise ValueError(f"{name} 的分析与规则引擎局面不一致")
+                raise ValueError(f"Analysis for {name} does not match the rules engine position")
             if name in ("forced_pass_endgame", "after_forced_pass"):
                 for candidate in analysis["candidates"]:
                     terminal = position
@@ -54,7 +54,7 @@ def verify_edax(edax: Edax, output: Path) -> dict[str, Any]:
                     result = terminal.result()
                     score = result["black_count"] - result["white_count"]
                     if candidate["score_kind"] != "exact" or candidate["score"] != score:
-                        raise ValueError(f"{name} 的残局精确分数与实际终局子差不一致")
+                        raise ValueError(f"Exact endgame score for {name} does not match the final disc difference")
         report["status"] = "passed"
         return report
     except Exception as exc:

@@ -53,10 +53,10 @@ class Tasks:
                           "usage": response["usage"]}
             task.update(status="succeeded", result=result, error=None)
         except Exception as exc:
-            logger.exception("任务失败 task_id=%s", task["task_id"])
+            logger.exception("Task failed task_id=%s", task["task_id"])
             task.update(status="failed", error={
                 "code": exc.code if isinstance(exc, AppError) else "TASK_FAILED",
-                "message": exc.message if isinstance(exc, AppError) else "任务执行失败，请检查服务日志后重试",
+                "message": exc.message if isinstance(exc, AppError) else "Task failed. Check service logs before retrying",
             })
         finally:
             with self.store.transaction() as db:
@@ -70,7 +70,7 @@ class Tasks:
         game_id = task["game_id"]
         for step in range(61):
             if self.stop.is_set():
-                raise AppError("SERVICE_STOPPING", "服务停止中断重演，可查看已保存的分支", 503)
+                raise AppError("SERVICE_STOPPING", "Service shutdown interrupted replay. The saved branch remains available", 503)
             game = self.games.get(game_id, owner)
             if game["status"] == "finished":
                 return {"game_id": game_id, "result": game["result"]}
@@ -85,13 +85,13 @@ class Tasks:
                 owner, game_id, f"{task['task_id']}:{step}", revision, move,
                 automated=True, hint_id=hint_id,
             )
-        raise AppError("BRANCH_LENGTH", "分支超过合法对局步数，请检查棋规", 500)
+        raise AppError("BRANCH_LENGTH", "Branch exceeded the legal game length. Check the rules", 500)
 
     def review(self, owner: str, game_id: str) -> dict[str, Any]:
         self.nemotron.ensure_configured()
         game = self.store.get("game", game_id, owner)
         if game["status"] != "finished":
-            raise AppError("REVIEW_REQUIRES_END", "对局未结束，不能生成复盘")
+            raise AppError("REVIEW_REQUIRES_END", "Review requires a finished game")
         hints = [hint for hint in self.store.list_records("hint", owner)
                  if hint["game_id"] == game_id and hint["displayed"]]
         position = Position(tuple(game["initial_board"]), game["initial_turn"])
@@ -103,7 +103,7 @@ class Tasks:
                 revision = event["revision"]
                 continue
             if self.stop.is_set():
-                raise AppError("SERVICE_STOPPING", "服务停止中断复盘，请重新创建任务", 503)
+                raise AppError("SERVICE_STOPPING", "Service shutdown interrupted review. Create a new task", 503)
             analysis = engine.analyze(position.board, position.turn)
             candidates = analysis["candidates"]
             actual = next(c for c in candidates if c["coordinate"] == event["coordinate"])
@@ -119,7 +119,7 @@ class Tasks:
             position, _ = position.play(event["coordinate"])
             revision = event["revision"]
         if list(position.board) != game["board"] or position.result() != game["result"]:
-            raise AppError("REPLAY_MISMATCH", "棋谱回放与保存的终局不一致", 500)
+            raise AppError("REPLAY_MISMATCH", "History replay does not match the saved final position", 500)
         key_moves = sorted(evidence, key=lambda item: item["score_loss"], reverse=True)[:8]
         summary = {
             "game_id": game_id, "result": game["result"], "human_color": game["human_color"],

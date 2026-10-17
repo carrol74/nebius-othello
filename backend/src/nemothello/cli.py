@@ -23,7 +23,7 @@ from nemothello.verification import verify_demo
 def api_key() -> str:
     key = os.environ.get("PYTRIO_API_KEY", "").strip()
     if not key:
-        raise ValueError("需要配置 PYTRIO_API_KEY")
+        raise ValueError("PYTRIO_API_KEY is required")
     return key
 
 
@@ -31,46 +31,46 @@ def engine(level: int) -> Edax:
     executable = Path(os.environ["EDAX_EXECUTABLE"])
     eval_file = Path(os.environ["EDAX_EVAL_FILE"])
     if not executable.is_file() or not eval_file.is_file():
-        raise ValueError("Edax 程序与评估权重文件必须存在")
+        raise ValueError("Edax executable and evaluation weights must exist")
     return Edax(executable, eval_file, os.environ["EDAX_VERSION"], level,
                 float(os.environ.get("EDAX_TIMEOUT_SECONDS", "60")))
 
 
 def main() -> None:
     load_dotenv()
-    parser = argparse.ArgumentParser(description="Nemothello 产品检查、接口导出与可选研究工具")
+    parser = argparse.ArgumentParser(description="Nemothello product checks, API export, and optional research tools")
     sub = parser.add_subparsers(dest="command", required=True)
-    openings = sub.add_parser("openings", help="生成固定共享开局，不调用模型")
+    openings = sub.add_parser("openings", help="Generate fixed shared openings without model calls")
     openings.add_argument("--output", type=Path, required=True)
     openings.add_argument("--count", type=int, default=40)
     openings.add_argument("--plies", type=int, default=8)
     openings.add_argument("--seed", type=int, default=20261008)
-    edax_check = sub.add_parser("check-edax", help="通过真实 Python 管道检查 Edax，不调用云端模型")
+    edax_check = sub.add_parser("check-edax", help="Check Edax through native Python pipes without cloud model calls")
     edax_check.add_argument("--output", type=Path, required=True)
     edax_check.add_argument("--level", type=int, default=8, choices=range(1, 11))
-    generate = sub.add_parser("generate", help="运行真实 Edax 生成完整棋谱与标签")
+    generate = sub.add_parser("generate", help="Run native Edax to generate full games and labels")
     generate.add_argument("--output", type=Path, required=True)
     generate.add_argument("--openings", type=Path, required=True)
     generate.add_argument("--games", type=int, default=250)
     generate.add_argument("--level", type=int, default=8, choices=range(1, 11))
     generate.add_argument("--seed", type=int, default=42)
-    prepare = sub.add_parser("prepare", help="按整盘划分并检查数据")
+    prepare = sub.add_parser("prepare", help="Split data by game and validate it")
     prepare.add_argument("--input", type=Path, required=True)
     prepare.add_argument("--output", type=Path, required=True)
     prepare.add_argument("--seed", type=int, default=42)
-    calibration = sub.add_parser("calibrate", help="真实云端落子与保存恢复核验，会产生调用费用")
+    calibration = sub.add_parser("calibrate", help="Verify live cloud moves and save/restore; incurs API charges")
     calibration.add_argument("--data", type=Path, required=True)
     calibration.add_argument("--output", type=Path, required=True)
     calibration.add_argument("--name", required=True)
     calibration.add_argument("--model-path")
-    calibration.add_argument("--sampler-path", help="生成模式恢复时，与 Train 检查点配对的 Sampler 路径")
+    calibration.add_argument("--sampler-path", help="Sampler path paired with the Train checkpoint for generation restoration")
     calibration.add_argument("--mode", choices=POLICY_MODES, default=GENERATION_MODE)
     calibration.add_argument("--template-version", choices=TEMPLATE_VERSIONS,
-                             help="显式选择与权重配对的输入模板；省略时使用原候选模板")
+                             help="Select the input template paired with the weights; defaults to the original candidate template")
     calibration.add_argument("--repeats", type=int, default=3)
     calibration.add_argument("--limit", type=int, default=12)
     calibration.add_argument("--tolerance", type=float, default=1e-4)
-    training = sub.add_parser("train", help="真实云端训练，会产生训练费用")
+    training = sub.add_parser("train", help="Run live cloud training; incurs training charges")
     training.add_argument("--dataset", type=Path, required=True)
     training.add_argument("--calibration", type=Path, required=True)
     training.add_argument("--output", type=Path, required=True)
@@ -82,21 +82,21 @@ def main() -> None:
     training.add_argument("--seed", type=int, default=42)
     training.add_argument("--checkpoint-every", type=int, default=25)
     training.add_argument("--max-restarts", type=int, default=0,
-                          help="遇到可恢复的传输错误时，从检查点启动新进程的最大次数")
-    training.add_argument("--resume", action="store_true", help="从输出目录已确认的批次检查点恢复权重和优化器")
-    evaluation = sub.add_parser("evaluate", help="真实基座与微调对弈评测，会产生推理费用")
+                          help="Maximum checkpoint restarts in a new process after recoverable transport failures")
+    training.add_argument("--resume", action="store_true", help="Restore weights and optimizer from the confirmed batch checkpoint in the output directory")
+    evaluation = sub.add_parser("evaluate", help="Evaluate live base and fine-tuned models in matches; incurs inference charges")
     evaluation.add_argument("--model-path", required=True)
-    evaluation.add_argument("--baseline-model-path", help="参考模型的已保存路径；省略时使用未微调基座")
+    evaluation.add_argument("--baseline-model-path", help="Saved reference model path; defaults to the untuned base model")
     evaluation.add_argument("--openings", type=Path, required=True)
     evaluation.add_argument("--output", type=Path, required=True)
     evaluation.add_argument("--seed", type=int, default=42)
     evaluation.add_argument("--mode", choices=POLICY_MODES, default=GENERATION_MODE)
-    evaluation.add_argument("--pilot-openings", type=int, help="仅做前 N 个固定开局的试验，不作为正式评测")
-    evaluation.add_argument("--resume", action="store_true", help="从已保存棋谱继续，不重复完成对局")
+    evaluation.add_argument("--pilot-openings", type=int, help="Pilot using the first N fixed openings; not a formal evaluation")
+    evaluation.add_argument("--resume", action="store_true", help="Resume from saved histories without replaying completed games")
     evaluation.add_argument("--edax-level", type=int, choices=range(1, 11), default=2)
     evaluation.add_argument("--opponents", nargs="+", choices=("random", "edax"),
-                            default=["random", "edax"], help="只运行选定对手的对照")
-    positions = sub.add_parser("evaluate-positions", help="真实保留测试局面的基座与微调比较，会产生推理费用")
+                            default=["random", "edax"], help="Run comparisons only against selected opponents")
+    positions = sub.add_parser("evaluate-positions", help="Compare live base and fine-tuned models on held-out positions; incurs inference charges")
     positions.add_argument("--model-path", required=True)
     positions.add_argument("--dataset", type=Path, required=True)
     positions.add_argument("--output", type=Path, required=True)
@@ -104,19 +104,19 @@ def main() -> None:
     positions.add_argument("--limit", type=int, default=200)
     positions.add_argument("--equivalent-margin", type=float, default=1)
     positions.add_argument("--mode", choices=POLICY_MODES, default=GENERATION_MODE)
-    failures = sub.add_parser("analyze-failures", help="只运行 Edax 标注已保存败局，不调用云端模型")
+    failures = sub.add_parser("analyze-failures", help="Label saved losses using Edax without cloud model calls")
     failures.add_argument("--sources", type=Path, nargs="+", required=True)
     failures.add_argument("--dataset", type=Path, required=True)
     failures.add_argument("--output", type=Path, required=True)
     failures.add_argument("--level", type=int, choices=range(1, 11), default=8)
     failures.add_argument("--resume", action="store_true")
-    backup = sub.add_parser("backup", help="下载真实 sampler adapter 归档并检查 PEFT 文件，不运行模型")
+    backup = sub.add_parser("backup", help="Download the sampler adapter archive and inspect PEFT files without running a model")
     backup.add_argument("--metadata", type=Path, required=True)
     backup.add_argument("--output", type=Path, required=True)
     backup.add_argument("--tmp-dir", type=Path, default=Path("../.tmp"))
-    contracts = sub.add_parser("export-openapi", help="根据后端类型导出接口定义，不启动服务或调用模型")
+    contracts = sub.add_parser("export-openapi", help="Export API definitions from backend schemas without starting services or calling models")
     contracts.add_argument("--output", type=Path, required=True)
-    verify = sub.add_parser("verify-demo", help="真实后端全流程验收，会调用模型与引擎并产生费用")
+    verify = sub.add_parser("verify-demo", help="Verify the live backend flow; calls models and engines and incurs charges")
     verify.add_argument("--url", required=True)
     verify.add_argument("--output", type=Path, required=True)
     verify.add_argument("--task-timeout", type=float, default=1800)
@@ -126,7 +126,7 @@ def main() -> None:
         write_json(args.output, generate_openings(args.count, args.plies, args.seed))
     elif args.command == "check-edax":
         verify_edax(engine(args.level), args.output)
-        print(f"Edax 适配器检查通过，报告：{args.output}")
+        print(f"Edax adapter check passed; report: {args.output}")
     elif args.command == "generate":
         edax = engine(args.level)
         try:
@@ -141,9 +141,9 @@ def main() -> None:
         from nemothello.training import calibrate
 
         if args.template_version is not None and args.mode != GENERATION_MODE:
-            parser.error("显式模板选择只支持单 token 生成校准")
+            parser.error("Explicit template selection supports only single-token generation calibration")
         if args.output.exists():
-            parser.error("校准输出已存在，请使用新文件保留原始证据")
+            parser.error("Calibration output already exists. Use a new file to preserve original evidence")
         try:
             if args.mode == GENERATION_MODE:
                 calibrate_generation(api_key(), base_model, args.data, args.output, args.name,
@@ -160,13 +160,13 @@ def main() -> None:
                     report.update(status="failed", error_type=type(exc).__name__)
                     write_json(args.output, report)
             raise
-        print(f"落子校准通过，报告：{args.output}")
+        print(f"Move calibration passed; report: {args.output}")
     elif args.command == "train":
         from nemothello.training import train
         from nemothello.training_recovery import supervise_training
 
         if args.max_restarts < 0:
-            parser.error("max-restarts 不能为负")
+            parser.error("max-restarts must be nonnegative")
         if args.max_restarts:
             supervise_training(args)
         else:
@@ -202,7 +202,7 @@ def main() -> None:
             openings = json.loads(args.openings.read_text())
             if args.pilot_openings is not None:
                 if not 1 <= args.pilot_openings <= len(openings):
-                    parser.error("pilot-openings 超出可用开局范围")
+                    parser.error("pilot-openings exceeds the available opening count")
                 openings = openings[:args.pilot_openings]
             evaluate(api_key(), base_model, args.model_path, openings, edax, args.output,
                      args.seed, args.mode, args.pilot_openings is not None, args.resume,

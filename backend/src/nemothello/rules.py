@@ -14,18 +14,18 @@ DIRECTIONS = tuple(
 
 def opponent(color: Color) -> Color:
     if color not in ("X", "O"):
-        raise ValueError("行动方必须是 X 或 O")
+        raise ValueError("Player to move must be X or O")
     return "O" if color == "X" else "X"
 
 
 def validate_board(board: Board) -> None:
     if len(board) != 8 or any(len(row) != 8 or set(row) - set(".XO") for row in board):
-        raise ValueError("棋盘必须为八行八列，字符仅为 .、X、O")
+        raise ValueError("Board must have eight rows of eight characters, using only ., X, and O")
 
 
 def square(coordinate: str) -> tuple[int, int]:
     if len(coordinate) != 2 or coordinate[0] not in "abcdefgh" or coordinate[1] not in "12345678":
-        raise ValueError("坐标必须在 a1 至 h8 之间")
+        raise ValueError("Coordinate must be between a1 and h8")
     return int(coordinate[1]) - 1, ord(coordinate[0]) - ord("a")
 
 
@@ -63,7 +63,7 @@ def apply_move(board: Board, color: Color, move: str) -> Board:
     validate_board(board)
     captured = flips(board, color, move)
     if not captured:
-        raise ValueError("该位置不是合法落子点")
+        raise ValueError("This square is not a legal move")
     cells = [list(row) for row in board]
     row, col = square(move)
     cells[row][col] = color
@@ -83,7 +83,7 @@ class Position:
 
     def play(self, move: str) -> tuple["Position", Color | None]:
         if self.turn is None:
-            raise ValueError("对局已经结束")
+            raise ValueError("Game has finished")
         board = apply_move(self.board, self.turn, move)
         next_turn = opponent(self.turn)
         if legal_moves(board, next_turn):

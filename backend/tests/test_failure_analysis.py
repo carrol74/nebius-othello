@@ -42,7 +42,7 @@ def test_decisions_map_to_correct_pre_move_positions():
 def test_mismatched_saved_decision_is_rejected():
     report = losing_report()
     report["records"][0]["decisions"][0]["coordinate"] = "h8"
-    with pytest.raises(ValueError, match="调用与棋谱"):
+    with pytest.raises(ValueError, match="calls differ from the game history"):
         list(decision_positions(report))
 
 
@@ -78,8 +78,8 @@ def test_interruption_preserves_real_teacher_evidence_and_quarantine(tmp_path):
     assert saved["records"][0]["analysis"]["candidates"] == measured["candidates"]
     assert saved["records"][0]["teacher_score_loss"] == 0
     assert saved["quarantined_for_training"] is True
-    with pytest.raises(ValueError, match="输出已存在"):
+    with pytest.raises(ValueError, match="output already exists"):
         analyze_failures([source], dataset, Engine(), output)
     (dataset / "train.jsonl").write_text('{"board":[],"turn":"X"}\n')
-    with pytest.raises(ValueError, match="来源或引擎设置"):
+    with pytest.raises(ValueError, match="source or engine settings"):
         analyze_failures([source], dataset, Engine(), output, resume=True)

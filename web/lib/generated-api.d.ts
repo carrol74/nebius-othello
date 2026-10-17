@@ -403,7 +403,7 @@ export interface components {
             opponent_config_id: string;
             /**
              * Opponent Name
-             * @default 历史对手
+             * @default Previous opponent
              */
             opponent_name: string;
             /** Difficulty */

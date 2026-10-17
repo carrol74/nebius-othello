@@ -40,7 +40,7 @@ class Store:
             try:
                 fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except BlockingIOError as exc:
-                raise RuntimeError("同一数据库只允许一个后端 worker，请使用 --workers 1") from exc
+                raise RuntimeError("Only one backend worker may use a database; use --workers 1") from exc
             try:
                 yield
             finally:
@@ -56,7 +56,7 @@ class Store:
                 ).fetchone()
                 start, count = (row["window_start"], row["request_count"]) if row else (now, 0)
                 if count >= limit:
-                    raise AppError("REQUEST_LIMIT", "请求过于频繁，请稍后再试", 429, True)
+                    raise AppError("REQUEST_LIMIT", "Too many requests. Please try again later", 429, True)
                 db.execute(
                     "INSERT INTO request_limits VALUES (?,?,?) ON CONFLICT(bucket) DO UPDATE "
                     "SET window_start=excluded.window_start, request_count=excluded.request_count",
@@ -86,7 +86,7 @@ class Store:
             (kind, item_id, owner),
         ).fetchone()
         if row is None:
-            raise AppError("NOT_FOUND", "未找到该记录", 404)
+            raise AppError("NOT_FOUND", "Record not found", 404)
         return json.loads(row["document"])
 
     def save(
@@ -112,7 +112,7 @@ class Store:
         if row is None:
             return None
         if json.loads(row["payload"]) != payload:
-            raise AppError("REQUEST_CONFLICT", "同一请求编号不能用于不同操作")
+            raise AppError("REQUEST_CONFLICT", "A request ID cannot be reused for different operations")
         return json.loads(row["response"])
 
     def mutate(
@@ -157,7 +157,7 @@ class Store:
             for row in rows:
                 task = json.loads(row["document"])
                 task.update(status="failed", error={
-                    "code": "SERVICE_RESTARTED", "message": "服务重启中断任务，请重新创建任务",
+                    "code": "SERVICE_RESTARTED", "message": "Service restart interrupted this task. Create a new task",
                 })
                 if task["kind"] == "branch":
                     game = self.get("game", task["game_id"], row["owner"], db)

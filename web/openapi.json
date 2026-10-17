@@ -1266,7 +1266,7 @@
           "opponent_name": {
             "type": "string",
             "title": "Opponent Name",
-            "default": "历史对手"
+            "default": "Previous opponent"
           },
           "difficulty": {
             "anyOf": [

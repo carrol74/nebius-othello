@@ -36,7 +36,7 @@ def parse_results(output: str, board: Board, turn: Color) -> list[dict[str, Any]
         if pv[0] not in found or depth >= found[pv[0]]["depth"]:
             found[pv[0]] = candidate
     if set(found) != set(expected):
-        raise AppError("EDAX_INCOMPLETE", "Edax 没有返回所有合法候选的有效评分", 502)
+        raise AppError("EDAX_INCOMPLETE", "Edax did not return valid scores for all legal moves", 502)
     return [found[move] for move in expected]
 
 
@@ -49,7 +49,7 @@ class Edax:
         self.eval_file = eval_file.resolve()
         self.version = version
         if not 1 <= level <= 10:
-            raise ValueError("当前适配只支持非选择性搜索的 Edax level 1–10")
+            raise ValueError("This adapter supports only non-selective Edax search at levels 1–10")
         self.level = level
         self.timeout = timeout
         self.lock = Lock()
@@ -73,10 +73,10 @@ class Edax:
             while True:
                 remaining = deadline - time.monotonic()
                 if remaining <= 0 or not selector.select(remaining):
-                    raise AppError("EDAX_TIMEOUT", "Edax 分析超时，请重试", 503, True)
+                    raise AppError("EDAX_TIMEOUT", "Edax analysis timed out. Please try again", 503, True)
                 data = os.read(self.process.stdout.fileno(), 65536)
                 if not data:
-                    raise AppError("EDAX_EXITED", "Edax 进程意外结束", 502)
+                    raise AppError("EDAX_EXITED", "Edax exited unexpectedly", 502)
                 chunks.extend(data)
                 if chunks == b">" or chunks.endswith(b"\n>"):
                     return bytes(chunks[:-1]).decode("utf-8", errors="replace")
@@ -99,12 +99,12 @@ class Edax:
             self._read_prompt()
             version_text = self._exchange("version")
             if not re.search(r"\bEdax\b[^\n]*\b" + re.escape(self.version) + r"\b", version_text):
-                raise AppError("EDAX_VERSION", "Edax 版本输出与配置不一致", 502)
+                raise AppError("EDAX_VERSION", "Edax version does not match configuration", 502)
 
     def analyze(self, board: Board, turn: Color) -> dict[str, Any]:
         moves = legal_moves(board, turn)
         if not moves:
-            raise AppError("NO_LEGAL_MOVES", "该局面无需落子分析", 422)
+            raise AppError("NO_LEGAL_MOVES", "This position does not require move analysis", 422)
         key = (board, turn, self.version, str(self.eval_file), self.level)
         with self.lock:
             if key in self.cache:
@@ -120,12 +120,12 @@ class Edax:
                 raise
             except OSError as exc:
                 self.close()
-                raise AppError("EDAX_FAILED", "Edax 程序执行失败，请检查服务日志", 502) from exc
+                raise AppError("EDAX_FAILED", "Edax failed. Check service logs", 502) from exc
             candidates = parse_results(output, board, turn)
             empties = sum(row.count(".") for row in board)
             required_depth = empties if empties <= 2 * self.level else self.level
             if any(item["depth"] < required_depth for item in candidates):
-                raise AppError("EDAX_DEPTH", "Edax 搜索未达到配置深度", 502)
+                raise AppError("EDAX_DEPTH", "Edax search did not reach the configured depth", 502)
             best = max(candidates, key=lambda item: item["score"])
             analysis = {
                 "board": list(board), "turn": turn, "candidates": candidates,

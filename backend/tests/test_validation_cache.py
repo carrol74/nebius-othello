@@ -51,5 +51,5 @@ def test_complete_cache_avoids_repeating_model_requests(tmp_path):
     path.write_text(json.dumps({"version": 1, "signature": signature,
                                "batches": [{"batch": 0, "positions": 1, "answer_loss_sum": 2.0}]}))
     assert validate_loss(NoCloudCalls(), datums, 16, path, "trio://test/a") == 2.0
-    with pytest.raises(ValueError, match="不能复用"):
+    with pytest.raises(ValueError, match="cannot be reused"):
         validate_loss(NoCloudCalls(), datums, 16, path, "trio://test/b")

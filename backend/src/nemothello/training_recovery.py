@@ -36,13 +36,13 @@ def validate_progress(progress: dict[str, Any], batches: int, epochs: int) -> No
             or [item.get("epoch") for item in history] != list(range(1, epoch + 1))
             or [item.get("batch") for item in updates] != list(range(batch))
             or not str(progress.get("state_path", "")).startswith("trio://")):
-        raise ValueError("训练检查点的轮次、批次或更新记录不一致，不能续训")
+        raise ValueError("Checkpoint epoch, batch, or update records are inconsistent; training cannot resume")
     for item in history:
         loss = item.get("validation_answer_loss")
         if (type(loss) not in (int, float) or not math.isfinite(loss) or loss < 0
                 or not str(item.get("state_path", "")).startswith("trio://")
                 or not str(item.get("sampler_path", "")).startswith("trio://")):
-            raise ValueError("完整轮次的验证结果或检查点无效")
+            raise ValueError("Completed epoch has invalid validation results or checkpoint")
 
 
 def recoverable_error(error: Exception) -> bool:
@@ -79,5 +79,5 @@ def supervise_training(args: Any) -> None:
             raise SystemExit(result.returncode)
         if "--resume" not in command:
             command.append("--resume")
-        print(f"训练客户端已停止；从确认的检查点启动新进程恢复 {attempt + 1}/{args.max_restarts}",
+        print(f"Training client stopped; starting a new process from the confirmed checkpoint, recovery {attempt + 1}/{args.max_restarts}",
               flush=True)

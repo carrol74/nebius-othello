@@ -61,14 +61,14 @@ def run_matches(api_key, base_model, model_path, openings, edax, output: Path, s
                 opponents=("random", "edax"), baseline_model_path=None):
     if (not opponents or len(set(opponents)) != len(opponents)
             or set(opponents) - {"random", "edax"}):
-        raise ValueError("对手必须是不同的 random 或 edax")
+        raise ValueError("Opponents must be distinct values from random and edax")
     if ((len(openings) != 40 and not pilot) or (pilot and not 1 <= len(openings) <= 40)
             or len({o["opening_id"] for o in openings}) != len(openings)):
-        raise ValueError("正式评测需要四十组开局；试验需显式 pilot 并使用不同开局")
+        raise ValueError("Formal evaluation requires forty opening groups; a pilot must be explicit and use distinct openings")
     for opening in openings:
         position = replay(opening["moves"])
         if list(position.board) != opening["board"] or position.turn != opening["turn"]:
-            raise ValueError("共享开局的棋盘与棋谱不一致")
+            raise ValueError("Shared opening board differs from its history")
     identity = {"base_model": base_model, "model_path": model_path,
                 "baseline_model_path": baseline_model_path, "policy_mode": mode,
                 "seed": seed, "edax_level": edax.level, "openings": openings, "pilot": pilot,
@@ -79,26 +79,26 @@ def run_matches(api_key, base_model, model_path, openings, edax, output: Path, s
                 for color in ("X", "O")]
     if output.exists():
         if not resume:
-            raise ValueError("评测输出已存在，需显式 resume，不能覆盖证据")
+            raise ValueError("Evaluation output already exists. Use resume explicitly; do not overwrite evidence")
         report = json.loads(output.read_text())
         report.setdefault("opponents", ["random", "edax"])
         report.setdefault("baseline_model_path", None)
         if any(report.get(k) != v for k, v in identity.items()):
-            raise ValueError("恢复配置与原对弈报告不一致")
+            raise ValueError("Resume configuration differs from the original match report")
         for i, row in enumerate(report["records"]):
             n, o, index, color = schedule[i]
             if (row["policy"], row["opponent"], row["opening_id"], row["color"]) != (
                 n, o, openings[index]["opening_id"], color,
             ) or row["status"] not in ("completed", "failed"):
-                raise ValueError("恢复记录不是已确认的连续对局")
+                raise ValueError("Resume records are not confirmed consecutive games")
         if report["status"] == "completed":
             return report
     else:
         if resume:
-            raise ValueError("缺少可恢复的对弈报告")
+            raise ValueError("No match report is available to resume")
         report = {**identity, "status": "running", "records": [], "active_match": None,
-                  "summary": {}, "limits": "失败无胜负分；统计仅含完整对局／完整换色组，必须同时报告失败率。"
-                  "试验不证明棋力；客户端耗时和成功响应 token 不是端到端延迟或完整账单。"}
+                  "summary": {}, "limits": "Failed games have no result points; statistics include only complete games/color pairs. Report the failure rate separately. "
+                  "A pilot does not establish strength. Client duration and successful-response tokens do not measure end-to-end latency or the full bill."}
     report["status"] = "running"
     atomic_json(output, report)
     policies = {"base": create_policy(api_key, base_model, baseline_model_path, mode),
@@ -116,10 +116,10 @@ def run_matches(api_key, base_model, model_path, openings, edax, output: Path, s
             if (active["policy"], active["opponent"], active["opening_id"], active["color"]) != (
                 name, opponent, opening["opening_id"], color,
             ):
-                raise ValueError("活动对局与恢复进度不一致")
+                raise ValueError("Active game differs from resume progress")
             position = replay(active["moves"], Position(tuple(opening["board"]), opening["turn"]))
             if list(position.board) != active["board"] or position.turn != active["turn"]:
-                raise ValueError("活动棋谱回放不一致")
+                raise ValueError("Active history replay is inconsistent")
             state = active["rng_state"]
             rng = random.Random()
             rng.setstate((state[0], tuple(state[1]), state[2]))
@@ -137,7 +137,7 @@ def run_matches(api_key, base_model, model_path, openings, edax, output: Path, s
                     decision = policies[name].score(position.board, position.turn)
                     move = decision["coordinate"]
                     if move not in position.moves:
-                        raise AppError("POLICY_ILLEGAL_OUTPUT", "非法模型落点", 502)
+                        raise AppError("POLICY_ILLEGAL_OUTPUT", "Illegal model move", 502)
                     active["decisions"].append(decision)
                 elif opponent == "random":
                     move = rng.choice(position.moves)
@@ -173,7 +173,7 @@ def run_matches(api_key, base_model, model_path, openings, edax, output: Path, s
         report["active_match"] = None
         summarize_matches(report, interval)
         atomic_json(output, report)
-        print(f"对弈 {len(report['records'])}/{len(schedule)}：{name} vs {opponent} "
+        print(f"Match {len(report['records'])}/{len(schedule)}: {name} vs {opponent} "
               f"{opening['opening_id']} {color} {active['status']} score={score}", flush=True)
     report["status"] = "completed"
     atomic_json(output, report)

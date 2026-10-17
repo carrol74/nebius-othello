@@ -58,9 +58,9 @@ def encode_position(
     moves = legal_moves(board, turn)
     coordinates = moves if order is None else order
     if not moves or len(coordinates) != len(moves) or set(coordinates) != set(moves):
-        raise ValueError("编码必须包含全部合法候选且没有重复")
+        raise ValueError("Encoding must contain all legal moves without duplicates")
     if len(moves) > len(SYMBOLS):
-        raise ValueError("候选数量超过符号表容量")
+        raise ValueError("Candidate count exceeds the symbol table capacity")
     symbols = tuple(SYMBOLS[:len(moves)])
     message = "Board:\n" + "\n".join(board) + f"\nTurn: {turn}\nCandidates: "
     message += " ".join(f"{symbol}={move}" for symbol, move in zip(symbols, coordinates, strict=True))
@@ -74,10 +74,10 @@ def encode_position(
     for symbol in symbols:
         tokens = tokenizer.encode(symbol, add_special_tokens=False)
         if len(tokens) != 1 or tokenizer.encode(rendered + symbol, add_special_tokens=False) != prefix + tokens:
-            raise ValueError(f"候选 {symbol} 不是当前答案位置的独立单 token")
+            raise ValueError(f"Candidate {symbol} is not a standalone token at the answer position")
         token_ids.append(tokens[0])
     if len(set(token_ids)) != len(token_ids):
-        raise ValueError("不同候选符号映射到了同一 token")
+        raise ValueError("Different candidate symbols map to the same token")
     return EncodedPosition(prefix, coordinates, symbols, tuple(token_ids), rendered)
 
 
@@ -92,7 +92,7 @@ def position_encoder(template_version: str):
         from nemothello.rule_features import encode_feature_position
 
         return encode_feature_position
-    raise ValueError("未知的落子输入模板")
+    raise ValueError("Unknown move input template")
 
 
 def training_datum(encoded: EncodedPosition, target: str) -> trio.Datum:
@@ -107,16 +107,16 @@ def training_datum(encoded: EncodedPosition, target: str) -> trio.Datum:
 
 def complete_scores(output: Any, encoded: EncodedPosition) -> dict[str, float]:
     if len(output.loss_fn_outputs) != len(encoded.coordinates):
-        raise AppError("SCORE_SHAPE", "返回的评分样本数量与合法候选数量不同", 502)
+        raise AppError("SCORE_SHAPE", "Returned score count differs from the legal candidate count", 502)
     scores = {}
     for coordinate, loss_output in zip(encoded.coordinates, output.loss_fn_outputs, strict=True):
         values = np.asarray(loss_output["logprobs"].to_numpy())
         expected = (len(encoded.prefix),)
         if values.shape != expected:
-            raise AppError("SCORE_SHAPE", f"候选评分形状不完整，期望 {expected}", 502)
+            raise AppError("SCORE_SHAPE", f"Incomplete candidate score shape; expected {expected}", 502)
         score = float(values[-1])
         if not math.isfinite(score) or score > 1e-5:
-            raise AppError("SCORE_INVALID", "候选分数不是有限的有效 logprob", 502)
+            raise AppError("SCORE_INVALID", "Candidate score is not a valid finite logprob", 502)
         scores[coordinate] = score
     return scores
 
@@ -140,7 +140,7 @@ class PytrioPolicy:
                 self.service = trio.ServiceClient(api_key=self.api_key)
             training = self.service.create_training_client_from_state(self.model_path)
             if training.model_id != self.base_model:
-                raise AppError("MODEL_MISMATCH", "恢复的基座与对局配置不一致", 502)
+                raise AppError("MODEL_MISMATCH", "Restored base model does not match the game configuration", 502)
             tokenizer = training.get_tokenizer()
             self.training, self.tokenizer = training, tokenizer
 
@@ -177,7 +177,7 @@ class SamplingPolicy:
             values = self.sampler.compute_logprobs(trio.ModelInput.from_ints(tokens)).result()
             if (len(values) != len(tokens) or values[-1] is None
                     or not math.isfinite(values[-1]) or values[-1] > 1e-5):
-                raise AppError("REFERENCE_INCOMPLETE", "逐候选接口没有返回目标 token 分数", 502)
+                raise AppError("REFERENCE_INCOMPLETE", "Per-candidate API did not return the target token score", 502)
             scores[move] = float(values[-1])
         return scores
 
@@ -195,7 +195,7 @@ class SamplingPolicy:
 def generated_coordinate(tokens: list[int], encoded: EncodedPosition) -> str:
     if (len(tokens) != 1 or type(tokens[0]) is not int
             or tokens[0] not in encoded.symbol_tokens):
-        raise AppError("POLICY_ILLEGAL_OUTPUT", "模型没有返回单个合法候选符号", 502, True)
+        raise AppError("POLICY_ILLEGAL_OUTPUT", "Model did not return one legal candidate symbol", 502, True)
     return encoded.coordinates[encoded.symbol_tokens.index(tokens[0])]
 
 
@@ -225,7 +225,7 @@ class GenerationPolicy:
                 base_model=self.base_model, model_path=self.model_path,
             )
             if sampler.model_id != self.base_model:
-                raise AppError("MODEL_MISMATCH", "恢复的基座与对局配置不一致", 502)
+                raise AppError("MODEL_MISMATCH", "Restored base model does not match the game configuration", 502)
             self.sampler, self.tokenizer = sampler, sampler.get_tokenizer()
 
     def _generate(self, encoded: EncodedPosition) -> dict[str, Any]:
@@ -234,7 +234,7 @@ class GenerationPolicy:
             sampling_params=trio.SamplingParams(**GENERATION_SETTINGS), return_text=False,
         ).result()
         if len(response.sequences) != 1:
-            raise AppError("POLICY_OUTPUT_SHAPE", "模型返回的序列数量不同于请求", 502, True)
+            raise AppError("POLICY_OUTPUT_SHAPE", "Model returned a different number of sequences than requested", 502, True)
         tokens = response.sequences[0].tokens
         coordinate = generated_coordinate(tokens, encoded)
         return {"coordinate": coordinate, "generated_token": tokens[0],
@@ -266,8 +266,8 @@ def create_policy(
     if mode == GENERATION_MODE:
         return GenerationPolicy(api_key, base_model, model_path, template_version=template_version)
     if template_version != TEMPLATE_VERSION:
-        raise ValueError("规则特征模板只支持单 token 生成模式")
+        raise ValueError("Rule feature template supports only single-token generation")
     if mode == SCORING_MODE:
         return (PytrioPolicy(api_key, base_model, model_path) if model_path
                 else SamplingPolicy(api_key, base_model))
-    raise ValueError("未知的 PyTRIO 落子模式")
+    raise ValueError("Unknown PyTRIO move mode")

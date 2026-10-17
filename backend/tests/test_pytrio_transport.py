@@ -84,7 +84,7 @@ def test_nontransient_errors_and_cancellation_are_not_retried(monkeypatch, no_ba
 def test_sdk_upgrade_requires_review_before_modifying_transport(monkeypatch):
     original = EventGetActorMixin.get_event
     monkeypatch.setattr(pytrio_transport.importlib.metadata, "version", lambda _: "future-version")
-    with pytest.raises(RuntimeError, match="兼容性"):
+    with pytest.raises(RuntimeError, match="compatibility"):
         pytrio_transport.enable_event_get_retries()
     assert EventGetActorMixin.get_event is original
 
@@ -191,7 +191,7 @@ def test_sdk_upgrade_refuses_both_training_wrappers(monkeypatch):
     original_get = EventGetActorMixin.get_event
     original_submit = EventSubmitActorMixin.submit_event
     monkeypatch.setattr(pytrio_transport.importlib.metadata, "version", lambda _: "future-version")
-    with pytest.raises(RuntimeError, match="兼容性"):
+    with pytest.raises(RuntimeError, match="compatibility"):
         pytrio_transport.enable_training_event_retries()
     assert EventGetActorMixin.get_event is original_get
     assert EventSubmitActorMixin.submit_event is original_submit

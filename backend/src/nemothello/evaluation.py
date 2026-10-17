@@ -23,9 +23,9 @@ def evaluate_positions(
     mode: str = GENERATION_MODE,
 ) -> dict[str, Any]:
     if output.exists():
-        raise ValueError("评测输出已存在，请使用新文件保留原始证据")
+        raise ValueError("Evaluation output already exists. Use a new file to preserve original evidence")
     if limit < 1 or not np.isfinite(equivalent_margin) or equivalent_margin < 0:
-        raise ValueError("评测数量须为正，近似等价容差不能为负")
+        raise ValueError("Evaluation count must be positive and equivalence tolerance must be nonnegative")
     splits = {name: read_jsonl(dataset / f"{name}.jsonl")
               for name in ("train", "validation", "test")}
     ids = {name: {r["game_id"] for r in rows} for name, rows in splits.items()}
@@ -33,7 +33,7 @@ def evaluate_positions(
         ids[a] & ids[b] for a, b in (("train", "validation"), ("train", "test"),
                                     ("validation", "test"))
     ):
-        raise ValueError("评测需要非空且整盘互斥的三组数据")
+        raise ValueError("Evaluation requires three nonempty splits with no shared games")
     samples = list(splits["test"])
     random.Random(seed).shuffle(samples)
     samples = samples[:limit]
@@ -47,10 +47,10 @@ def evaluate_positions(
                 or set(coordinates) != set(position.moves) or len(coordinates) != len(position.moves)
                 or analysis["board"] != sample["board"] or analysis["turn"] != position.turn
                 or analysis["score_perspective"] != position.turn):
-            raise ValueError("测试局面或完整老师评分与合法点不一致")
+            raise ValueError("Test position or full teacher scores differ from legal moves")
         scores = {c["coordinate"]: float(c["score"]) for c in candidates}
         if any(not np.isfinite(v) for v in scores.values()) or scores[sample["target"]] != max(scores.values()):
-            raise ValueError("老师目标与实际候选分数不一致")
+            raise ValueError("Teacher target differs from actual candidate scores")
     policies = {"base": create_policy(api_key, base_model, None, mode),
                 "trained": create_policy(api_key, base_model, model_path, mode)}
     records: list[dict[str, Any]] = []
@@ -71,7 +71,7 @@ def evaluate_positions(
                 move = decision["coordinate"]
                 if (move not in scores or (mode == SCORING_MODE
                                           and set(decision["scores"]) != set(scores))):
-                    raise ValueError("模型落子或候选评分不合法")
+                    raise ValueError("Model move or candidate scores are invalid")
             except AppError as error:
                 if mode != GENERATION_MODE or error.code not in (
                     "POLICY_ILLEGAL_OUTPUT", "POLICY_OUTPUT_SHAPE",
@@ -97,7 +97,7 @@ def evaluate_positions(
                             "teacher_score_loss": regret, "decision": decision,
                             "analysis_settings": sample["analysis"]["settings"]})
             write_json(output, report)
-        print(f"局面对照：{sample_index + 1}/{len(samples)}", flush=True)
+        print(f"Position comparison: {sample_index + 1}/{len(samples)}", flush=True)
     for name in policies:
         group = [r for r in records if r["policy"] == name]
         buckets = {"all": group}
@@ -136,9 +136,9 @@ def evaluate_positions(
         "excluded_positions": len(paired) - len(comparable),
     }
     report["status"] = "completed"
-    report["limits"] = ("仅衡量固定老师设置的选点一致性与评分损失；棋力需独立对弈评测。"
-                        "近似等价不表示真实等价或必胜。平均损失只含合法输出，配对差异只含双方均合法的局面；"
-                        "非法输出单列合法率，不补造分数。")
+    report["limits"] = ("Measures move agreement and score loss against fixed teacher settings; strength requires separate match evaluation. "
+                        "Approximate equivalence does not establish actual equivalence or a forced win. Mean loss includes only legal outputs; paired differences include only positions where both outputs are legal. "
+                        "Report legality separately for invalid outputs; never invent missing scores.")
     write_json(output, report)
     return report
 

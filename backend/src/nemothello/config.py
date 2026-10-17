@@ -27,9 +27,9 @@ class Settings(BaseSettings):
     def validate_resources(self) -> None:
         for path in (self.edax_executable, self.edax_eval_file):
             if not path.is_file():
-                raise ValueError(f"缺少必需文件：{path}")
+                raise ValueError(f"Required file is missing: {path}")
         if not self.backend_service_token.get_secret_value().strip():
-            raise ValueError("服务凭据不能为空")
+            raise ValueError("Service token must not be empty")
         if (bool(self.token_factory_api_key.get_secret_value().strip())
                 != bool(self.token_factory_model_id.strip())):
-            raise ValueError("Token Factory 密钥与模型 ID 必须同时配置；均留空时仅复盘讲解不可用")
+            raise ValueError("Token Factory key and model ID must be configured together; leave both empty to disable review explanations")

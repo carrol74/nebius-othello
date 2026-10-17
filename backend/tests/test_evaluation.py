@@ -83,6 +83,6 @@ def test_existing_evidence_cannot_be_overwritten(tmp_path, monkeypatch):
         pytest.fail("No paid client may be created when evidence already exists")
 
     monkeypatch.setattr(evaluation, "create_policy", forbidden)
-    with pytest.raises(ValueError, match="评测输出已存在"):
+    with pytest.raises(ValueError, match="Evaluation output already exists"):
         evaluation.evaluate_positions("", "base", "adapter", tmp_path / "missing", output, 42)
     assert output.read_text() == "original evidence"

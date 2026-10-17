@@ -29,16 +29,16 @@ def calibrate_generation(
 ) -> dict[str, Any]:
     """Check generation independently of the legacy cross-engine score comparison."""
     if output.exists():
-        raise ValueError("校准输出已存在，请使用新文件保留原始证据")
+        raise ValueError("Calibration output already exists. Use a new file to preserve original evidence")
     if (limit < 2 or repeats < 3 or not math.isfinite(tolerance) or tolerance < 0
             or bool(model_path) != bool(sampler_path)):
-        raise ValueError("至少两条样本、三次重复；恢复需提供配对的 Train 和 Sampler 路径")
+        raise ValueError("At least two samples and three repeats are required; restoration requires paired Train and Sampler paths")
     encoder = encode_position if template_version is None else position_encoder(template_version)
     active_template = TEMPLATE_VERSION if template_version is None else template_version
     policy_options = {} if template_version is None else {"template_version": template_version}
     samples = read_jsonl(data)
     if len(samples) < limit:
-        raise ValueError("样本数量不足")
+        raise ValueError("Not enough samples")
     selected = sorted(samples, key=lambda sample: len(sample["candidates"]))
     selected = [selected[index] for index in np.linspace(0, len(selected) - 1, limit, dtype=int)]
     for sample in selected:
@@ -50,7 +50,7 @@ def calibrate_generation(
         "generation_settings": dict(GENERATION_SETTINGS), "repeat_count": repeats,
         "source_model_path": model_path, "source_sampler_path": sampler_path,
         "tolerance": tolerance, "data_path": str(data), "samples": [], "checks": {},
-        "scope": "编码、Train 保存恢复、单请求生成的合法性和选点稳定性；不证明棋力。",
+        "scope": "Encoding, Train save/restore, and single-request move legality and stability; does not establish strength.",
     }
     write_json(output, report)
     trio.configure(request_timeout_seconds=90, control_retry_timeout_seconds=30,
@@ -60,17 +60,17 @@ def calibrate_generation(
     training = (service.create_training_client_from_state(model_path) if model_path else
                 service.create_lora_training_client(base_model=base_model, rank=32, seed=42))
     if training.model_id != base_model:
-        raise ValueError("Train 检查点与基座不一致")
+        raise ValueError("Train checkpoint differs from the base model")
     tokenizer = training.get_tokenizer()
     before_forward = []
     for sample in selected:
         encoded = encoder(tokenizer, tuple(sample["board"]), sample["turn"])
         if list(encoded.coordinates) != sample["candidates"]:
-            raise ValueError("候选排列与训练标签不一致")
+            raise ValueError("Candidate order differs from training labels")
         datum = training_datum(encoded, sample["target"])
         result = training.forward([datum], loss_fn="cross_entropy", auto_shift=False).result()
         before_forward.append((sample, encoded, datum, answer_logprob(result, len(encoded.prefix))))
-        print(f"生成校准编码与监督：{len(before_forward)}/{limit}", flush=True)
+        print(f"Generation calibration encoding and supervision: {len(before_forward)}/{limit}", flush=True)
     saved = training.save_state(name=f"{name}-train", ttl_seconds=None).result()
     sampler_saved = training.save_weights_for_sampler(name=f"{name}-sampler", ttl_seconds=None).result()
     report.update(model_path=saved.path, sampler_path=sampler_saved.path,
@@ -90,7 +90,7 @@ def calibrate_generation(
             recovered_encoded = encoder(policy.tokenizer, tuple(sample["board"]), sample["turn"])
             if (recovered_encoded.prefix != encoded.prefix
                     or recovered_encoded.symbol_tokens != encoded.symbol_tokens):
-                raise ValueError("采样器编码与训练编码不一致")
+                raise ValueError("Sampler encoding differs from training encoding")
         recovered = recovered_training.forward([datum], loss_fn="cross_entropy", auto_shift=False).result()
         difference = abs(score - answer_logprob(recovered, len(encoded.prefix)))
         row = {"game_id": sample["game_id"], "ply": sample["ply"],
@@ -116,8 +116,8 @@ def calibrate_generation(
         checks["sampler_restore_selection"] &= matched
         report["samples"].append(row)
         write_json(output, report)
-        print(f"生成校准对照：{len(report['samples'])}/{limit}，合法 {legal}，"
-              f"重复稳定 {stable}，恢复选点一致 {matched}，权重恢复误差 {difference:.6g}", flush=True)
+        print(f"Generation calibration comparison: {len(report['samples'])}/{limit}, legal {legal}, "
+              f"repeat stability {stable}, restored move agreement {matched}, weight restoration error {difference:.6g}", flush=True)
     report["checks"] = checks
     decisions = [item for row in report["samples"] for key in ("before", "after")
                  for item in row[key]]
@@ -136,14 +136,14 @@ def calibrate_generation(
     report["status"] = "passed" if all(checks.values()) else "failed"
     write_json(output, report)
     if report["status"] != "passed":
-        raise ValueError(f"单 token 生成校准失败，记录见 {output}")
+        raise ValueError(f"Single-token generation calibration failed; see {output}")
     return report
 
 
 def answer_logprob(output: Any, length: int) -> float:
     if len(output.loss_fn_outputs) != 1:
-        raise ValueError("监督评分数量不完整")
+        raise ValueError("Supervised score count is incomplete")
     values = output.loss_fn_outputs[0]["logprobs"].to_numpy()
     if values.shape != (length,) or not np.isfinite(values).all() or values[-1] > 1e-5:
-        raise ValueError("监督评分形状或数值无效")
+        raise ValueError("Supervised score shape or values are invalid")
     return float(values[-1])

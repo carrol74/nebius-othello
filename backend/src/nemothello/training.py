@@ -34,9 +34,9 @@ def calibrate(
 ) -> dict[str, Any]:
     samples = read_jsonl(data)
     if limit < 2 or len(samples) < limit:
-        raise ValueError("评分核验至少需要两条样本，样本数量需达到指定 limit")
+        raise ValueError("Scoring verification requires at least two samples and enough samples for the requested limit")
     if not math.isfinite(tolerance) or tolerance < 0:
-        raise ValueError("评分核验容差必须为有限的非负数")
+        raise ValueError("Scoring tolerance must be finite and nonnegative")
     selected = sorted(samples, key=lambda s: len(s["candidates"]))
     indices = np.linspace(0, len(selected) - 1, limit, dtype=int)
     selected = [selected[i] for i in indices]
@@ -62,7 +62,7 @@ def calibrate(
         before.append((sample, encoded, complete_scores(result, encoded), result.metrics))
         report["forward_samples"] = len(before)
         write_json(output, report)
-        print(f"校准初始评分：{len(before)}/{limit}", flush=True)
+        print(f"Calibration initial scores: {len(before)}/{limit}", flush=True)
     saved = training.save_state(name=f"{name}-train", ttl_seconds=None).result()
     sampler_saved = training.save_weights_for_sampler(
         name=f"{name}-sampler", ttl_seconds=None,
@@ -77,7 +77,7 @@ def calibrate(
     for sample, encoded, scores, metrics in before:
         reference_encoded = encode_position(reference.tokenizer, tuple(sample["board"]), sample["turn"])
         if reference_encoded.prefix != encoded.prefix or reference_encoded.symbol_tokens != encoded.symbol_tokens:
-            raise ValueError("恢复采样器的 tokenizer 编码与原始评分不同")
+            raise ValueError("Restored sampler tokenization differs from the original scoring input")
         reference_scores = reference.score_encoded(encoded)
         recovered = restored.score(tuple(sample["board"]), sample["turn"])
         restored_scores = recovered["scores"]
@@ -112,14 +112,14 @@ def calibrate(
                      "order_changed_selection": max(scores, key=scores.get) != max(reordered, key=reordered.get),
                      "metrics": metrics, "restored_elapsed_ms": recovered["elapsed_ms"]})
         write_json(output, report)
-        print(f"校准对照与恢复：{len(rows)}/{limit}，误差 {difference:.6g}/{recovery_difference:.6g}，"
-              f"批次顺序误差 {batch_order_difference:.6g}",
+        print(f"Calibration comparison and restoration: {len(rows)}/{limit}, error {difference:.6g}/{recovery_difference:.6g}, "
+              f"batch order error {batch_order_difference:.6g}",
               flush=True)
     report["batch_order_checked"] = True
     report["status"] = "passed" if passed else "failed"
     write_json(output, report)
     if not passed:
-        raise ValueError(f"评分或恢复核验失败，记录见 {output}")
+        raise ValueError(f"Scoring or restoration verification failed; see {output}")
     return report
 
 
@@ -140,7 +140,7 @@ def validate_loss(
     total = sum(batch["answer_loss_sum"] for batch in completed)
     batches = (len(datums) + batch_size - 1) // batch_size
     if completed:
-        print(f"复用已保存的验证批次：{len(completed)}/{batches}", flush=True)
+        print(f"Reusing saved validation batches: {len(completed)}/{batches}", flush=True)
     for start in range(len(completed) * batch_size, len(datums), batch_size):
         batch = datums[start:start + batch_size]
         output = training.forward(batch, loss_fn="cross_entropy", auto_shift=False).result()
@@ -152,20 +152,20 @@ def validate_loss(
         if cache_path is not None:
             atomic_json(cache_path, record)
         total += loss
-        print(f"验证批次已完成：{len(completed)}/{batches}", flush=True)
+        print(f"Validation batches completed: {len(completed)}/{batches}", flush=True)
     return total / len(datums)
 
 
 def validate_training_output(output: Any, lengths: list[int]) -> None:
     if len(output.loss_fn_outputs) != len(lengths):
-        raise ValueError("训练返回的答案数量不完整，停止优化器更新")
+        raise ValueError("Training returned an incomplete answer count; stopping optimizer update")
     for item, length in zip(output.loss_fn_outputs, lengths, strict=True):
         values = np.asarray(item["logprobs"].to_numpy())
         if (values.shape != (length,) or not np.isfinite(values).all()
                 or values[-1] > 1e-5):
-            raise ValueError("训练答案形状或数值无效，停止优化器更新")
+            raise ValueError("Training answer shape or values are invalid; stopping optimizer update")
     if any(not math.isfinite(value) for value in output.metrics.values()):
-        raise ValueError("训练返回非有限指标，停止优化器更新")
+        raise ValueError("Training returned nonfinite metrics; stopping optimizer update")
 
 
 def train(
@@ -176,10 +176,10 @@ def train(
 ) -> dict[str, Any]:
     policy_mode = calibration.get("scoring_mode", "")
     if not calibration_passed(calibration, base_model, policy_mode):
-        raise ValueError("训练前需要当前基座与模板的真实评分核验记录")
+        raise ValueError("Training requires live scoring verification for the current base model and template")
     if (rank < 4 or rank > 64 or batch_size < 1 or epochs < 1 or checkpoint_every < 1
             or not math.isfinite(learning_rate) or learning_rate <= 0):
-        raise ValueError("训练参数不在有效范围")
+        raise ValueError("Training parameters are outside valid ranges")
     examples = read_jsonl(dataset / "train.jsonl")
     validation = read_jsonl(dataset / "validation.jsonl")
     test = read_jsonl(dataset / "test.jsonl")
@@ -188,10 +188,10 @@ def train(
             validate_sample(sample)
     groups = [{item["game_id"] for item in group} for group in (examples, validation, test)]
     if not all(groups) or any(groups[a] & groups[b] for a, b in ((0, 1), (0, 2), (1, 2))):
-        raise ValueError("训练、验证、测试集必须非空且没有共享对局")
+        raise ValueError("Training, validation, and test splits must be nonempty with no shared games")
     calibration_ids = {sample["game_id"] for sample in calibration["samples"]}
     if not calibration_ids <= groups[0]:
-        raise ValueError("评分校准样本必须来自本次训练集")
+        raise ValueError("Scoring calibration samples must come from the current training split")
     identity = {
         "base_model": base_model, "rank": rank, "learning_rate": learning_rate,
         "batch_size": batch_size, "seed": seed, "template_version": TEMPLATE_VERSION,
@@ -215,24 +215,24 @@ def train(
     if resume:
         config = json.loads((output / "training-config.json").read_text())
         if any(config.get(key) != value for key, value in identity.items()):
-            raise ValueError("续训需要原来的基座、训练配置与整盘数据划分")
+            raise ValueError("Resuming requires the original base model, training configuration, and game-level data splits")
         if json.loads((output / "dataset-manifest.json").read_text()) != dataset_manifest:
-            raise ValueError("训练局面、标签、候选或顺序已经变化，不能沿用原优化器续训")
+            raise ValueError("Training positions, labels, candidates, or order changed; cannot resume the original optimizer")
         if (output / "training-progress.json").exists():
             progress = json.loads((output / "training-progress.json").read_text())
         elif (output / "training-history.json").exists():
             history = json.loads((output / "training-history.json").read_text())
             if not history:
-                raise ValueError("续训需要已保存的训练检查点")
+                raise ValueError("Resuming requires a saved training checkpoint")
             progress = {"version": 1, "next_epoch": len(history), "next_batch": 0,
                         "state_path": history[-1]["state_path"], "history": history, "updates": []}
         else:
-            raise ValueError("原任务没有已保存的训练检查点，不能从本地损失记录续训")
+            raise ValueError("The original task has no saved checkpoint; local loss records cannot resume training")
         validate_progress(progress, batches, epochs)
         history = progress["history"]
         checkpoint_path = progress["state_path"]
     elif output.exists() and any(output.iterdir()):
-        raise ValueError("输出目录已有产物；续训使用 --resume，新实验使用新目录")
+        raise ValueError("Output directory contains artifacts. Use --resume to continue or a new directory for a new experiment")
     # A failed POST may already have mutated gradients. Recover from a checkpoint
     # in another process rather than retrying an uncertain event on this run.
     trio.configure(training_retry_timeout_seconds=0, training_event_max_in_flight=1,
@@ -246,12 +246,12 @@ def train(
         training.load_state_with_optimizer(checkpoint_path).result()
     tokenizer = training.get_tokenizer()
     if resume and tokenizer.chat_template != config["chat_template"]:
-        raise ValueError("tokenizer 的聊天模板已经变化，不能沿用原编码续训")
+        raise ValueError("Tokenizer chat template changed; cannot resume with the original encoding")
 
     def datum(item: dict[str, Any]):
         encoded = encode_position(tokenizer, tuple(item["board"]), item["turn"])
         if tuple(item["candidates"]) != encoded.coordinates:
-            raise ValueError("样本候选排列与训练编码不同")
+            raise ValueError("Sample candidate order differs from training encoding")
         return training_datum(encoded, item["target"]), len(encoded.prefix)
 
     encoded_training = [datum(item) for item in examples]
@@ -296,7 +296,7 @@ def train(
             name=f"{name}-{invocation_id}-e{epoch + 1}-b{batch}", ttl_seconds=604800,
         ).result()
         commit_progress(epoch, batch, updates, saved.path)
-        print(f"训练检查点已保存：轮次 {epoch + 1}，已完成批次 {batch}", flush=True)
+        print(f"Training checkpoint saved: epoch {epoch + 1}, completed batches {batch}", flush=True)
 
     epoch, updates = start_epoch, []
     try:
@@ -326,7 +326,7 @@ def train(
                 atomic_json(output / f"epoch-{epoch + 1}-updates.json", updates)
                 if len(updates) % checkpoint_every == 0 or len(updates) == batches:
                     snapshot(epoch, len(updates), updates)
-                print(f"训练轮次 {epoch + 1}/{epochs}，批次 {len(updates)}/{batches}", flush=True)
+                print(f"Training epoch {epoch + 1}/{epochs}, batch {len(updates)}/{batches}", flush=True)
             loss = validate_loss(training, validation_datums, batch_size,
                                  output / f"epoch-{epoch + 1}-validation.json", progress["state_path"])
             checkpoint = training.save_state(

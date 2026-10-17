@@ -23,7 +23,7 @@ def decision_positions(report):
                 decision = game["decisions"][decision_index]
                 if (decision["coordinate"] != move
                         or decision["candidate_count"] != len(position.moves)):
-                    raise ValueError("保存的模型调用与棋谱不一致")
+                    raise ValueError("Saved model calls differ from the game history")
                 yield {"opening_id": game["opening_id"], "color": game["color"],
                        "opponent": game["opponent"], "opponent_level": report["edax_level"],
                        "ply": len(opening["moves"]) + offset, "board": list(position.board),
@@ -33,7 +33,7 @@ def decision_positions(report):
             position, _ = position.play(move)
         if (decision_index != len(game["decisions"]) or position.result() != game["result"]
                 or list(position.board) != game["board"]):
-            raise ValueError("败局回放或调用数量不一致")
+            raise ValueError("Loss replay or call count is inconsistent")
 
 
 def analyze_failures(sources: list[Path], dataset: Path, edax, output: Path, resume=False):
@@ -47,27 +47,27 @@ def analyze_failures(sources: list[Path], dataset: Path, edax, output: Path, res
     for path in sources:
         report = json.loads(path.read_text())
         if report["status"] != "completed":
-            raise ValueError("诊断需要完整对弈报告")
+            raise ValueError("Diagnosis requires a complete match report")
         positions.extend({"source": str(path.resolve()), **row} for row in decision_positions(report))
     if not positions:
-        raise ValueError("报告中没有可分析的微调模型败局决策")
+        raise ValueError("Report has no fine-tuned model decisions from lost games to analyze")
     known = {name: {(tuple(row["board"]), row["turn"])
                     for row in read_jsonl(dataset / f"{name}.jsonl")}
              for name in ("train", "validation", "test")}
     if output.exists():
         if not resume:
-            raise ValueError("诊断输出已存在，请显式恢复，不能覆盖证据")
+            raise ValueError("Diagnosis output already exists. Resume explicitly; do not overwrite evidence")
         report = json.loads(output.read_text())
         if any(report.get(k) != v for k, v in identity.items()):
-            raise ValueError("诊断来源或引擎设置改变，不能恢复")
+            raise ValueError("Diagnosis source or engine settings changed; cannot resume")
         for expected, recorded in zip(positions, report["records"], strict=False):
             if any(recorded.get(k) != v for k, v in expected.items()):
-                raise ValueError("已有诊断与棋谱位置不匹配")
+                raise ValueError("Saved diagnosis does not match the history position")
         if len(report["records"]) > len(positions):
-            raise ValueError("诊断记录数量超出来源")
+            raise ValueError("Diagnosis record count exceeds the source count")
     else:
         if resume:
-            raise ValueError("没有可恢复的诊断")
+            raise ValueError("No diagnosis is available to resume")
         report = {**identity, "status": "running", "expected_positions": len(positions),
                   "records": [], "summary": {}, "quarantined_for_training": True}
     atomic_json(output, report)
@@ -78,12 +78,12 @@ def analyze_failures(sources: list[Path], dataset: Path, edax, output: Path, res
             if ({c["coordinate"] for c in candidates} != set(row["candidates"])
                     or len(candidates) != len(row["candidates"])
                     or analysis["score_perspective"] != row["turn"]):
-                raise ValueError("老师评分与局面合法候选不一致")
+                raise ValueError("Teacher scores differ from the position's legal candidates")
             scores = {c["coordinate"]: c for c in candidates}
             selected = scores[row["selected"]]
             best = max(candidates, key=lambda c: c["score"])
             if not all(np.isfinite(c["score"]) for c in candidates):
-                raise ValueError("老师分数必须完整且有限")
+                raise ValueError("Teacher scores must be complete and finite")
             empty = sum(r.count(".") for r in row["board"])
             key = (tuple(row["board"]), row["turn"])
             record = {**row, "stage": "opening" if empty >= 44 else "middle" if empty >= 20 else "end",
@@ -96,7 +96,7 @@ def analyze_failures(sources: list[Path], dataset: Path, edax, output: Path, res
             report["records"].append(record)
             atomic_json(output, report)
             if len(report["records"]) % 20 == 0 or len(report["records"]) == len(positions):
-                print(f"败局标注：{len(report['records'])}/{len(positions)}", flush=True)
+                print(f"Loss labeling: {len(report['records'])}/{len(positions)}", flush=True)
     except Exception as error:
         report.update(status="interrupted", error_type=type(error).__name__)
         atomic_json(output, report)

@@ -78,7 +78,7 @@ class Games:
         selected = self.opponent
         if difficulty is not None:
             if difficulty not in self.difficulty_opponents:
-                raise AppError("DIFFICULTY_UNAVAILABLE", "所选难度不可用", 422)
+                raise AppError("DIFFICULTY_UNAVAILABLE", "Selected difficulty is unavailable", 422)
             selected = self.difficulty_opponents[difficulty]
         payload = {"operation": "create_game", "human_color": human_color,
                    "difficulty": difficulty}
@@ -99,7 +99,7 @@ class Games:
         if initial is None:
             initial = Position()
         if initial.turn is None or not initial.moves:
-            raise AppError("BRANCH_POSITION", "分支起点必须是可落子的非终局状态", 422)
+            raise AppError("BRANCH_POSITION", "A branch must start from an unfinished position with legal moves", 422)
         return {
             "game_id": str(uuid4()), "revision": 0, "board": list(initial.board),
             "turn": initial.turn, "human_color": human_color, "status": "active",
@@ -116,14 +116,14 @@ class Games:
     def opponent_of(self, game: dict[str, Any]) -> EdaxOpponent:
         selected = self.opponents_by_id.get(game["opponent_config_id"])
         if selected is None:
-            raise AppError("OPPONENT_CHANGED", "原对手配置不可用，不能替换后继续或重演", 503)
+            raise AppError("OPPONENT_CHANGED", "The original opponent is unavailable. This game cannot continue or replay with a replacement", 503)
         return selected
 
     def hint_engine_of(self, game: dict[str, Any]) -> Edax:
         level = game.get("hint_level") or self.edax.level
         engine = self.hint_engines.get(level)
         if engine is None:
-            raise AppError("HINT_ENGINE_CHANGED", "原提示等级不可用，无法继续使用该提示配置", 503)
+            raise AppError("HINT_ENGINE_CHANGED", "The saved hint level is unavailable", 503)
         return engine
 
     def review_engine_of(self, game: dict[str, Any]) -> Edax:
@@ -132,12 +132,12 @@ class Games:
 
     def check_turn(self, game: dict[str, Any], revision: int, human: bool) -> None:
         if game["revision"] != revision:
-            raise AppError("STALE_REVISION", "棋盘状态已更新，请重新获取对局")
+            raise AppError("STALE_REVISION", "The board has changed. Refresh the game")
         if game["status"] != "active":
-            raise AppError("GAME_FINISHED", "该对局已经结束")
+            raise AppError("GAME_FINISHED", "This game has finished")
         expected = game["human_color"] if human else opponent(game["human_color"])
         if game["turn"] != expected:
-            raise AppError("WRONG_TURN", "当前不属于请求方回合")
+            raise AppError("WRONG_TURN", "It is not the requested player's turn")
 
     def move(
         self, owner: str, game_id: str, request_id: str, revision: int,
@@ -152,7 +152,7 @@ class Games:
                 return cached
             game = self.store.get("game", game_id, owner)
             if game.get("auto_play") and not automated:
-                raise AppError("BRANCH_RUNNING", "提示重演正在处理，请等待任务结束")
+                raise AppError("BRANCH_RUNNING", "Hint replay is running. Wait for it to finish")
             self.check_turn(game, revision, human)
             decision = None
             if not human:
@@ -172,7 +172,7 @@ class Games:
                     hint = self.store.get("hint", hint_id, owner, db)
                     if (hint["game_id"] != game_id or hint["revision"] != revision
                             or hint["recommended_move"] != coordinate):
-                        raise AppError("HINT_STRATEGY_MISMATCH", "重演落子与实际提示证据不一致", 500)
+                        raise AppError("HINT_STRATEGY_MISMATCH", "Replay move does not match the hint evidence", 500)
                     updated.setdefault("automatic_hint_moves", []).append({
                         "revision": revision, "hint_id": hint_id, "coordinate": coordinate,
                         "analysis_settings": hint["analysis"]["settings"],
@@ -190,7 +190,7 @@ class Games:
         with self.locks[game_id]:
             game = self.store.get("game", game_id, owner)
             if game.get("auto_play") and not automated:
-                raise AppError("BRANCH_RUNNING", "提示重演正在处理，请等待任务结束")
+                raise AppError("BRANCH_RUNNING", "Hint replay is running. Wait for it to finish")
             self.check_turn(game, revision, True)
             analysis = self.hint_engine_of(game).analyze(tuple(game["board"]), game["turn"])
             hint = {
@@ -214,13 +214,13 @@ class Games:
         def operation(db: Connection) -> dict[str, Any]:
             hint = self.store.get("hint", hint_id, owner, db)
             if hint["game_id"] != game_id or hint["revision"] != revision:
-                raise AppError("STALE_HINT", "提示与请求的棋盘不一致")
+                raise AppError("STALE_HINT", "Hint does not match the requested board")
             game = self.store.get("game", game_id, owner, db)
             if game.get("branch_mode") == "follow_hints":
-                raise AppError("AUTOMATIC_HINT", "自动重演的提示由后台记录，不属于人工展示")
+                raise AppError("AUTOMATIC_HINT", "Automatic replay hints are recorded by the worker, not as human displays")
             known_revisions = {0, *(event["revision"] for event in game["history"])}
             if revision not in known_revisions:
-                raise AppError("STALE_HINT", "提示局面不存在")
+                raise AppError("STALE_HINT", "Hint position does not exist")
             hint["displayed"] = True
             self.store.save(db, "hint", hint_id, owner, hint)
             return {"hint_id": hint_id, "displayed": True}
@@ -240,7 +240,7 @@ class Games:
             else:
                 events = [event for event in parent["history"] if event["revision"] == revision]
                 if not events:
-                    raise AppError("BRANCH_REVISION", "未找到该分支起点", 422)
+                    raise AppError("BRANCH_REVISION", "Branch starting position was not found", 422)
                 initial = Position(tuple(events[0]["board"]), events[0]["turn"])
             branch = self.new_game(parent["human_color"], initial, selected,
                                    parent.get("difficulty"),
@@ -261,12 +261,12 @@ class Games:
     ) -> dict[str, Any]:
         tasks = self.store.list_records("task", owner, db)
         if sum(task["status"] in ("queued", "running") for task in tasks) >= self.task_limit:
-            raise AppError("TASK_LIMIT", "已有任务正在处理，请稍后再创建", 429, True)
+            raise AppError("TASK_LIMIT", "Tasks are already running. Please try again later", 429, True)
         active = db.execute(
             "SELECT COUNT(*) FROM records WHERE kind='task' AND status IN ('queued','running')"
         ).fetchone()[0]
         if active >= self.task_queue_limit:
-            raise AppError("TASK_QUEUE_FULL", "任务队列已满，请稍后再试", 429, True)
+            raise AppError("TASK_QUEUE_FULL", "Task queue is full. Please try again later", 429, True)
         task = {
             "task_id": str(uuid4()), "game_id": game_id, "kind": kind,
             "status": "queued", "inputs": inputs, "result": None, "error": None,
@@ -287,7 +287,7 @@ class Games:
         def operation(db: Connection) -> dict[str, Any]:
             game = self.store.get("game", game_id, owner, db)
             if game["status"] != "finished":
-                raise AppError("REVIEW_REQUIRES_END", "对局结束后才能生成讲解")
+                raise AppError("REVIEW_REQUIRES_END", "Explanations require a finished game")
             if question:
                 self.store.get("review", game_id, owner, db)
             else:

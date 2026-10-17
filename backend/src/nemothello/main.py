@@ -93,7 +93,7 @@ def session(
 ) -> str:
     expected = "Bearer " + request.app.state.settings.backend_service_token.get_secret_value()
     if not secrets.compare_digest(authorization, expected):
-        raise AppError("UNAUTHORIZED", "服务凭据无效", 401)
+        raise AppError("UNAUTHORIZED", "Invalid service token", 401)
     settings = request.app.state.settings
     request.app.state.store.admit_request(
         x_session_id, settings.request_limit_per_session, settings.request_limit_global,
@@ -116,18 +116,18 @@ async def app_error(request: Request, exc: AppError):
 @app.exception_handler(RequestValidationError)
 async def invalid_input(request: Request, exc: RequestValidationError):
     return JSONResponse(status_code=422, content={
-        "code": "INVALID_INPUT", "message": "请求字段缺失或格式不正确",
+        "code": "INVALID_INPUT", "message": "Request fields are missing or invalid",
         "request_id": request.headers.get("x-request-id"), "retryable": False,
     })
 
 
 @app.exception_handler(Exception)
 async def service_error(request: Request, exc: Exception):
-    logger.exception("服务请求失败 path=%s", request.url.path)
+    logger.exception("Service request failed path=%s", request.url.path)
     upstream = isinstance(exc, httpx.HTTPError)
     return JSONResponse(status_code=502 if upstream else 500, content={
         "code": "UPSTREAM_FAILED" if upstream else "SERVICE_ERROR",
-        "message": "外部服务请求失败，请重试" if upstream else "服务处理失败，请检查日志",
+        "message": "Upstream service request failed. Please try again" if upstream else "Service request failed. Check service logs",
         "request_id": request.headers.get("x-request-id"), "retryable": upstream,
     })
 

@@ -24,14 +24,14 @@ def find_checkpoint(rest: Any, model_path: str):
         for checkpoint in page.checkpoints:
             if checkpoint.path == model_path:
                 if checkpoint.checkpoint_type != "sampler":
-                    raise ValueError("部署备份需要 sampler adapter，不能使用完整优化器检查点")
+                    raise ValueError("Deployment backup requires a sampler adapter, not a full optimizer checkpoint")
                 return checkpoint
         if not page.checkpoints or page.cursor is None:
             break
         offset = page.cursor.offset + page.cursor.limit
         if offset >= page.cursor.total_count:
             break
-    raise ValueError("账户中未找到元数据指定的 sampler checkpoint")
+    raise ValueError("Sampler checkpoint specified by metadata was not found in the account")
 
 
 def backup_adapter(
@@ -40,19 +40,19 @@ def backup_adapter(
     metadata = json.loads(metadata_path.read_text())
     if (metadata.get("artifact_kind") != "trained-policy"
             or not metadata.get("model_path") or not metadata.get("sampler_path")):
-        raise ValueError("备份需要真实训练产物的 adapter-metadata.json")
+        raise ValueError("Backup requires adapter-metadata.json from actual training output")
     if destination.exists():
-        raise ValueError("备份目录已经存在，请选择新的输出目录")
+        raise ValueError("Backup directory already exists. Choose a new output directory")
     temporary_root.mkdir(parents=True, exist_ok=True)
     service = trio.ServiceClient(api_key=api_key)
     rest = service.create_rest_client()
     checkpoint = find_checkpoint(rest, metadata["sampler_path"])
     source = urlsplit(checkpoint.path)
     if source.scheme != "trio" or not source.netloc:
-        raise ValueError("Sampler 检查点缺少可核验的训练任务来源")
+        raise ValueError("Sampler checkpoint has no verifiable training task source")
     training_run = rest.get_training_run(source.netloc).result()
     if training_run.base_model != metadata["base_model"] or not training_run.is_lora:
-        raise ValueError("检查点来源的基座或 LoRA 类型与训练元数据不同")
+        raise ValueError("Checkpoint base model or LoRA type differs from training metadata")
     with tempfile.TemporaryDirectory(prefix="adapter-", dir=temporary_root) as directory:
         work = Path(directory)
         archive = work / "checkpoint.archive"
@@ -68,19 +68,19 @@ def backup_adapter(
             with tarfile.open(archive) as source:
                 source.extractall(extracted, filter="data")
         else:
-            raise ValueError("下载结果不是可识别的 ZIP 或 TAR 权重归档")
+            raise ValueError("Download is not a recognized ZIP or TAR weights archive")
         configs = list(extracted.rglob("adapter_config.json"))
         if len(configs) != 1:
-            raise ValueError("下载归档必须包含一份 PEFT adapter_config.json")
+            raise ValueError("Downloaded archive must contain exactly one PEFT adapter_config.json")
         adapter_root = configs[0].parent
         if not (adapter_root / "adapter_model.safetensors").is_file():
-            raise ValueError("下载归档缺少 adapter_model.safetensors")
+            raise ValueError("Downloaded archive lacks adapter_model.safetensors")
         config = json.loads(configs[0].read_text())
         original_base = config.get("base_model_name_or_path")
         if not matches_peft_base(original_base, metadata["base_model"]):
-            raise ValueError("PEFT 配置中的基座与训练元数据不同")
+            raise ValueError("PEFT base model differs from training metadata")
         if config.get("peft_type") != "LORA" or config.get("r") != training_run.lora_rank:
-            raise ValueError("PEFT 类型或 rank 与平台训练任务不同")
+            raise ValueError("PEFT type or rank differs from the platform training task")
         shutil.copytree(adapter_root, destination / "adapter")
         if original_base != metadata["base_model"]:
             shutil.copy2(configs[0], destination / "adapter" / "adapter_config.original.json")
@@ -101,7 +101,7 @@ def backup_adapter(
             "adapter_directory": str((destination / "adapter").resolve()),
             "files": sorted(str(path.relative_to(destination)) for path in destination.rglob("*")
                             if path.is_file()),
-            "limits": "归档与 PEFT 文件结构已检查；本地加载与托管恢复评分须独立验证。",
+            "limits": "Archive and PEFT file structure checked; local loading and hosted restored scoring require separate verification.",
         }
         write_json(destination / "backup-metadata.json", report)
     return report

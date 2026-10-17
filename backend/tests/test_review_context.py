@@ -33,20 +33,21 @@ def test_real_engine_evidence_retains_move_revision_and_each_color_perspective()
         f"{event['revision']}:{event['actor']}:{event['coordinate']}" for event in evidence["history"])
     for original, position in zip(evidence["key_moves"], context["positions"], strict=True):
         assert position["revision"] == original["revision"]
-        color = "黑方" if original["actor"] == "X" else "白方"
-        assert f"{color}实际落子 {original['actual_move']}" in position["fact"]
-        assert f"{color}视角" in position["fact"]
+        color = "Black" if original["actor"] == "X" else "White"
+        assert f"{color} played {original['actual_move']}" in position["fact"]
+        assert f"{color}'s perspective" in position["fact"]
         for candidate in position["candidates"]:
             after = apply_move(tuple(position["board"]), original["actor"], candidate["coordinate"])
             assert candidate["opponent_legal_moves_after"] == list(legal_moves(after, opponent(original["actor"])))
+            assert candidate["opponent_legal_move_count_after"] == len(candidate["opponent_legal_moves_after"])
 
 
 def test_question_fetches_requested_position_without_reusing_generated_explanation():
     evidence = native_evidence()
     evidence["key_moves"] = evidence["evidence"][:1]
-    before = review_context(evidence, "针对局面版本 1：为什么这样下？")
-    evidence["explanation"] = "上一轮生成的文字"
-    after = review_context(evidence, "针对局面版本 1：为什么这样下？")
+    before = review_context(evidence, "For position revision 1: Why this move?")
+    evidence["explanation"] = "Previously generated explanation"
+    after = review_context(evidence, "For position revision 1: Why this move?")
     assert before == after
     assert [item["revision"] for item in after["positions"]] == [0, 1]
     assert [item["revision"] for item in review_context(evidence, None)["positions"]] == [0]

@@ -50,7 +50,7 @@ def test_product_settings_need_no_pytrio_or_review_credentials(tmp_path):
     assert settings.edax_opponent_level == 2
     assert settings.edax_level == 8
     settings.token_factory_model_id = "test-model"
-    with pytest.raises(ValueError, match="同时配置"):
+    with pytest.raises(ValueError, match="configured together"):
         settings.validate_resources()
 
 

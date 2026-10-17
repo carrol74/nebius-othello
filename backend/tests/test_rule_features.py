@@ -111,9 +111,9 @@ def test_runtime_uses_explicit_template_for_actual_score_path(monkeypatch, templ
 
 
 def test_unknown_template_and_legacy_feature_combination_fail_before_api_access():
-    with pytest.raises(ValueError, match="未知"):
+    with pytest.raises(ValueError, match="Unknown"):
         create_policy("", "test", "saved", template_version="unknown")
-    with pytest.raises(ValueError, match="只支持"):
+    with pytest.raises(ValueError, match="supports only"):
         create_policy("", "test", "saved", SCORING_MODE, FEATURE_TEMPLATE_VERSION)
 
 

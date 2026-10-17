@@ -13,7 +13,7 @@ from nemothello.schemas import GameState, Review, Task
 class DemoVerification:
     def __init__(self, base_url: str, service_token: str, output: Path, task_timeout: float):
         if not service_token.strip() or task_timeout <= 0:
-            raise ValueError("真实服务验证需要服务凭据和正的任务超时")
+            raise ValueError("Live verification requires a service token and a positive task timeout")
         self.owner = str(uuid4())
         self.output, self.task_timeout = output, task_timeout
         self.http = httpx.Client(
@@ -24,7 +24,7 @@ class DemoVerification:
             "status": "running", "source": "live-backend-api", "session_id": self.owner,
             "requests": [],
             "games": {}, "checks": [],
-            "limits": "验证真实服务流程；未验证浏览器渲染和实际提示展示，不记录提示展示事实。",
+            "limits": "Verifies live service flows; does not verify browser rendering or actual hint display, and does not record hint displays.",
         }
 
     def request(self, method: str, path: str, body: dict | None = None, expected: int = 200, **kwargs):
@@ -36,7 +36,7 @@ class DemoVerification:
         })
         write_json(self.output, self.report)
         if response.status_code != expected:
-            raise ValueError(f"{method} {path} 返回 {response.status_code}，期望 {expected}")
+            raise ValueError(f"{method} {path} returned {response.status_code}, expected {expected}")
         return response.json()
 
     def check(self, condition: bool, name: str) -> None:
@@ -53,10 +53,10 @@ class DemoVerification:
                 return task
             if task["status"] == "failed":
                 self.report["failed_task"] = task
-                raise ValueError(f"真实任务执行失败：{task['task_id']}")
+                raise ValueError(f"Live task failed: {task['task_id']}")
             if time.monotonic() >= deadline:
                 self.report["unfinished_task"] = task
-                raise TimeoutError("任务观察超时，任务仍可能在后端运行；不得据此重复创建任务")
+                raise TimeoutError("Task observation timed out. The task may still be running; do not submit a duplicate")
             time.sleep(1)
             task = self.request("GET", f"tasks/{task['task_id']}")
 
@@ -67,7 +67,7 @@ class DemoVerification:
                            if event["kind"] == "move"], initial)
         if (list(position.board) != game["board"] or position.turn != game["turn"]
                 or list(position.moves) != game["legal_moves"] or position.result() != game["result"]):
-            raise ValueError("服务棋盘、合法点或结果与保存棋谱的回放不同")
+            raise ValueError("Service board, legal moves, or result differs from history replay")
         return game
 
     def run(self) -> dict[str, Any]:
@@ -75,15 +75,15 @@ class DemoVerification:
             create = {"human_color": "X", "request_id": str(uuid4())}
             original = self.game(self.request("POST", "games", create))
             game_id = original["game_id"]
-            self.check(self.request("POST", "games", create) == original, "重复创建请求返回同一盘")
+            self.check(self.request("POST", "games", create) == original, "Repeated creation returns the same game")
             self.request("GET", f"games/{game_id}", expected=404,
                          headers={"X-Session-ID": str(uuid4())})
-            self.report["checks"].append("另一会话不能读取对局")
+            self.report["checks"].append("Another session cannot read the game")
             hint = self.request("POST", f"games/{game_id}/hint", {"expected_revision": 0})
             self.check(
                 {c["coordinate"] for c in hint["analysis"]["candidates"]} == set(original["legal_moves"])
                 and hint["recommended_move"] in original["legal_moves"],
-                "真实 Edax 分析覆盖全部合法候选",
+                "Live Edax analysis covers all legal moves",
             )
             for step in range(61):
                 if original["status"] == "finished":
@@ -98,23 +98,23 @@ class DemoVerification:
                 next_game = self.game(self.request("POST", path, body))
                 if step == 0:
                     self.check(self.request("POST", path, body) == next_game,
-                               "重复落子请求返回原结果")
+                               "Repeated move request returns the original result")
                     stale = {**body, "request_id": str(uuid4())}
                     error = self.request("POST", path, stale, expected=409)
-                    self.check(error["code"] == "STALE_REVISION", "旧版本的新请求被拒绝")
+                    self.check(error["code"] == "STALE_REVISION", "New request with a stale revision is rejected")
                 original = next_game
-            self.check(original["status"] == "finished", "真实对手完成完整对局")
+            self.check(original["status"] == "finished", "Live opponent completes a full game")
             self.report["games"]["original"] = original
             review_task = self.request("POST", f"games/{game_id}/reviews", {"request_id": str(uuid4())})
             self.wait_task(review_task)
             review = Review.model_validate(self.request("GET", f"games/{game_id}/review"))
-            self.check(bool(review.explanation.strip()) and bool(review.model_id), "真实复盘返回模型身份与讲解")
-            self.check(review.hint_adoption.shown_turns == 0, "程序查询分析没有冒充提示已展示")
+            self.check(bool(review.explanation.strip()) and bool(review.model_id), "Live review returns model identity and explanation")
+            self.check(review.hint_adoption.shown_turns == 0, "Programmatic analysis does not claim hints were displayed")
             self.report["review"] = review.model_dump(mode="json")
             question = self.wait_task(self.request("POST", f"games/{game_id}/review/questions", {
-                "request_id": str(uuid4()), "question": "请引用一个具体局面版本，说明这盘的主要改进。",
+                "request_id": str(uuid4()), "question": "Reference a specific position revision and explain the main improvement for this game.",
             }))
-            self.check(bool(question["result"]["answer"].strip()), "真实复盘追问返回回答")
+            self.check(bool(question["result"]["answer"].strip()), "Live review question returns an answer")
             self.report["question"] = question["result"]
             manual = self.game(self.request("POST", f"games/{game_id}/branches", {
                 "request_id": str(uuid4()), "revision": 0, "mode": "manual",
@@ -129,10 +129,10 @@ class DemoVerification:
             }))
             branch = self.game(self.request("GET", f"games/{branch_task['game_id']}"))
             self.check(branch["status"] == "finished" and not branch["auto_play"],
-                       "按提示重演保存真实终局并结束自动推进")
+                       "Hint replay saves the actual result and finishes automatic play")
             self.check(branch["opponent_config_id"] == original["opponent_config_id"]
-                       and branch["parent_game_id"] == game_id, "分支保留原盘与对手配置")
-            self.check(self.request("GET", f"games/{game_id}") == original, "分支没有改写原棋谱")
+                       and branch["parent_game_id"] == game_id, "Branch retains its parent game and opponent configuration")
+            self.check(self.request("GET", f"games/{game_id}") == original, "Branch does not change the original history")
             self.report["games"]["hint_branch"] = branch
             self.report["status"] = "completed"
             return self.report

@@ -67,7 +67,7 @@ def test_generation_gate_rejects_invalid_evidence_before_training(tmp_path, fail
         report["samples"][0]["max_restore_difference"] = 0.1
     else:
         report["tolerance"] = 0.3
-    with pytest.raises(ValueError, match="真实评分核验"):
+    with pytest.raises(ValueError, match="live scoring verification"):
         train("", report["base_model"], tmp_path / "missing", tmp_path / "output",
               "must-not-start", report)
     assert not (tmp_path / "output").exists()

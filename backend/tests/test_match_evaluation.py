@@ -83,10 +83,10 @@ def test_resume_rejects_changed_configuration_before_paid_calls(tmp_path, monkey
     match_evaluation.run_matches("", "base", "adapter", openings(), Engine(),
                                  output, 42, interval, pilot=True)
     monkeypatch.setattr(match_evaluation, "create_policy", lambda *args: pytest.fail("paid call"))
-    with pytest.raises(ValueError, match="恢复配置"):
+    with pytest.raises(ValueError, match="Resume configuration"):
         match_evaluation.run_matches("", "base", "other", openings(), Engine(),
                                      output, 42, interval, pilot=True, resume=True)
-    with pytest.raises(ValueError, match="输出已存在"):
+    with pytest.raises(ValueError, match="output already exists"):
         match_evaluation.run_matches("", "base", "adapter", openings(), Engine(),
                                      output, 42, interval, pilot=True)
 
@@ -103,10 +103,10 @@ def test_selected_opponent_does_not_repeat_other_games(tmp_path, monkeypatch):
     assert all(r["opponent"] == "edax" for r in report["records"])
     assert all("random" not in key for key in report["summary"])
     monkeypatch.setattr(match_evaluation, "create_policy", lambda *args: pytest.fail("paid call"))
-    with pytest.raises(ValueError, match="恢复配置"):
+    with pytest.raises(ValueError, match="Resume configuration"):
         match_evaluation.run_matches("", "base", "adapter", openings(), Engine(),
                                      output, 42, interval, pilot=True, resume=True, opponents=("edax",))
-    with pytest.raises(ValueError, match="恢复配置"):
+    with pytest.raises(ValueError, match="Resume configuration"):
         match_evaluation.run_matches("", "base", "adapter", openings(), engine,
                                      output, 42, interval, pilot=True, resume=True)
 
@@ -130,7 +130,7 @@ def test_saved_reference_is_used_and_cannot_change_on_resume(tmp_path, monkeypat
     original = output.read_bytes()
     monkeypatch.setattr(match_evaluation, "create_policy", lambda *args: pytest.fail("paid call"))
     for reference in (None, "other"):
-        with pytest.raises(ValueError, match="恢复配置"):
+        with pytest.raises(ValueError, match="Resume configuration"):
             match_evaluation.run_matches("", "base", "candidate", openings(), Engine(),
                 output, 42, interval, pilot=True, resume=True, opponents=("edax",),
                 baseline_model_path=reference)
@@ -145,7 +145,7 @@ def test_legacy_report_means_untrained_reference(tmp_path, monkeypatch):
     report.pop("baseline_model_path")
     output.write_text(json.dumps(report))
     monkeypatch.setattr(match_evaluation, "create_policy", lambda *args: pytest.fail("paid call"))
-    with pytest.raises(ValueError, match="恢复配置"):
+    with pytest.raises(ValueError, match="Resume configuration"):
         match_evaluation.run_matches("", "base", "candidate", openings(), Engine(),
             output, 42, interval, pilot=True, resume=True, opponents=("edax",),
             baseline_model_path="reference")

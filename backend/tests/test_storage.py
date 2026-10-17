@@ -16,7 +16,7 @@ def test_idempotency_and_owner_isolation(tmp_path):
     second = store.mutate("session-1", "request-1", {"color": "X"}, operation)
     assert first == second
     assert len(store.list_records("game", "session-1")) == 1
-    with pytest.raises(AppError, match="不同操作"):
+    with pytest.raises(AppError, match="different operations"):
         store.mutate("session-1", "request-1", {"color": "O"}, operation)
     with pytest.raises(AppError) as error:
         store.get("game", "game-1", "session-2")
@@ -28,7 +28,7 @@ def test_failed_transaction_does_not_save_partial_state(tmp_path):
 
     def operation(db):
         store.save(db, "game", "game-1", "session-1", {"revision": 1})
-        raise ValueError("真实事务失败")
+        raise ValueError("Actual transaction failure")
 
     with pytest.raises(ValueError):
         store.mutate("session-1", "request-1", {}, operation)
@@ -70,10 +70,10 @@ def test_worker_ownership_is_exclusive_and_released(tmp_path):
     second = Store(path)
     with (
         first.exclusive_worker(),
-        pytest.raises(RuntimeError, match="只允许一个后端 worker"),
+        pytest.raises(RuntimeError, match="Only one backend worker"),
         second.exclusive_worker(),
     ):
-        pytest.fail("第二个 worker 不应获得同一数据库的执行权")
+        pytest.fail("A second worker must not acquire ownership of the same database")
     with second.exclusive_worker(), second.transaction() as db:
         second.save(db, "game", "game-1", "session-1", {"revision": 0})
     assert first.get("game", "game-1", "session-1")["revision"] == 0

@@ -31,17 +31,17 @@ def write_jsonl(path: Path, records: list[dict[str, Any]]) -> None:
 def validate_sample(sample: dict[str, Any]) -> None:
     moves = legal_moves(tuple(sample["board"]), sample["turn"])
     if sample["candidates"] != list(moves) or sample["target"] not in moves:
-        raise ValueError("样本候选或老师目标与合法点不同")
+        raise ValueError("Sample candidates or teacher targets differ from legal moves")
     analysis = Analysis.model_validate(sample["analysis"])
     if (analysis.board != sample["board"] or analysis.turn != sample["turn"]
             or analysis.score_perspective != sample["turn"]
             or [c.coordinate for c in analysis.candidates] != list(moves)):
-        raise ValueError("老师完整评分与样本局面不同")
+        raise ValueError("Full teacher analysis differs from the sample position")
     scores = {c.coordinate: c.score for c in analysis.candidates}
     if (any(not math.isfinite(v) for v in scores.values())
             or analysis.recommended_move != sample["target"]
             or scores[sample["target"]] != max(scores.values())):
-        raise ValueError("老师目标与真实最高候选评分不同")
+        raise ValueError("Teacher target differs from the actual highest-scoring candidate")
 
 
 def canonical_board(board: Board) -> str:
@@ -56,7 +56,7 @@ def canonical_board(board: Board) -> str:
 
 def generate_openings(count: int, plies: int, seed: int) -> list[dict[str, Any]]:
     if count < 1 or plies < 4 or plies > 20:
-        raise ValueError("开局数量必须为正，开局步数须为 4–20")
+        raise ValueError("Opening count must be positive and opening length must be 4–20 plies")
     rng = random.Random(seed)
     openings, seen = [], set()
     for _ in range(count * 1000):
@@ -74,14 +74,14 @@ def generate_openings(count: int, plies: int, seed: int) -> list[dict[str, Any]]
                              "moves": moves, "board": list(position.board), "turn": position.turn})
             if len(openings) == count:
                 return openings
-    raise ValueError("无法生成足够的非对称重复开局，请增加开局步数")
+    raise ValueError("Could not generate enough symmetry-distinct openings. Increase opening length")
 
 
 def generate_games(
     edax: Edax, count: int, seed: int, excluded_openings: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
     if count < 10:
-        raise ValueError("至少生成十盘，以便按整盘划分三组")
+        raise ValueError("Generate at least ten games to split into three groups by game")
     excluded = {(canonical_board(tuple(o["board"])), o["turn"]) for o in excluded_openings}
     rng = random.Random(seed)
     games, seen_games = [], set()
@@ -111,14 +111,14 @@ def generate_games(
                       "strategy": "random-first-8-then-edax"})
         if len(games) == count:
             return games
-    raise ValueError("排除评测开局后未能生成足够对局")
+    raise ValueError("Not enough games could be generated after excluding evaluation openings")
 
 
 def prepare_dataset(games: list[dict[str, Any]], output: Path, seed: int) -> dict[str, Any]:
     if len(games) < 10 or len({game["game_id"] for game in games}) != len(games):
-        raise ValueError("需要至少十盘且 game_id 不能重复")
+        raise ValueError("At least ten games with unique game_id values are required")
     if len({tuple(game["moves"]) for game in games}) != len(games):
-        raise ValueError("完整棋谱重复，不能通过不同 game_id 跨集合使用同一盘")
+        raise ValueError("Duplicate histories cannot appear in different splits under different game_id values")
     shuffled = list(games)
     random.Random(seed).shuffle(shuffled)
     train_end, validation_end = int(len(games) * 0.8), int(len(games) * 0.9)
@@ -130,14 +130,14 @@ def prepare_dataset(games: list[dict[str, Any]], output: Path, seed: int) -> dic
         for game in group:
             position = Position()
             if len(game["positions"]) != len(game["moves"]):
-                raise ValueError("局面样本数量与原始棋谱不一致")
+                raise ValueError("Position sample count differs from the source history")
             for ply, (sample, actual) in enumerate(zip(game["positions"], game["moves"], strict=True)):
                 validate_sample(sample)
                 validate_board(tuple(sample["board"]))
                 if tuple(sample["board"]) != position.board or sample["turn"] != position.turn:
-                    raise ValueError("原始局面与棋谱回放不一致")
+                    raise ValueError("Source position differs from history replay")
                 if sample["candidates"] != list(position.moves) or sample["target"] not in position.moves:
-                    raise ValueError("候选或老师目标与合法点不一致")
+                    raise ValueError("Candidates or teacher targets differ from legal moves")
                 if len(position.moves) > 1:
                     records.append({"game_id": game["game_id"], "ply": ply,
                                     "board": sample["board"], "turn": sample["turn"],
@@ -145,7 +145,7 @@ def prepare_dataset(games: list[dict[str, Any]], output: Path, seed: int) -> dic
                                     "analysis": sample["analysis"]})
                 position, _ = position.play(actual)
             if position.result() != game["result"]:
-                raise ValueError("原始棋谱终局结果不一致")
+                raise ValueError("Source history has an inconsistent final result")
         write_jsonl(output / f"{name}.jsonl", records)
         keys[name] = Counter((tuple(item["board"]), item["turn"]) for item in records)
         summary[name] = {"games": len(group), "positions": len(records),

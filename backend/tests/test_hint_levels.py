@@ -17,7 +17,7 @@ def client(tmp_path, monkeypatch):
     executable = Path(os.environ.get("TEST_EDAX_EXECUTABLE", root / "deploy/edax/edax"))
     weights = Path(os.environ.get("TEST_EDAX_EVAL_FILE", root / "deploy/edax/eval.dat"))
     if not executable.is_file() or not weights.is_file():
-        pytest.skip("需要真实 Edax 程序和 eval.dat；可用 TEST_EDAX_EXECUTABLE/TEST_EDAX_EVAL_FILE 指定")
+        pytest.skip("Native Edax and eval.dat are required; set TEST_EDAX_EXECUTABLE/TEST_EDAX_EVAL_FILE")
     for name, value in {
         "EDAX_EXECUTABLE": str(executable.resolve()), "EDAX_EVAL_FILE": str(weights.resolve()),
         "EDAX_VERSION": "4.6", "EDAX_LEVEL": "8", "EDAX_OPPONENT_LEVEL": "2",
@@ -59,7 +59,7 @@ def test_real_hint_routes_by_game_and_branch_keeps_saved_level(client, difficult
          hint_id=hint["hint_id"])
     post(client, f"/games/{game['game_id']}/moves", expected_revision=0,
          coordinate=hint["recommended_move"])
-    # 调整新对局预设后，既有对局和分支仍保留已保存的提示等级。
+    # Existing games and branches retain their saved hint level when defaults change.
     app.state.games.difficulty_hints[difficulty] = app.state.games.edax
     branch = post(client, f"/games/{game['game_id']}/branches", revision=0, mode="manual")
     assert branch["hint_level"] == level

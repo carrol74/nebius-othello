@@ -82,7 +82,7 @@ class GameState(BaseModel):
     initial_board: BoardRows
     initial_turn: Color
     opponent_config_id: str
-    opponent_name: str = "历史对手"
+    opponent_name: str = "Previous opponent"
     difficulty: Difficulty | None = None
     hint_level: int | None = Field(default=None, ge=1, le=10)
     result: GameResult | None
@@ -219,9 +219,9 @@ class Task(BaseModel):
         expected = {"review": Review, "branch": BranchResult, "question": QuestionResult}[self.kind]
         if self.status == "succeeded":
             if not isinstance(self.result, expected):
-                raise ValueError("任务结果与任务种类不一致")
+                raise ValueError("Task result does not match the task kind")
         elif self.result is not None:
-            raise ValueError("未完成任务不能包含成功结果")
+            raise ValueError("Unfinished tasks cannot contain a successful result")
         return self
 
 

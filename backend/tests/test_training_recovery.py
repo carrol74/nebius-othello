@@ -42,7 +42,7 @@ def test_resume_rejects_inconsistent_progress(change):
         invalid["updates"][1]["batch"] = 0
     else:
         invalid["state_path"] = ""
-    with pytest.raises(ValueError, match="不能续训"):
+    with pytest.raises(ValueError, match="cannot resume"):
         validate_progress(invalid, 5, 2)
 
 
@@ -107,7 +107,7 @@ def test_supervisor_does_not_retry_stale_failure_report(monkeypatch, tmp_path):
 
 
 def test_missing_training_answers_are_rejected_before_optimizer():
-    with pytest.raises(ValueError, match="答案数量不完整"):
+    with pytest.raises(ValueError, match="incomplete answer count"):
         validate_training_output(SimpleNamespace(loss_fn_outputs=[], metrics={}), [85])
 
 

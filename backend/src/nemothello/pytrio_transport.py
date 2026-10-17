@@ -17,7 +17,7 @@ RETRIED_SUBMIT_TYPES = frozenset({EventType.TRAINER_FORWARD_BACKWARD,
 
 def _check_sdk_version() -> None:
     if importlib.metadata.version("pytrio") != "0.2.9":
-        raise RuntimeError("事件重试适配器只验证了 PyTRIO 0.2.9，请先检查 SDK 兼容性")
+        raise RuntimeError("Event retry adapter is verified only with PyTRIO 0.2.9; check SDK compatibility first")
 
 
 def _transient(error: ActorEventGetError | ActorEventSubmitError) -> bool:
@@ -47,7 +47,7 @@ def enable_event_get_retries() -> None:
             except ActorEventGetError as error:
                 if not _transient(error) or attempt == 3:
                     raise
-                logger.warning("重试读取训练事件 %s，下一次查询 %s/3", event_id, attempt + 1)
+                logger.warning("Retry reading training event %s, next attempt %s/3", event_id, attempt + 1)
                 await asyncio.sleep(attempt)
 
     get_with_retries._nemothello_read_retry = True
@@ -78,7 +78,7 @@ def enable_training_event_retries() -> None:
             except ActorEventSubmitError as error:
                 if not _transient(error) or attempt == 3:
                     raise
-                logger.warning("重试提交同一训练事件 %s，下一次提交 %s/3",
+                logger.warning("Retry submitting the same training event %s, next attempt %s/3",
                                envelope.event_id, attempt + 1)
                 await asyncio.sleep(attempt)
 
