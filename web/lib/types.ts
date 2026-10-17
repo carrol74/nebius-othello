@@ -3,6 +3,7 @@ import type { components } from "./generated-api";
 export type TeachingComparison = components["schemas"]["TeachingComparison"];
 export type TeachingMove = components["schemas"]["TeachingMove"];
 export type TeachingFrame = components["schemas"]["TeachingFrame"];
+export type TeachingDefense = components["schemas"]["TeachingDefense"];
 
 export type Color = "X" | "O";
 export type Difficulty = "easy" | "medium" | "hard";

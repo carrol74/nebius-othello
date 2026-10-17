@@ -44,6 +44,11 @@ p { line-height: 1.7; }
 .teaching-choices button[aria-pressed="true"] { border-color: var(--accent); background: #283425; }
 .concrete-lesson { max-width: 66ch; font-size: 15px; }
 .concrete-lesson p { margin: 10px 0; }
+.coaching-question { max-width: 66ch; margin: 20px 0; }
+.coaching-question p { font-size: 16px; line-height: 1.8; }
+.coaching-question-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.coaching-question-actions button { font-size: 14px; }
+.defense-feedback { flex-basis: 100%; margin: 6px 0; color: var(--accent); line-height: 1.7; }
 .teaching-steps { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0; }
 .teaching-steps button { display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-size: 13px; }
 .teaching-steps small { color: var(--muted); font-size: 11px; }
