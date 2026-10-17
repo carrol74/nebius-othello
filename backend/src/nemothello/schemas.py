@@ -84,6 +84,7 @@ class GameState(BaseModel):
     opponent_config_id: str
     opponent_name: str = "历史对手"
     difficulty: Difficulty | None = None
+    hint_level: int | None = Field(default=None, ge=1, le=10)
     result: GameResult | None
     parent_game_id: str | None = None
     parent_revision: int | None = None
@@ -150,6 +151,7 @@ class ReviewHint(BaseModel):
     hint_id: str
     revision: int
     recommended_move: Coordinate
+    analysis_settings: AnalysisSettings | None = None
 
 
 class HintAdoption(BaseModel):

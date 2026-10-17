@@ -1284,6 +1284,19 @@
             ],
             "title": "Difficulty"
           },
+          "hint_level": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hint Level"
+          },
           "result": {
             "anyOf": [
               {
@@ -1905,6 +1918,16 @@
             "type": "string",
             "pattern": "^[a-h][1-8]$",
             "title": "Recommended Move"
+          },
+          "analysis_settings": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalysisSettings"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",

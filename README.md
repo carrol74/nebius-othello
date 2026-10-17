@@ -4,6 +4,8 @@ An Othello app with an Edax opponent, optional move hints, and post-game review 
 
 The backend owns board rules, games, hint records, and branch replay. Separate Edax processes provide opponent moves and analysis. Nemotron explains completed games using the saved game and engine evidence, and answers review questions.
 
+Beginner, intermediate, and advanced opponents use Edax levels 1, 4, and 8; their move hints use levels 4, 8, and 10. Games save their hint level, and branches inherit it. `EDAX_LEVEL` sets the general analysis level and minimum review level; reviews use at least the game's hint level. Search levels do not guarantee a win.
+
 ## Structure
 
 - `web/`: Next.js board, game history, hints, reviews, and backend proxy.

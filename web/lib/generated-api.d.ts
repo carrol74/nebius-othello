@@ -408,6 +408,8 @@ export interface components {
             opponent_name: string;
             /** Difficulty */
             difficulty?: ("easy" | "medium" | "hard") | null;
+            /** Hint Level */
+            hint_level?: number | null;
             result: components["schemas"]["GameResult"] | null;
             /** Parent Game Id */
             parent_game_id?: string | null;
@@ -609,6 +611,7 @@ export interface components {
             revision: number;
             /** Recommended Move */
             recommended_move: string;
+            analysis_settings?: components["schemas"]["AnalysisSettings"] | null;
         };
         /** ReviewLookup */
         ReviewLookup: {

@@ -95,6 +95,7 @@ class Tasks:
         hints = [hint for hint in self.store.list_records("hint", owner)
                  if hint["game_id"] == game_id and hint["displayed"]]
         position = Position(tuple(game["initial_board"]), game["initial_turn"])
+        engine = self.games.review_engine_of(game)
         revision = 0
         evidence = []
         for event in game["history"]:
@@ -103,7 +104,7 @@ class Tasks:
                 continue
             if self.stop.is_set():
                 raise AppError("SERVICE_STOPPING", "服务停止中断复盘，请重新创建任务", 503)
-            analysis = self.games.edax.analyze(position.board, position.turn)
+            analysis = engine.analyze(position.board, position.turn)
             candidates = analysis["candidates"]
             actual = next(c for c in candidates if c["coordinate"] == event["coordinate"])
             best = max(candidates, key=lambda c: c["score"])
@@ -132,7 +133,8 @@ class Tasks:
             "branch_mode": game.get("branch_mode"),
             "automatic_hint_moves": game.get("automatic_hint_moves", []),
             "hints": [{"hint_id": hint["hint_id"], "revision": hint["revision"],
-                       "recommended_move": hint["recommended_move"]} for hint in hints],
+                       "recommended_move": hint["recommended_move"],
+                       "analysis_settings": hint["analysis"]["settings"]} for hint in hints],
             "hint_adoption": {"shown_turns": sum(bool(item["shown_hint_ids"]) for item in evidence),
                               "adopted_turns": sum(item["adopted_hint"] for item in evidence)},
         }

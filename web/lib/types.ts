@@ -31,6 +31,7 @@ export interface GameState {
   opponent_config_id: string;
   opponent_name: string;
   difficulty: Difficulty | null;
+  hint_level: number | null;
   result: GameResult | null;
   parent_game_id: string | null;
   parent_revision: number | null;
@@ -76,7 +77,12 @@ export interface Review {
   history: Pick<HistoryEvent, "event_index" | "actor" | "kind" | "coordinate" | "revision">[];
   explanation: string;
   evidence: ReviewEvidence[];
-  hints: { hint_id: string; revision: number; recommended_move: string }[];
+  hints: {
+    hint_id: string;
+    revision: number;
+    recommended_move: string;
+    analysis_settings?: Analysis["settings"] | null;
+  }[];
   hint_adoption: { shown_turns: number; adopted_turns: number };
   result: GameResult;
   human_color: Color;

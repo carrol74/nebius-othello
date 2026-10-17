@@ -14,7 +14,7 @@ from nemothello.edax import Edax
 from nemothello.errors import AppError
 from nemothello.games import Games
 from nemothello.nemotron import Nemotron
-from nemothello.opponents import DIFFICULTY_LEVELS, EdaxOpponent
+from nemothello.opponents import DIFFICULTY_LEVELS, HINT_LEVELS, EdaxOpponent
 from nemothello.schemas import (
     Analysis,
     AnalyzeRequest,
@@ -48,6 +48,12 @@ async def lifespan(app: FastAPI):
         store.recover_tasks()
         edax = Edax(settings.edax_executable, settings.edax_eval_file,
                     settings.edax_version, settings.edax_level, settings.edax_timeout_seconds)
+        hint_engines = {
+            level: Edax(settings.edax_executable, settings.edax_eval_file,
+                        settings.edax_version, level, settings.edax_timeout_seconds)
+            for level in set(HINT_LEVELS.values()) - {edax.level}
+        }
+        hint_engines[edax.level] = edax
         opponent_engines = {
             level: Edax(settings.edax_executable, settings.edax_eval_file,
                         settings.edax_version, level, settings.edax_timeout_seconds)
@@ -59,7 +65,8 @@ async def lifespan(app: FastAPI):
                             settings.token_factory_base_url, settings.token_factory_model_id)
         games = Games(store, opponent, edax, settings.task_limit_per_session,
                       settings.task_queue_limit,
-                      {name: opponents[level] for name, level in DIFFICULTY_LEVELS.items()})
+                      {name: opponents[level] for name, level in DIFFICULTY_LEVELS.items()},
+                      {name: hint_engines[level] for name, level in HINT_LEVELS.items()})
         tasks = Tasks(store, games, nemotron)
         app.state.settings, app.state.games, app.state.store = settings, games, store
         worker = asyncio.create_task(tasks.run())
@@ -70,7 +77,8 @@ async def lifespan(app: FastAPI):
             try:
                 await worker
             finally:
-                edax.close()
+                for engine in hint_engines.values():
+                    engine.close()
                 for engine in opponent_engines.values():
                     engine.close()
                 nemotron.close()

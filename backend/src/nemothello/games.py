@@ -52,6 +52,7 @@ class Games:
         edax: Edax, task_limit: int,
         task_queue_limit: int = 16,
         difficulty_opponents: dict[Difficulty, EdaxOpponent] | None = None,
+        difficulty_hints: dict[Difficulty, Edax] | None = None,
     ) -> None:
         self.store = store
         self.opponent = opponent
@@ -60,6 +61,10 @@ class Games:
             item.config_id: item for item in [opponent, *self.difficulty_opponents.values()]
         }
         self.edax = edax
+        self.difficulty_hints = difficulty_hints or {}
+        self.hint_engines = {
+            engine.level: engine for engine in [edax, *self.difficulty_hints.values()]
+        }
         self.task_limit = task_limit
         self.task_queue_limit = task_queue_limit
         self.locks: defaultdict[str, RLock] = defaultdict(RLock)
@@ -88,6 +93,7 @@ class Games:
     def new_game(
         self, human_color: str, initial: Position | None = None,
         selected: EdaxOpponent | None = None, difficulty: Difficulty | None = None,
+        hint_level: int | None = None,
     ) -> dict[str, Any]:
         selected = selected or self.opponent
         if initial is None:
@@ -101,6 +107,8 @@ class Games:
             "initial_board": list(initial.board), "initial_turn": initial.turn,
             "opponent_config_id": selected.config_id,
             "opponent_name": selected.name, "difficulty": difficulty,
+            "hint_level": (hint_level if hint_level is not None
+                           else self.difficulty_hints.get(difficulty, self.edax).level),
             "opponent_config": dict(selected.configuration),
             "parent_game_id": None, "parent_revision": None,
         }
@@ -110,6 +118,17 @@ class Games:
         if selected is None:
             raise AppError("OPPONENT_CHANGED", "原对手配置不可用，不能替换后继续或重演", 503)
         return selected
+
+    def hint_engine_of(self, game: dict[str, Any]) -> Edax:
+        level = game.get("hint_level") or self.edax.level
+        engine = self.hint_engines.get(level)
+        if engine is None:
+            raise AppError("HINT_ENGINE_CHANGED", "原提示等级不可用，无法继续使用该提示配置", 503)
+        return engine
+
+    def review_engine_of(self, game: dict[str, Any]) -> Edax:
+        hint_engine = self.hint_engine_of(game)
+        return hint_engine if hint_engine.level > self.edax.level else self.edax
 
     def check_turn(self, game: dict[str, Any], revision: int, human: bool) -> None:
         if game["revision"] != revision:
@@ -173,7 +192,7 @@ class Games:
             if game.get("auto_play") and not automated:
                 raise AppError("BRANCH_RUNNING", "提示重演正在处理，请等待任务结束")
             self.check_turn(game, revision, True)
-            analysis = self.edax.analyze(tuple(game["board"]), game["turn"])
+            analysis = self.hint_engine_of(game).analyze(tuple(game["board"]), game["turn"])
             hint = {
                 "hint_id": str(uuid4()), "game_id": game_id, "revision": revision,
                 "recommended_move": analysis["recommended_move"], "analysis": analysis,
@@ -224,7 +243,8 @@ class Games:
                     raise AppError("BRANCH_REVISION", "未找到该分支起点", 422)
                 initial = Position(tuple(events[0]["board"]), events[0]["turn"])
             branch = self.new_game(parent["human_color"], initial, selected,
-                                   parent.get("difficulty"))
+                                   parent.get("difficulty"),
+                                   parent.get("hint_level") or self.edax.level)
             branch.update(parent_game_id=game_id, parent_revision=revision)
             branch["auto_play"] = mode == "follow_hints"
             branch["branch_mode"] = mode

@@ -9,6 +9,7 @@ from nemothello.rules import Board, Color
 
 Difficulty = Literal["easy", "medium", "hard"]
 DIFFICULTY_LEVELS: dict[Difficulty, int] = {"easy": 1, "medium": 4, "hard": 8}
+HINT_LEVELS: dict[Difficulty, int] = {"easy": 4, "medium": 8, "hard": 10}
 
 
 def file_digest(path: Path) -> str:
