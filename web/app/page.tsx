@@ -7,12 +7,12 @@ import { TaskList } from "@/components/task-list";
 import type { Color, Difficulty, GameState, Hint, Review, Task, TrackedTask } from "@/lib/types";
 
 type RecentGame = { game_id: string; label: string };
-const difficultyName: Record<Difficulty, string> = { easy: "初级", medium: "中级", hard: "高级" };
-const colorName = (color: Color) => color === "X" ? "黑方" : "白方";
+const difficultyName: Record<Difficulty, string> = { easy: "Beginner", medium: "Intermediate", hard: "Advanced" };
+const colorName = (color: Color) => color === "X" ? "Black" : "White";
 
 function message(error: unknown) {
-  if (error instanceof ApiError) return `${error.message}${error.detail.request_id ? ` · 请求 ${error.detail.request_id}` : ""}`;
-  return error instanceof Error ? error.message : "请求未完成，请重试";
+  if (error instanceof ApiError) return `${error.message}${error.detail.request_id ? ` · Request ${error.detail.request_id}` : ""}`;
+  return error instanceof Error ? error.message : "Request failed. Please try again.";
 }
 
 export default function Home() {
@@ -60,7 +60,7 @@ export default function Home() {
       tipsRef.current = false;
     }
     setRecent((current) => [
-      { game_id: next.game_id, label: `${next.parent_game_id ? "分支" : "对局"} · ${colorName(next.human_color)} · ${next.game_id.slice(0, 8)}` },
+      { game_id: next.game_id, label: `${next.parent_game_id ? "Branch" : "Game"} · ${colorName(next.human_color)} · ${next.game_id.slice(0, 8)}` },
       ...current.filter((item) => item.game_id !== next.game_id),
     ].slice(0, 20));
     localStorage.setItem("nemothello_active_game", next.game_id);
@@ -78,7 +78,7 @@ export default function Home() {
       setError(message(failure));
       if (failure instanceof ApiError && failure.status === 409 && gameRef.current) {
         try { acceptGame(await api<GameState>(`/games/${gameRef.current.game_id}`)); }
-        catch (refreshFailure) { setError(`${message(failure)}；重新获取棋盘失败：${message(refreshFailure)}`); }
+        catch (refreshFailure) { setError(`${message(failure)}; Could not refresh the board: ${message(refreshFailure)}`); }
       }
     } finally { busyRef.current = false; setBusy(null); }
   }, [acceptGame]);
@@ -92,14 +92,18 @@ export default function Home() {
   useEffect(() => {
     if (bootStarted.current) return;
     bootStarted.current = true;
-    void perform("准备对局", async () => {
+    void perform("Preparing game", async () => {
       await api<{ ready: boolean }>("/session");
       const saved = localStorage.getItem("nemothello_recent_games");
       if (saved) {
         try {
           const parsed: unknown = JSON.parse(saved);
-          if (!Array.isArray(parsed) || !parsed.every((item) => item && typeof item.game_id === "string" && typeof item.label === "string")) throw new Error("保存的对局列表格式错误");
-          setRecent(parsed);
+          if (!Array.isArray(parsed) || !parsed.every((item) => item && typeof item.game_id === "string" && typeof item.label === "string")) throw new Error("Saved game list is invalid");
+          setRecent(parsed.map((item: RecentGame) => ({
+            ...item,
+            label: item.label.startsWith("Game · ") || item.label.startsWith("Branch · ")
+              ? item.label : `Saved game · ${item.game_id.slice(0, 8)}`,
+          })));
         } catch (failure) { setError(message(failure)); }
       }
       const gameId = new URLSearchParams(window.location.search).get("game");
@@ -121,7 +125,7 @@ export default function Home() {
 
   useEffect(() => { if (loaded) localStorage.setItem("nemothello_recent_games", JSON.stringify(recent)); }, [recent, loaded]);
 
-  const requestAi = useCallback((current: GameState) => perform("AI 正在选择落子", async () => {
+  const requestAi = useCallback((current: GameState) => perform("AI is choosing a move", async () => {
     acceptGame(await api<GameState>(`/games/${current.game_id}/ai-move`, { expected_revision: current.revision, request_id: requestId() }));
   }), [acceptGame, perform]);
 
@@ -147,7 +151,7 @@ export default function Home() {
         gameRef.current = next;
         setGame(next);
       }).catch((failure) => {
-        if (!controller.signal.aborted) setError(`重演棋盘更新失败：${message(failure)}`);
+        if (!controller.signal.aborted) setError(`Could not update replay: ${message(failure)}`);
       }).finally(() => { pending = false; });
     }, 1600);
     return () => { clearInterval(timer); controller.abort(); };
@@ -180,7 +184,7 @@ export default function Home() {
           displayIds.current.delete(hint.hint_id);
           if (!cancelled) { setHintConfirmed(true); setHintError(null); }
         })
-        .catch((failure) => { if (!cancelled) setHintError(`提示记录失败：${message(failure)}`); });
+        .catch((failure) => { if (!cancelled) setHintError(`Could not record hint display: ${message(failure)}`); });
     }); });
     return () => { cancelled = true; cancelAnimationFrame(frame); cancelAnimationFrame(paintedFrame); };
   }, [hint, tips, historyRevision, displayRetry]);
@@ -197,12 +201,12 @@ export default function Home() {
     const controller = new AbortController();
     try {
       const entries: unknown = JSON.parse(saved);
-      if (!Array.isArray(entries) || !entries.every((item) => item && typeof item.task_id === "string" && typeof item.game_id === "string" && ["review", "question", "branch"].includes(item.purpose))) throw new Error("保存的任务列表格式错误");
+      if (!Array.isArray(entries) || !entries.every((item) => item && typeof item.task_id === "string" && typeof item.game_id === "string" && ["review", "question", "branch"].includes(item.purpose))) throw new Error("Saved task list is invalid");
       void Promise.allSettled(entries.map((entry) => api<Task>(`/tasks/${encodeURIComponent(entry.task_id)}`, undefined, controller.signal))).then((results) => {
         if (controller.signal.aborted) return;
         results.forEach((result, index) => {
           if (result.status === "fulfilled") trackTask({ task: result.value, purpose: entries[index].purpose, game_id: entries[index].game_id, question: entries[index].question });
-          else setError(`恢复任务失败：${message(result.reason)}`);
+          else setError(`Could not restore task: ${message(result.reason)}`);
         });
       });
     } catch (failure) { setError(message(failure)); }
@@ -239,7 +243,7 @@ export default function Home() {
         if (controller.signal.aborted) return;
         results.forEach((result, index) => {
           if (result.status === "fulfilled") trackTask({ ...pending[index], task: result.value });
-          else setError(`任务查询失败：${message(result.reason)}。点击「刷新任务」重新查询。`);
+          else setError(`Could not fetch task: ${message(result.reason)}. Select Refresh tasks to try again.`);
         });
       });
     }, 1600);
@@ -265,7 +269,7 @@ export default function Home() {
     if (busyRef.current) return;
     if (canChangeOpening) {
       if (color !== game?.human_color || level !== game?.difficulty) {
-        void perform("更新新对局", () => createGame(color, level));
+        void perform("Updating game", () => createGame(color, level));
       }
     } else {
       setHumanColor(color);
@@ -276,46 +280,46 @@ export default function Home() {
   return (
     <main className="workspace">
       <header className="masthead"><a className="wordmark" href="/">Nemo<span>thello</span><span className="brand-dot" /></a></header>
-      <section className="game-toolbar" aria-label="对局设置"><div className="color-picker">{!canChangeOpening && game && <span>新对局颜色</span>}<button aria-pressed={humanColor === "X"} onClick={() => changeSettings("X", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc black" />执黑</button><button aria-pressed={humanColor === "O"} onClick={() => changeSettings("O", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc white" />执白</button></div><label className="difficulty-picker">{!canChangeOpening && game && "新对局难度"}<select aria-label={canChangeOpening ? "对局难度" : "新对局难度"} value={difficulty} disabled={!!busy || !loaded} onChange={(event) => changeSettings(humanColor, event.target.value as Difficulty)}><option value="easy">初级</option><option value="medium">中级</option><option value="hard">高级</option></select></label><button className="primary" disabled={!!busy || !loaded} onClick={() => void perform("创建对局", () => createGame(humanColor, difficulty))}>新对局</button>{recent.length > 0 && <label className="recent-picker">最近对局<select value={game?.game_id ?? ""} disabled={!!busy} onChange={(event) => { const id = event.target.value; if (id) void perform("载入对局", async () => acceptGame(await api<GameState>(`/games/${id}`))); }}><option value="" disabled>选择对局</option>{recent.map((item) => <option key={item.game_id} value={item.game_id}>{item.label}</option>)}</select></label>}</section>
-      {error && <div className="error-banner" role="alert"><span>{error}</span><button aria-label="关闭错误提示" onClick={() => setError(null)}>×</button></div>}
+      <section className="game-toolbar" aria-label="Game settings"><div className="color-picker">{!canChangeOpening && game && <span>Next game color</span>}<button aria-pressed={humanColor === "X"} onClick={() => changeSettings("X", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc black" />Black</button><button aria-pressed={humanColor === "O"} onClick={() => changeSettings("O", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc white" />White</button></div><label className="difficulty-picker">{!canChangeOpening && game && "Next game difficulty"}<select aria-label={canChangeOpening ? "Difficulty" : "Next game difficulty"} value={difficulty} disabled={!!busy || !loaded} onChange={(event) => changeSettings(humanColor, event.target.value as Difficulty)}><option value="easy">Beginner</option><option value="medium">Intermediate</option><option value="hard">Advanced</option></select></label><button className="primary" disabled={!!busy || !loaded} onClick={() => void perform("Creating game", () => createGame(humanColor, difficulty))}>New game</button>{recent.length > 0 && <label className="recent-picker">Recent games<select value={game?.game_id ?? ""} disabled={!!busy} onChange={(event) => { const id = event.target.value; if (id) void perform("Loading game", async () => acceptGame(await api<GameState>(`/games/${id}`))); }}><option value="" disabled>Select a game</option>{recent.map((item) => <option key={item.game_id} value={item.game_id}>{item.label}</option>)}</select></label>}</section>
+      {error && <div className="error-banner" role="alert"><span>{error}</span><button aria-label="Dismiss error" onClick={() => setError(null)}>×</button></div>}
       {!loaded && !busy && bootStarted.current && <button className="primary connection-retry" onClick={() => {
         bootStarted.current = false;
         setBootRetry((attempt) => attempt + 1);
-      }}>重试连接</button>}
+      }}>Reconnect</button>}
       <div className="play-layout">
-        <section className="board-panel" aria-label="翻转棋棋盘"><div className="board-topline">{game?.difficulty && <span className="turn-label" aria-label="当前对手难度">{difficultyName[game.difficulty]}</span>}<span className="turn-label" aria-live="polite">{busy ?? (game ? live && game.status === "finished" ? "对局结束" : displayedTurn ? live ? game.turn === game.human_color ? "轮到你" : "AI 回合" : `${colorName(displayedTurn)}回合` : "对局结束" : "正在准备新对局…")}</span></div>
-          <div className="board-with-labels"><div className="column-labels" aria-hidden="true">{"abcdefgh".split("").map((column) => <span key={column}>{column}</span>)}</div><div className="board-rows"><div className="row-labels" aria-hidden="true">{Array.from({ length: 8 }, (_, row) => <span key={row}>{row + 1}</span>)}</div><div className={`board ${board ? "" : "empty-board"}`} role="group" aria-label={board ? "棋盘，坐标 a1 位于左上" : "尚未开始对局"}>{Array.from({ length: 64 }, (_, index) => {
+        <section className="board-panel" aria-label="Othello board"><div className="board-topline">{game?.difficulty && <span className="turn-label" aria-label="Opponent difficulty">{difficultyName[game.difficulty]}</span>}<span className="turn-label" aria-live="polite">{busy ?? (game ? live && game.status === "finished" ? "Game over" : displayedTurn ? live ? game.turn === game.human_color ? "Your turn" : "AI's turn" : `${colorName(displayedTurn)} to move` : "Game over" : "Preparing a new game…")}</span></div>
+          <div className="board-with-labels"><div className="column-labels" aria-hidden="true">{"abcdefgh".split("").map((column) => <span key={column}>{column}</span>)}</div><div className="board-rows"><div className="row-labels" aria-hidden="true">{Array.from({ length: 8 }, (_, row) => <span key={row}>{row + 1}</span>)}</div><div className={`board ${board ? "" : "empty-board"}`} role="group" aria-label={board ? "Board, a1 is at the top left" : "No game started"}>{Array.from({ length: 64 }, (_, index) => {
             const row = Math.floor(index / 8), column = index % 8;
             const coordinate = `${"abcdefgh"[column]}${row + 1}`, cell = board?.[row]?.[column] ?? ".";
             const legal = live && !!game?.legal_moves.includes(coordinate), recommended = visibleHint?.recommended_move === coordinate;
-            return <button key={coordinate} className={`square ${recommended ? "recommended" : ""}`} disabled={!canMove || !legal} aria-label={`${coordinate}，${cell === "X" ? "黑子" : cell === "O" ? "白子" : "空位"}${legal ? "，合法落子点" : ""}${recommended ? "，推荐点" : ""}`} onClick={() => { if (game) void perform("提交落子", async () => acceptGame(await api<GameState>(`/games/${game.game_id}/moves`, { coordinate, expected_revision: game.revision, request_id: requestId() }))); }}>{cell !== "." && <span className={`disc ${cell === "X" ? "black" : "white"}`} />}{cell === "." && legal && <span className="legal-marker" />}{recommended && <span className="hint-ring" />}</button>;
+            return <button key={coordinate} className={`square ${recommended ? "recommended" : ""}`} disabled={!canMove || !legal} aria-label={`${coordinate}, ${cell === "X" ? "black disc" : cell === "O" ? "white disc" : "empty"}${legal ? ", legal move" : ""}${recommended ? ", recommended move" : ""}`} onClick={() => { if (game) void perform("Playing move", async () => acceptGame(await api<GameState>(`/games/${game.game_id}/moves`, { coordinate, expected_revision: game.revision, request_id: requestId() }))); }}>{cell !== "." && <span className={`disc ${cell === "X" ? "black" : "white"}`} />}{cell === "." && legal && <span className="legal-marker" />}{recommended && <span className="hint-ring" />}</button>;
           })}</div></div></div>
           {game && (game.auto_play || !live || (game.status === "active" && game.turn !== game.human_color && !busy)) && <div className="board-footer">
-            {!live && <><span>{historyRevision === 0 ? "初始局面" : `历史局面 ${historyRevision}`}</span><button onClick={() => setHistoryRevision(null)}>返回终局</button></>}
-            {game.auto_play && <span>按提示重演正在推进</span>}
-            {game.status === "active" && !game.auto_play && game.turn !== game.human_color && !busy && <button className="primary" onClick={() => void requestAi(game)}>重试 AI 落子</button>}
+            {!live && <><span>{historyRevision === 0 ? "Starting position" : `Position ${historyRevision}`}</span><button onClick={() => setHistoryRevision(null)}>Back to final position</button></>}
+            {game.auto_play && <span>Replaying with hints</span>}
+            {game.status === "active" && !game.auto_play && game.turn !== game.human_color && !busy && <button className="primary" onClick={() => void requestAi(game)}>Retry AI move</button>}
           </div>}
         </section>
-        <aside className="side-panel"><section className="score-card" aria-label={live ? "棋子数" : "所选局面棋子数"}><div className="score-line"><div><i className="mini-disc black" /><span>黑方 {game?.human_color === "X" && <small>你</small>}</span><strong>{board ? board.join("").split("X").length - 1 : "—"}</strong></div><div><i className="mini-disc white" /><span>白方 {game?.human_color === "O" && <small>你</small>}</span><strong>{board ? board.join("").split("O").length - 1 : "—"}</strong></div></div>{game?.result && <p className="result-label">{!live && "终局 · "}{game.result.winner === "draw" ? "和棋" : game.result.winner === game.human_color ? "你赢了" : "AI 获胜"}<span>{game.result.black_count} : {game.result.white_count}</span></p>}</section>
+        <aside className="side-panel"><section className="score-card" aria-label={live ? "Disc count" : "Disc count at selected position"}><div className="score-line"><div><i className="mini-disc black" /><span>Black {game?.human_color === "X" && <small>You</small>}</span><strong>{board ? board.join("").split("X").length - 1 : "—"}</strong></div><div><i className="mini-disc white" /><span>White {game?.human_color === "O" && <small>You</small>}</span><strong>{board ? board.join("").split("O").length - 1 : "—"}</strong></div></div>{game?.result && <p className="result-label">{!live && "Final · "}{game.result.winner === "draw" ? "Draw" : game.result.winner === game.human_color ? "You win" : "AI wins"}<span>{game.result.black_count} : {game.result.white_count}</span></p>}</section>
           {game?.status !== "finished" && <section className="tips-card">
             <div className="card-heading">
-              <span className="section-label">推荐点</span>
-              <button className={`toggle ${tips ? "on" : ""}`} role="switch" aria-checked={tips} aria-label="推荐点提示" disabled={!game || game.auto_play || game.status !== "active"} onClick={() => { tipsRef.current = !tips; setTips(!tips); }}><span /></button>
+              <span className="section-label">Hints</span>
+              <button className={`toggle ${tips ? "on" : ""}`} role="switch" aria-checked={tips} aria-label="Move hints" disabled={!game || game.auto_play || game.status !== "active"} onClick={() => { tipsRef.current = !tips; setTips(!tips); }}><span /></button>
             </div>
             {tips && (hintError || (live && game?.turn === game?.human_color && (!visibleHint || !hintConfirmed))) && <div className="tip-status" aria-live="polite">
-              {hintError ? <><span className="inline-error">{hintError}</span><button onClick={() => hint ? setDisplayRetry((value) => value + 1) : setHintRetry((value) => value + 1)}>重试提示</button></> : "正在准备提示…"}
+              {hintError ? <><span className="inline-error">{hintError}</span><button onClick={() => hint ? setDisplayRetry((value) => value + 1) : setHintRetry((value) => value + 1)}>Retry hint</button></> : "Preparing hint…"}
             </div>}
           </section>}
-          {game?.status === "finished" && <section className="history-card" aria-label="棋谱"><span className="section-label">棋谱</span><div className="history-list"><button className={historyRevision === 0 ? "selected" : ""} onClick={() => setHistoryRevision(0)}>初始局面</button>{game.history.map((event) => <button key={event.event_index} className={historyRevision === event.revision ? "selected" : ""} onClick={() => setHistoryRevision(event.revision)}><span><small>{event.event_index + 1}</small>{colorName(event.actor)}</span><strong>{event.kind === "pass" ? "跳过回合" : event.coordinate}</strong></button>)}</div></section>}
+          {game?.status === "finished" && <section className="history-card" aria-label="Move history"><span className="section-label">Move history</span><div className="history-list"><button className={historyRevision === 0 ? "selected" : ""} onClick={() => setHistoryRevision(0)}>Starting position</button>{game.history.map((event) => <button key={event.event_index} className={historyRevision === event.revision ? "selected" : ""} onClick={() => setHistoryRevision(event.revision)}><span><small>{event.event_index + 1}</small>{colorName(event.actor)}</span><strong>{event.kind === "pass" ? "Pass" : event.coordinate}</strong></button>)}</div></section>}
         </aside>
       </div>
       {game?.status === "finished" && (
         <section className="review-panel">
           <div className="review-heading">
-            {review && <h2>复盘</h2>}
-            {!review && <button className="primary" disabled={!!busy || reviewPending} onClick={() => void perform("创建复盘任务", async () => trackTask({
+            {review && <h2>Review</h2>}
+            {!review && <button className="primary" disabled={!!busy || reviewPending} onClick={() => void perform("Requesting review", async () => trackTask({
               task: await api<Task>(`/games/${game.game_id}/reviews`, { request_id: requestId() }), purpose: "review", game_id: game.game_id,
-            }))}>{reviewPending ? "正在生成复盘" : "生成复盘"}</button>}
+            }))}>{reviewPending ? "Generating review" : "Review game"}</button>}
           </div>
           {review ? <>
             <div className="explanation">{review.explanation}</div>
@@ -323,34 +327,34 @@ export default function Home() {
             <form className="question-form" onSubmit={(event) => {
               event.preventDefault();
               const text = question.trim();
-              if (text) void perform("提交复盘问题", async () => {
-                const contextualQuestion = historyRevision === null ? text : `针对局面版本 ${historyRevision}：${text}`;
+              if (text) void perform("Sending question", async () => {
+                const contextualQuestion = historyRevision === null ? text : `For position revision ${historyRevision}: ${text}`;
                 trackTask({ task: await api<Task>(`/games/${game.game_id}/review/questions`, { question: contextualQuestion, request_id: requestId() }), purpose: "question", game_id: game.game_id, question: contextualQuestion });
                 setQuestion("");
               });
             }}>
-              <div><textarea id="review-question" aria-label="复盘问题" value={question} maxLength={1900} onChange={(event) => setQuestion(event.target.value)} placeholder={historyRevision === null ? "输入复盘问题…" : historyRevision === 0 ? "关于初始局面的问题…" : `关于局面 ${historyRevision} 的问题…`} required /><button className="primary" disabled={!!busy || !question.trim()}>追问</button></div>
+              <div><textarea id="review-question" aria-label="Review question" value={question} maxLength={1900} onChange={(event) => setQuestion(event.target.value)} placeholder={historyRevision === null ? "Ask about this game…" : historyRevision === 0 ? "Ask about the starting position…" : `Ask about position ${historyRevision}…`} required /><button className="primary" disabled={!!busy || !question.trim()}>Ask</button></div>
             </form>
           </> : null}
         </section>
       )}
       {game?.status === "finished" && historyRevision !== null && (
         <section className="branch-panel">
-          {awaitingPass && <p>请选择跳过回合后的局面。</p>}
-          {displayedTurn === null && <p>请选择终局之前的局面。</p>}
+          {awaitingPass && <p>Select a position after the pass.</p>}
+          {displayedTurn === null && <p>Select a position before the game ends.</p>}
           <div className="branch-actions">
-            <button disabled={!!busy || branchUnavailable} onClick={() => void perform("创建手动分支", async () => acceptGame(await api<GameState>(`/games/${game.game_id}/branches`, {
+            <button disabled={!!busy || branchUnavailable} onClick={() => void perform("Creating branch", async () => acceptGame(await api<GameState>(`/games/${game.game_id}/branches`, {
               revision: branchRevision, mode: "manual", request_id: requestId(),
-            })))}>从这里继续下</button>
-            <button className="primary" disabled={!!busy || branchPending || branchUnavailable} onClick={() => void perform("创建提示重演任务", async () => trackTask({
+            })))}>Continue from here</button>
+            <button className="primary" disabled={!!busy || branchPending || branchUnavailable} onClick={() => void perform("Starting hint replay", async () => trackTask({
               task: await api<Task>(`/games/${game.game_id}/branches`, { revision: branchRevision, mode: "follow_hints", request_id: requestId() }), purpose: "branch", game_id: game.game_id,
-            }))}>{branchPending ? "正在重演" : "按提示重演"}</button>
+            }))}>{branchPending ? "Replaying" : "Replay with hints"}</button>
           </div>
         </section>
       )}
-      <TaskList entries={currentTasks} busy={!!busy} refresh={() => void perform("刷新任务", async () => {
+      <TaskList entries={currentTasks} busy={!!busy} refresh={() => void perform("Refresh tasks", async () => {
         for (const entry of currentTasks) trackTask({ ...entry, task: await api<Task>(`/tasks/${entry.task.task_id}`) });
-      })} openGame={(id) => void perform("载入分支", async () => acceptGame(await api<GameState>(`/games/${id}`)))} repeatQuestion={(text) => {
+      })} openGame={(id) => void perform("Loading branch", async () => acceptGame(await api<GameState>(`/games/${id}`)))} repeatQuestion={(text) => {
         setQuestion(text);
         document.getElementById("review-question")?.focus();
       }} />

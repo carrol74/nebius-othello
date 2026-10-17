@@ -30,7 +30,7 @@ export async function api<T>(path: string, body?: object, signal?: AbortSignal):
     signal,
   });
   if (!response.headers.get("content-type")?.includes("application/json")) {
-    throw new ApiError(response.status, { code: "INVALID_RESPONSE", message: "服务返回了无法读取的响应，请联系维护者" });
+    throw new ApiError(response.status, { code: "INVALID_RESPONSE", message: "The service returned an unreadable response. Contact the maintainer." });
   }
   const payload: unknown = await response.json();
   if (!response.ok) {
@@ -39,7 +39,7 @@ export async function api<T>(path: string, body?: object, signal?: AbortSignal):
     if (pendingKey && response.status < 500 && detail.code !== "INVALID_RESPONSE") pendingWrites.delete(pendingKey);
     throw new ApiError(response.status, {
       code: detail.code ?? "REQUEST_FAILED",
-      message: detail.message ?? `请求失败（${response.status}）`,
+      message: detail.message ?? `Request failed (${response.status})`,
       request_id: detail.request_id,
       retryable: detail.retryable,
     });

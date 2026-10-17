@@ -4,12 +4,12 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Nemothello",
-  description: "翻转棋 AI 对战、可开关提示与独立复盘",
+  description: "Play Othello against AI, toggle move hints, and review completed games",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="zh-CN">
+    <html lang="en">
       <body>{children}</body>
     </html>
   );
