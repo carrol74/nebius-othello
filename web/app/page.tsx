@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError, requestId } from "@/lib/api";
 import { ReviewDetails } from "@/components/review-details";
+import { ReviewCoach } from "@/components/review-coach";
+import type { Practice, Variation } from "@/components/review-coach";
 import { TaskList } from "@/components/task-list";
 import type { Color, Difficulty, GameState, Hint, Review, Task, TrackedTask } from "@/lib/types";
 
@@ -30,6 +32,8 @@ export default function Home() {
   const [displayRetry, setDisplayRetry] = useState(0);
   const [historyRevision, setHistoryRevision] = useState<number | null>(null);
   const [review, setReview] = useState<Review | null>(null);
+  const [practice, setPractice] = useState<Practice | null>(null);
+  const [variation, setVariation] = useState<Variation | null>(null);
   const [tasks, setTasks] = useState<TrackedTask[]>([]);
   const [question, setQuestion] = useState("");
   const [loaded, setLoaded] = useState(false);
@@ -49,6 +53,8 @@ export default function Home() {
     gameRef.current = next;
     setGame(next);
     setHistoryRevision(null);
+    setPractice(null);
+    setVariation(null);
     setHint(null);
     setHintConfirmed(false);
     if (isNew) {
@@ -191,7 +197,20 @@ export default function Home() {
 
   const trackTask = useCallback((entry: TrackedTask) => {
     setTasks((current) => [entry, ...current.filter((item) => item.task.task_id !== entry.task.task_id)]);
-    if (entry.task.status === "succeeded" && entry.task.kind === "review" && entry.task.result && entry.game_id === gameRef.current?.game_id) setReview(entry.task.result);
+    if (entry.task.kind === "review" && entry.game_id === gameRef.current?.game_id) {
+      if (entry.task.status === "succeeded" && entry.task.result) {
+        setReview(entry.task.result);
+        const first = entry.task.result.key_moves[0]?.revision ?? null;
+        setHistoryRevision((current) => current ?? first);
+      } else if (entry.task.status === "running" || entry.task.status === "failed") {
+        void api<Review | { task: Task | null }>(`/games/${entry.game_id}/review`).then((result) => {
+          if (!("task" in result) && gameRef.current?.game_id === entry.game_id) {
+            setReview(result);
+            setHistoryRevision((current) => current ?? result.key_moves[0]?.revision ?? null);
+          }
+        }).catch((failure) => { if (gameRef.current?.game_id === entry.game_id) setError(message(failure)); });
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -227,7 +246,10 @@ export default function Home() {
     void api<Review | { task: Task | null }>(`/games/${gameId}/review`, undefined, controller.signal).then((result) => {
       if (controller.signal.aborted || gameRef.current?.game_id !== gameId) return;
       if ("task" in result) { if (result.task) trackTask({ task: result.task, purpose: "review", game_id: gameId }); }
-      else setReview(result);
+      else {
+        setReview(result);
+        setHistoryRevision((current) => current ?? result.key_moves[0]?.revision ?? null);
+      }
     }).catch((failure) => {
       if (!controller.signal.aborted && !(failure instanceof ApiError && failure.detail.code === "REVIEW_NOT_FOUND")) setError(message(failure));
     });
@@ -251,10 +273,14 @@ export default function Home() {
   }, [tasks, trackTask]);
 
   const selectedEvent = game?.history.find((event) => event.revision === historyRevision);
-  const board = historyRevision === 0 ? game?.initial_board : selectedEvent?.board ?? game?.board;
-  const displayedTurn = historyRevision === 0 ? game?.initial_turn : selectedEvent ? selectedEvent.turn : game?.turn;
+  const selectedEvidence = review?.evidence.find((entry) => entry.revision === historyRevision);
+  const variationComparison = variation && review?.evidence.find((entry) => entry.revision === variation.revision)?.comparisons?.find((entry) => entry.coordinate === variation.coordinate);
+  const variationFrame = variation && variationComparison?.frames[variation.frame];
+  const board = variationFrame?.board ?? selectedEvidence?.analysis.board ?? (historyRevision === 0 ? game?.initial_board : selectedEvent?.board ?? game?.board);
+  const displayedTurn = variationFrame ? variationFrame.turn : selectedEvidence?.actor ?? (historyRevision === 0 ? game?.initial_turn : selectedEvent ? selectedEvent.turn : game?.turn);
   const live = historyRevision === null;
-  const canMove = !!game && live && !busy && !game.auto_play && game.status === "active" && game.turn === game.human_color && (!hint || hintConfirmed);
+  const canPractice = !!practice && practice.coordinate === null && practice.revision === historyRevision && !!selectedEvidence && selectedEvidence.actor === game?.human_color && !busy && !variation;
+  const canMove = canPractice || (!!game && live && !busy && !game.auto_play && game.status === "active" && game.turn === game.human_color && (!hint || hintConfirmed));
   const visibleHint = tips && live && hint?.game_id === game?.game_id && hint?.revision === game?.revision ? hint : null;
   const currentTasks = tasks.filter((entry) => entry.game_id === game?.game_id || (entry.purpose === "branch" && entry.task.game_id === game?.game_id));
   const reviewPending = currentTasks.some((entry) => entry.purpose === "review" && ["queued", "running"].includes(entry.task.status));
@@ -264,6 +290,38 @@ export default function Home() {
   const branchUnavailable = branchRevision === undefined || displayedTurn === null || awaitingPass || !!game?.auto_play;
   const canChangeOpening = !!game && !game.parent_game_id && !game.auto_play && game.status === "active"
     && !game.history.some((event) => event.kind === "move" && event.actor === game.human_color);
+
+  function selectPosition(revision: number | null) {
+    setPractice(null);
+    setVariation(null);
+    setHistoryRevision(revision);
+  }
+
+  function startPractice(revision: number) {
+    setHistoryRevision(revision);
+    setVariation(null);
+    setPractice({revision, coordinate: null});
+    document.getElementById("game-board")?.scrollIntoView({block: "start", behavior: "instant"});
+  }
+
+  function showVariation(value: Variation | null) {
+    setVariation(value);
+    if (value) { setPractice(null); setHistoryRevision(value.revision); }
+    document.getElementById("game-board")?.scrollIntoView({block: "start", behavior: "instant"});
+  }
+
+  function continuePractice(revision: number, coordinate: string) {
+    if (!game) return;
+    void perform("Continuing your retry", async () => {
+      const branch = await api<GameState>(`/games/${game.game_id}/branches`, {
+        revision, mode: "manual", request_id: requestId(),
+      });
+      acceptGame(branch);
+      acceptGame(await api<GameState>(`/games/${branch.game_id}/moves`, {
+        coordinate, expected_revision: branch.revision, request_id: requestId(),
+      }));
+    });
+  }
 
   function changeSettings(color: Color, level: Difficulty) {
     if (busyRef.current) return;
@@ -287,15 +345,17 @@ export default function Home() {
         setBootRetry((attempt) => attempt + 1);
       }}>Reconnect</button>}
       <div className="play-layout">
-        <section className="board-panel" aria-label="Othello board"><div className="board-topline">{game?.difficulty && <span className="turn-label" aria-label="Opponent difficulty">{difficultyName[game.difficulty]}</span>}<span className="turn-label" aria-live="polite">{busy ?? (game ? live && game.status === "finished" ? "Game over" : displayedTurn ? live ? game.turn === game.human_color ? "Your turn" : "AI's turn" : `${colorName(displayedTurn)} to move` : "Game over" : "Preparing a new game…")}</span></div>
+        <section className="board-panel" id="game-board" aria-label="Othello board"><div className="board-topline">{game?.difficulty && <span className="turn-label" aria-label="Opponent difficulty">{difficultyName[game.difficulty]}</span>}<span className="turn-label" aria-live="polite">{busy ?? (game ? live && game.status === "finished" ? "Game over" : displayedTurn ? live ? game.turn === game.human_color ? "Your turn" : "AI's turn" : `${colorName(displayedTurn)} to move` : "Game over" : "Preparing a new game…")}</span></div>
           <div className="board-with-labels"><div className="column-labels" aria-hidden="true">{"abcdefgh".split("").map((column) => <span key={column}>{column}</span>)}</div><div className="board-rows"><div className="row-labels" aria-hidden="true">{Array.from({ length: 8 }, (_, row) => <span key={row}>{row + 1}</span>)}</div><div className={`board ${board ? "" : "empty-board"}`} role="group" aria-label={board ? "Board, a1 is at the top left" : "No game started"}>{Array.from({ length: 64 }, (_, index) => {
             const row = Math.floor(index / 8), column = index % 8;
             const coordinate = `${"abcdefgh"[column]}${row + 1}`, cell = board?.[row]?.[column] ?? ".";
-            const legal = live && !!game?.legal_moves.includes(coordinate), recommended = visibleHint?.recommended_move === coordinate;
-            return <button key={coordinate} className={`square ${recommended ? "recommended" : ""}`} disabled={!canMove || !legal} aria-label={`${coordinate}, ${cell === "X" ? "black disc" : cell === "O" ? "white disc" : "empty"}${legal ? ", legal move" : ""}${recommended ? ", recommended move" : ""}`} onClick={() => { if (game) void perform("Playing move", async () => acceptGame(await api<GameState>(`/games/${game.game_id}/moves`, { coordinate, expected_revision: game.revision, request_id: requestId() }))); }}>{cell !== "." && <span className={`disc ${cell === "X" ? "black" : "white"}`} />}{cell === "." && legal && <span className="legal-marker" />}{recommended && <span className="hint-ring" />}</button>;
+            const legal = canPractice ? !!selectedEvidence?.analysis.candidates.some((entry) => entry.coordinate === coordinate) : live && !!game?.legal_moves.includes(coordinate);
+            const recommended = !variation && (practice?.coordinate ? selectedEvidence?.recommended_move === coordinate : visibleHint?.recommended_move === coordinate);
+            return <button key={coordinate} className={`square ${recommended ? "recommended" : ""}`} disabled={!canMove || !legal} aria-label={`${coordinate}, ${cell === "X" ? "black disc" : cell === "O" ? "white disc" : "empty"}${legal ? ", legal move" : ""}${recommended ? ", recommended move" : ""}`} onClick={() => { if (canPractice && practice) { setPractice({...practice, coordinate}); document.getElementById("review-coaching")?.scrollIntoView({block: "start", behavior: "instant"}); return; } if (game) void perform("Playing move", async () => acceptGame(await api<GameState>(`/games/${game.game_id}/moves`, { coordinate, expected_revision: game.revision, request_id: requestId() }))); }}>{cell !== "." && <span className={`disc ${cell === "X" ? "black" : "white"}`} />}{cell === "." && legal && <span className="legal-marker" />}{recommended && <span className="hint-ring" />}</button>;
           })}</div></div></div>
           {game && (game.auto_play || !live || (game.status === "active" && game.turn !== game.human_color && !busy)) && <div className="board-footer">
-            {!live && <><span>{historyRevision === 0 ? "Starting position" : `Position ${historyRevision}`}</span><button onClick={() => setHistoryRevision(null)}>Back to final position</button></>}
+            {!live && !variation && <><span>{historyRevision === 0 ? "Starting position" : `Position ${historyRevision}`}</span><button onClick={() => selectPosition(null)}>Back to final position</button></>}
+            {variation && variationComparison && <><span>Search line · {variationComparison.frames.slice(1, variation.frame + 1).map((frame) => frame.coordinate).join(" → ") || "Starting position"}</span><button aria-label="Previous search move" disabled={variation.frame === 0} onClick={() => setVariation({...variation, frame: variation.frame - 1})}>Previous</button><span>{variation.frame} / {variationComparison.frames.length - 1}</span><button aria-label="Next search move" disabled={variation.frame === variationComparison.frames.length - 1} onClick={() => setVariation({...variation, frame: variation.frame + 1})}>Next</button><button onClick={() => setVariation(null)}>Back to position</button></>}
             {game.auto_play && <span>Replaying with hints</span>}
             {game.status === "active" && !game.auto_play && game.turn !== game.human_color && !busy && <button className="primary" onClick={() => void requestAi(game)}>Retry AI move</button>}
           </div>}
@@ -310,20 +370,22 @@ export default function Home() {
               {hintError ? <><span className="inline-error">{hintError}</span><button onClick={() => hint ? setDisplayRetry((value) => value + 1) : setHintRetry((value) => value + 1)}>Retry hint</button></> : "Preparing hint…"}
             </div>}
           </section>}
-          {game?.status === "finished" && <section className="history-card" aria-label="Move history"><span className="section-label">Move history</span><div className="history-list"><button className={historyRevision === 0 ? "selected" : ""} onClick={() => setHistoryRevision(0)}>Starting position</button>{game.history.map((event) => <button key={event.event_index} className={historyRevision === event.revision ? "selected" : ""} onClick={() => setHistoryRevision(event.revision)}><span><small>{event.event_index + 1}</small>{colorName(event.actor)}</span><strong>{event.kind === "pass" ? "Pass" : event.coordinate}</strong></button>)}</div></section>}
+          {game?.status === "finished" && <section className="history-card" aria-label="Move history"><span className="section-label">Move history</span><div className="history-list"><button className={historyRevision === 0 ? "selected" : ""} onClick={() => selectPosition(0)}>Starting position</button>{game.history.map((event) => <button key={event.event_index} className={historyRevision === event.revision ? "selected" : ""} onClick={() => selectPosition(event.revision)}><span><small>{event.event_index + 1}</small>{colorName(event.actor)}</span><strong>{event.kind === "pass" ? "Pass" : event.coordinate}</strong></button>)}</div></section>}
         </aside>
       </div>
       {game?.status === "finished" && (
-        <section className="review-panel">
+        <section className="review-panel" id="review-coaching">
           <div className="review-heading">
-            {review && <h2>Review</h2>}
-            {!review && <button className="primary" disabled={!!busy || reviewPending} onClick={() => void perform("Requesting review", async () => trackTask({
+            <h2>Review</h2>
+            {(!review || review.format_version !== "grounded-v1" || review.coaching_status === "failed") && <button className="primary" disabled={!!busy || reviewPending} onClick={() => void perform("Requesting review", async () => trackTask({
               task: await api<Task>(`/games/${game.game_id}/reviews`, { request_id: requestId() }), purpose: "review", game_id: game.game_id,
-            }))}>{reviewPending ? "Generating review" : "Review game"}</button>}
+            }))}>{reviewPending ? "Building review" : review?.format_version === "grounded-v1" ? "Retry coaching" : "Review game"}</button>}
           </div>
-          {review ? <>
-            <div className="explanation">{review.explanation}</div>
-            <ReviewDetails review={review} selectRevision={setHistoryRevision} />
+          {review?.format_version === "grounded-v1" ? <>
+            {review.coaching_status === "pending" && <p className="muted" role="status">Choosing lessons. You can already explore the analysis.</p>}
+            {review.coaching_status === "failed" && <p className="inline-error">{review.coaching_error}</p>}
+            <ReviewCoach review={review} selectedRevision={historyRevision} practice={practice} variation={variation} busy={!!busy} select={selectPosition} startPractice={startPractice} continueGame={continuePractice} showVariation={showVariation} />
+            {(!practice || practice.coordinate !== null) && <ReviewDetails review={review} selectRevision={selectPosition} />}
             <form className="question-form" onSubmit={(event) => {
               event.preventDefault();
               const text = question.trim();
@@ -335,10 +397,10 @@ export default function Home() {
             }}>
               <div><textarea id="review-question" aria-label="Review question" value={question} maxLength={1900} onChange={(event) => setQuestion(event.target.value)} placeholder={historyRevision === null ? "Ask about this game…" : historyRevision === 0 ? "Ask about the starting position…" : `Ask about position ${historyRevision}…`} required /><button className="primary" disabled={!!busy || !question.trim()}>Ask</button></div>
             </form>
-          </> : null}
+          </> : review ? <p className="muted">Generate a new review to explore verified comparisons and coaching.</p> : null}
         </section>
       )}
-      {game?.status === "finished" && historyRevision !== null && (
+      {game?.status === "finished" && historyRevision !== null && !variation && !practice && (
         <section className="branch-panel">
           {awaitingPass && <p>Select a position after the pass.</p>}
           {displayedTurn === null && <p>Select a position before the game ends.</p>}

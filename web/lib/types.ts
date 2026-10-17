@@ -90,7 +90,7 @@ export interface Review {
   parent_revision: number | null;
   opponent_config_id: string;
   key_moves: ReviewEvidence[];
-  model_id: string;
+  model_id: string | null;
   usage: Record<string, unknown> | null;
   branch_mode: "manual" | "follow_hints" | null;
   automatic_hint_moves: {
@@ -99,6 +99,45 @@ export interface Review {
     coordinate: string;
     analysis_settings: Analysis["settings"];
   }[];
+  format_version?: string | null;
+  summary_facts?: ReviewFact[];
+  coaching?: CoachingCard[];
+  coaching_status?: "pending" | "ready" | "failed" | null;
+  coaching_error?: string | null;
+  branch_results?: { game_id: string; parent_revision: number; result: GameResult }[];
+}
+
+export interface ReviewFact {
+  id: string;
+  text: string;
+  topic: string;
+  revision: number | null;
+}
+
+export interface CoachingCard {
+  revision: number;
+  facts: ReviewFact[];
+  lesson_id: string;
+  lesson: { title: string; text: string; question: string };
+}
+
+export interface VariationFrame {
+  board: string[];
+  turn: Color | null;
+  coordinate: string | null;
+}
+
+export interface MoveComparison {
+  coordinate: string;
+  corner: number;
+  empty_corner_neighbor: number;
+  opponent_moves: number;
+  own_moves: number;
+  frontier_difference: number;
+  disc_difference: number;
+  opponent_legal_moves: string[];
+  opponent_corners: string[];
+  frames: VariationFrame[];
 }
 
 export interface ReviewEvidence {
@@ -110,6 +149,8 @@ export interface ReviewEvidence {
   analysis: Analysis;
   shown_hint_ids: string[];
   adopted_hint: boolean;
+  stage?: string | null;
+  comparisons?: MoveComparison[];
 }
 
 interface TaskState {
@@ -122,7 +163,7 @@ interface TaskState {
 export type Task = TaskState & (
   | { kind: "review"; result: Review | null }
   | { kind: "branch"; result: { game_id: string; result: GameResult } | null }
-  | { kind: "question"; result: { answer: string; model_id: string; usage: Record<string, unknown> | null } | null }
+  | { kind: "question"; result: { answer: string; model_id: string | null; usage: Record<string, unknown> | null; coaching?: CoachingCard[]; format_version?: string | null } | null }
 );
 
 export interface TrackedTask {

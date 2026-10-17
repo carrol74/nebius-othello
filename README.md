@@ -2,7 +2,7 @@
 
 An Othello app with an Edax opponent, optional move hints, and post-game review by NVIDIA Nemotron through Nebius Token Factory.
 
-The backend owns board rules, games, hint records, and branch replay. Separate Edax processes provide opponent moves and analysis. Nemotron explains completed games using the saved game and engine evidence, and answers review questions.
+The backend owns board rules, games, hint records, and branch replay. Separate Edax processes provide opponent moves and analysis. Nemotron selects personalized lessons using verified game and engine evidence. The backend checks its references and supplies the displayed facts and teaching content.
 
 Beginner, intermediate, and advanced opponents use Edax levels 1, 4, and 8; their move hints use levels 4, 8, and 10. Games save their hint level, and branches inherit it. `EDAX_LEVEL` sets the general analysis level and minimum review level; reviews use at least the game's hint level. Search levels do not guarantee a win.
 
@@ -34,7 +34,9 @@ For manual startup, configure `backend/.env` and `web/.env.local` from their exa
 
 Set both `TOKEN_FACTORY_API_KEY` and `TOKEN_FACTORY_MODEL_ID` to enable Nemotron reviews. Leave both empty to use games, hints, and branch replay without language-model calls; review requests then report that the service is not configured. Credentials stay on the backend.
 
-The interface and new review answers use English. Nemotron reviews use saved game and engine evidence, with thinking disabled; incomplete responses report an error. The per-move analysis panel provides the underlying scores for checking generated explanations.
+The interface and new review answers use English. After a game, explore up to three key player decisions, try a move on the board, compare its search score, and continue a real branch against the original opponent. Step through either search continuation on the board or inspect the complete move analysis. Tied best-scoring alternatives count as equally rated.
+
+Coaching uses a checked JSON lesson plan with thinking disabled. Invalid or incomplete plans report an error; saved analysis and practice remain available, and coaching can be retried separately. Opening saved reviews, practising moves, and exploring continuations make no model calls. Hint-adoption and result queries use saved facts when they can be answered directly.
 
 To start both services locally, double-click `start.command` on macOS or run:
 

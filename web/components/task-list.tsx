@@ -19,8 +19,8 @@ export function TaskList({ entries, busy, refresh, openGame, repeatQuestion }: {
           <article key={entry.task.task_id} className="task-item">
             <div><strong>{entry.purpose === "review" ? "Game review" : entry.purpose === "question" ? entry.question ?? "Review question" : "Replay with hints"}</strong><span className={`task-status ${entry.task.status}`}>{statusName[entry.task.status]}</span></div>
             {entry.task.error && <p role="alert" className="inline-error">{entry.task.error.message}</p>}
-            {entry.task.kind === "question" && entry.task.result && <p className="explanation">{entry.task.result.answer}</p>}
-            {entry.purpose === "question" && entry.task.status === "failed" && entry.question && <button disabled={busy} onClick={() => repeatQuestion(entry.question!)}>Ask again</button>}
+            {entry.task.kind === "question" && entry.task.result && <p className="explanation">{entry.task.result.format_version === "grounded-v1" ? entry.task.result.answer : "This answer predates verified coaching. Ask again for a new answer."}</p>}
+            {entry.purpose === "question" && (entry.task.status === "failed" || (entry.task.kind === "question" && entry.task.result && entry.task.result.format_version !== "grounded-v1")) && entry.question && <button disabled={busy} onClick={() => repeatQuestion(entry.question!)}>Ask again</button>}
             {entry.purpose === "branch" && result && <p>Black {result.black_count} : White {result.white_count} · {result.winner === "draw" ? "Draw" : result.winner === "X" ? "Black wins" : "White wins"}</p>}
             {entry.purpose === "branch" && (entry.task.status === "queued" || entry.task.status === "running") && <button disabled={busy} onClick={() => openGame(entry.task.game_id)}>View replay</button>}
             {entry.purpose === "branch" && (entry.task.status === "succeeded" || entry.task.status === "failed") && <button disabled={busy} onClick={() => openGame(entry.task.game_id)}>View branch</button>}
