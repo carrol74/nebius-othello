@@ -253,6 +253,8 @@ class QuestionResult(BaseModel):
     usage: dict[str, Any] | None
     coaching: list[CoachingCard] = Field(default_factory=list)
     format_version: str | None = None
+    answer_facts: list[ReviewFact] = Field(default_factory=list)
+    topic: str | None = None
 
 
 class Task(BaseModel):

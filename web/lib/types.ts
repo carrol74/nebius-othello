@@ -163,7 +163,7 @@ interface TaskState {
 export type Task = TaskState & (
   | { kind: "review"; result: Review | null }
   | { kind: "branch"; result: { game_id: string; result: GameResult } | null }
-  | { kind: "question"; result: { answer: string; model_id: string | null; usage: Record<string, unknown> | null; coaching?: CoachingCard[]; format_version?: string | null } | null }
+  | { kind: "question"; result: { answer: string; model_id: string | null; usage: Record<string, unknown> | null; coaching?: CoachingCard[]; format_version?: string | null; answer_facts?: ReviewFact[]; topic?: string | null } | null }
 );
 
 export interface TrackedTask {

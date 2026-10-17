@@ -34,9 +34,11 @@ For manual startup, configure `backend/.env` and `web/.env.local` from their exa
 
 Set both `TOKEN_FACTORY_API_KEY` and `TOKEN_FACTORY_MODEL_ID` to enable Nemotron reviews. Leave both empty to use games, hints, and branch replay without language-model calls; review requests then report that the service is not configured. Credentials stay on the backend.
 
-The interface and new review answers use English. After a game, explore up to three key player decisions, try a move on the board, compare its search score, and continue a real branch against the original opponent. Step through either search continuation on the board or inspect the complete move analysis. Tied best-scoring alternatives count as equally rated.
+Switch between English and Chinese with the header buttons; the app remembers your language. After a game, select a decision and compare any legal move with the engine recommendation. A short explanation shows the score difference and relevant board facts. Practice, search continuations, full analysis, and questions remain available as optional controls. Tied best-scoring alternatives count as equally rated.
 
 Coaching uses a checked JSON lesson plan with thinking disabled. Invalid or incomplete plans report an error; saved analysis and practice remain available, and coaching can be retried separately. Opening saved reviews, practising moves, and exploring continuations make no model calls. Hint-adoption and result queries use saved facts when they can be answered directly.
+
+To evaluate the configured model independently, run `nemothello check-coach-blind --input saved-review.json --revisions 2 16 19 47 --output blind-check.json` from `backend/`. This sends only boards, sides to move, and legal moves; saved engine recommendations and scores are used afterward to check the answers. It incurs one bounded API call per position, with no automatic retries. The report separates move quality, factual accuracy, and unchecked free-text reasoning.
 
 To start both services locally, double-click `start.command` on macOS or run:
 

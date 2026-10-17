@@ -563,6 +563,10 @@ export interface components {
             coaching?: components["schemas"]["CoachingCard"][];
             /** Format Version */
             format_version?: string | null;
+            /** Answer Facts */
+            answer_facts?: components["schemas"]["ReviewFact"][];
+            /** Topic */
+            topic?: string | null;
         };
         /** Review */
         Review: {

@@ -53,7 +53,7 @@ class Nemotron:
             self.ensure_configured()
         context = review_context(evidence, question)
         factual = factual_question_plan(question)
-        if (factual is None and question and "pass" in question.lower() and context["positions"]
+        if (factual is None and question and any(word in question.lower() for word in ("pass", "跳过", "无合法落点")) and context["positions"]
                 and all(item["allowed_lessons"] == ["pass"] for item in context["positions"])):
             factual = CoachingPlan(topic="strategy", selections=[
                 Selection(revision=item["revision"], fact_ids=[f"p{item['revision']}:pass"], lesson_id="pass")

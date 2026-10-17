@@ -25,6 +25,21 @@ p { line-height: 1.7; }
 .wordmark { font-size: 32px; font-weight: 700; letter-spacing: -.06em; white-space: nowrap; }
 .wordmark > span:first-child { font-weight: 400; }
 .brand-dot { display: inline-block; width: 9px; height: 9px; background: var(--accent); border-radius: 50%; margin-left: 8px; }
+.language-switch { display: flex; margin-left: auto; gap: 4px; }
+.language-switch button { padding: 8px 11px; font-size: 13px; }
+.language-switch button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.compact-result { display: flex; flex-wrap: wrap; gap: 12px 24px; color: var(--muted); font-size: 13px; }
+.comparison-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 0 18px; }
+.comparison-controls label { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.comparison-controls button { margin-left: auto; font-size: 13px; }
+.move-reason { max-width: 68ch; margin: 18px 0; font-size: 14px; }
+.move-reason p { margin: 8px 0; }
+.move-reason p:last-child { color: var(--muted); font-size: 12px; }
+.comparison-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+.comparison-actions > details { padding: 10px 14px; }
+.review-more { margin-top: 22px; }
+.branch-options { margin-top: 20px; }
+.branch-options .branch-panel { border: 0; margin-top: 12px; padding: 0; background: transparent; }
 .game-toolbar { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; margin: 30px 0; }
 .color-picker { display: flex; align-items: center; gap: 8px; }
 .color-picker > span { font-size: 13px; color: var(--muted); margin-right: 8px; }

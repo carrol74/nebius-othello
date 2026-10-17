@@ -193,7 +193,7 @@ def pass_context(review: dict[str, Any], revision: int):
 
 
 def review_context(review: dict[str, Any], question: str | None) -> dict[str, Any]:
-    requested = {int(value) for value in re.findall(r"(?:position(?:\s+revision)?|revision)\s*(\d+)", question or "", re.IGNORECASE)}
+    requested = {int(value) for value in re.findall(r"(?:position(?:\s+revision)?|revision|局面)\s*(\d+)", question or "", re.IGNORECASE)}
     evidence = review.get("evidence", review["key_moves"])
     if requested:
         selected = [item for item in evidence if item["revision"] in requested]
@@ -201,7 +201,7 @@ def review_context(review: dict[str, Any], question: str | None) -> dict[str, An
             raise AppError("REVIEW_POSITION", "Ask about at most three positions at a time", 422)
     else:
         selected = select_key_moves(evidence, review["human_color"])
-    extra = set(re.findall(r"\b[a-h][1-8]\b", question or "", re.IGNORECASE))
+    extra = set(re.findall(r"(?<![a-z0-9])[a-h][1-8](?![a-z0-9])", question or "", re.IGNORECASE))
     positions = []
     for original in selected:
         item = original if original.get("comparisons") else enrich_evidence(original)
@@ -253,10 +253,10 @@ def factual_question_plan(question: str | None):
     if question is None:
         return None
     text = question.lower()
-    moves = set(re.findall(r"\b[a-h][1-8]\b", text))
-    if not moves and any(word in text for word in ("guarantee", "guaranteed", "would i win", "would i have won", "final result")):
+    moves = set(re.findall(r"(?<![a-z0-9])[a-h][1-8](?![a-z0-9])", text))
+    if not moves and any(word in text for word in ("guarantee", "guaranteed", "would i win", "would i have won", "final result", "保证获胜", "一定赢", "一定能赢", "能赢吗", "最终结果")):
         return CoachingPlan(topic="outcome", selections=[])
-    if not moves and "hint" in text and any(word in text for word in ("follow", "adopt", "ignore", "display", "shown")):
+    if not moves and any(word in text for word in ("hint", "提示", "推荐点")) and any(word in text for word in ("follow", "adopt", "ignore", "display", "shown", "采用", "按照", "显示", "采纳")):
         return CoachingPlan(topic="hints", selections=[])
     return None
 
@@ -303,12 +303,16 @@ def render_plan(plan: CoachingPlan, context: dict[str, Any]):
         cards.append({"revision": selection.revision, "facts": [facts[key] for key in identifiers],
                       "lesson_id": selection.lesson_id, "lesson": LESSONS[selection.lesson_id]})
     summary = context["summary_facts"]
+    answer_facts = []
     if context["task"] == "review":
-        blocks = [item["text"] for item in summary[:2]]
+        answer_facts = summary[:2]
+        blocks = [item["text"] for item in answer_facts]
     elif plan.topic == "hints":
-        blocks = [item["text"] for item in summary if item["topic"] == "hints"]
+        answer_facts = [item for item in summary if item["topic"] == "hints"]
+        blocks = [item["text"] for item in answer_facts]
     elif plan.topic == "outcome":
-        blocks = [item["text"] for item in summary if item["topic"] == "outcome"]
+        answer_facts = [item for item in summary if item["topic"] == "outcome"]
+        blocks = [item["text"] for item in answer_facts]
     elif plan.topic == "unsupported":
         blocks = ["The saved game evidence does not answer that question. Ask about a move, displayed hints, or the game's result."]
     else:
@@ -317,6 +321,9 @@ def render_plan(plan: CoachingPlan, context: dict[str, Any]):
         blocks.append(" ".join(item["text"] for item in card["facts"]))
         blocks.append(card["lesson"]["text"])
     if (context["task"] == "question" and plan.topic in ("comparison", "strategy", "hints")
-            and re.search(r"\b(win|won|winning|guarantee|guaranteed|victory)\b", context["question"], re.IGNORECASE)):
-        blocks.append(next(item["text"] for item in summary if item["id"] == "outcome_limit"))
-    return {"text": "\n\n".join(blocks), "coaching": cards}
+            and re.search(r"\b(win|won|winning|guarantee|guaranteed|victory)\b|获胜|赢|保证", context["question"], re.IGNORECASE)):
+        boundary = next(item for item in summary if item["id"] == "outcome_limit")
+        blocks.append(boundary["text"])
+        answer_facts.append(boundary)
+    return {"text": "\n\n".join(blocks), "coaching": cards,
+            "answer_facts": answer_facts, "topic": plan.topic}

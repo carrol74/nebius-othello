@@ -1779,6 +1779,24 @@
               }
             ],
             "title": "Format Version"
+          },
+          "answer_facts": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewFact"
+            },
+            "type": "array",
+            "title": "Answer Facts"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic"
           }
         },
         "type": "object",

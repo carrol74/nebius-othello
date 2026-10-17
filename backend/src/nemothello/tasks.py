@@ -52,7 +52,8 @@ class Tasks:
                 response = self.nemotron.explain(review, task["inputs"]["question"])
                 result = {"answer": response["text"], "model_id": response["model_id"],
                           "usage": response["usage"], "coaching": response["coaching"],
-                          "format_version": REVIEW_VERSION}
+                          "format_version": REVIEW_VERSION, "answer_facts": response["answer_facts"],
+                          "topic": response["topic"]}
             task.update(status="succeeded", result=result, error=None, usage=result.get("usage"))
         except Exception as exc:
             logger.exception("Task failed task_id=%s", task["task_id"])

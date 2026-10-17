@@ -129,6 +129,28 @@ def test_question_about_recorded_pass_uses_rules_without_inventing_scores(native
         model.close()
 
 
+@pytest.mark.parametrize("question,topic", [
+    ("局面30：为什么黑方必须跳过回合？", "strategy"),
+    ("我采用过哪些提示？", "hints"),
+    ("按照提示一定能赢吗？", "outcome"),
+])
+def test_chinese_factual_questions_need_no_model_call(native_review, question, topic):
+    model = Nemotron("", "https://unused.invalid/v1", "")
+    try:
+        response = model.explain(native_review, question)
+        assert response["model_id"] is None and response["usage"] is None
+        assert response["topic"] == topic
+        assert response["coaching"] or response["answer_facts"]
+    finally:
+        model.close()
+
+
+def test_chinese_question_extracts_adjacent_move_coordinates(native_review):
+    context = review_context(native_review, "局面16：为什么g4比b3差？")
+    assert len(context["positions"]) == 1 and context["positions"][0]["revision"] == 16
+    assert any(fact["id"] == "p16:g4" for fact in context["positions"][0]["facts"])
+
+
 def test_full_review_must_cover_all_selected_human_decisions(native_review):
     context = review_context(native_review, None)
     selections = [{"revision": item["revision"], "fact_ids": [f"p{item['revision']}:score"],

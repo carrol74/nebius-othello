@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError, requestId } from "@/lib/api";
+import { LanguageSwitch, useLocale } from "@/lib/locale";
 import { ReviewDetails } from "@/components/review-details";
 import { ReviewCoach } from "@/components/review-coach";
 import type { Practice, Variation } from "@/components/review-coach";
@@ -9,7 +10,6 @@ import { TaskList } from "@/components/task-list";
 import type { Color, Difficulty, GameState, Hint, Review, Task, TrackedTask } from "@/lib/types";
 
 type RecentGame = { game_id: string; label: string };
-const difficultyName: Record<Difficulty, string> = { easy: "Beginner", medium: "Intermediate", hard: "Advanced" };
 const colorName = (color: Color) => color === "X" ? "Black" : "White";
 
 function message(error: unknown) {
@@ -18,6 +18,10 @@ function message(error: unknown) {
 }
 
 export default function Home() {
+  const {locale, t} = useLocale();
+  const localizedColor = (color: Color) => color === "X" ? t("Black", "黑方") : t("White", "白方");
+  const localizedDifficulty: Record<Difficulty, string> = {easy: t("Beginner", "初级"), medium: t("Intermediate", "中级"), hard: t("Advanced", "高级")};
+  const busyMessages: Record<string, string> = {"Preparing game": "准备对局", "AI is choosing a move": "AI 正在落子", "Continuing your retry": "正在创建续下对局", "Updating game": "更新对局", "Creating game": "创建对局", "Loading game": "加载对局", "Playing move": "落子中", "Requesting review": "分析棋局", "Sending question": "发送问题", "Creating branch": "创建分支", "Starting hint replay": "开始提示回放", "Refresh tasks": "刷新任务", "Loading branch": "加载分支"};
   const [game, setGame] = useState<GameState | null>(null);
   const [humanColor, setHumanColor] = useState<Color>("X");
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
@@ -337,55 +341,55 @@ export default function Home() {
 
   return (
     <main className="workspace">
-      <header className="masthead"><a className="wordmark" href="/">Nemo<span>thello</span><span className="brand-dot" /></a></header>
-      <section className="game-toolbar" aria-label="Game settings"><div className="color-picker">{!canChangeOpening && game && <span>Next game color</span>}<button aria-pressed={humanColor === "X"} onClick={() => changeSettings("X", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc black" />Black</button><button aria-pressed={humanColor === "O"} onClick={() => changeSettings("O", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc white" />White</button></div><label className="difficulty-picker">{!canChangeOpening && game && "Next game difficulty"}<select aria-label={canChangeOpening ? "Difficulty" : "Next game difficulty"} value={difficulty} disabled={!!busy || !loaded} onChange={(event) => changeSettings(humanColor, event.target.value as Difficulty)}><option value="easy">Beginner</option><option value="medium">Intermediate</option><option value="hard">Advanced</option></select></label><button className="primary" disabled={!!busy || !loaded} onClick={() => void perform("Creating game", () => createGame(humanColor, difficulty))}>New game</button>{recent.length > 0 && <label className="recent-picker">Recent games<select value={game?.game_id ?? ""} disabled={!!busy} onChange={(event) => { const id = event.target.value; if (id) void perform("Loading game", async () => acceptGame(await api<GameState>(`/games/${id}`))); }}><option value="" disabled>Select a game</option>{recent.map((item) => <option key={item.game_id} value={item.game_id}>{item.label}</option>)}</select></label>}</section>
-      {error && <div className="error-banner" role="alert"><span>{error}</span><button aria-label="Dismiss error" onClick={() => setError(null)}>×</button></div>}
+      <header className="masthead"><a className="wordmark" href="/">Nemo<span>thello</span><span className="brand-dot" /></a><LanguageSwitch /></header>
+      <section className="game-toolbar" aria-label={t("Game settings", "对局设置")}><div className="color-picker">{!canChangeOpening && game && <span>{t("Next game color", "下一局执棋")}</span>}<button aria-pressed={humanColor === "X"} onClick={() => changeSettings("X", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc black" />{t("Black", "黑方")}</button><button aria-pressed={humanColor === "O"} onClick={() => changeSettings("O", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc white" />{t("White", "白方")}</button></div><label className="difficulty-picker">{!canChangeOpening && game && t("Next game difficulty", "下一局难度")}<select aria-label={canChangeOpening ? t("Difficulty", "难度") : t("Next game difficulty", "下一局难度")} value={difficulty} disabled={!!busy || !loaded} onChange={(event) => changeSettings(humanColor, event.target.value as Difficulty)}><option value="easy">{t("Beginner", "初级")}</option><option value="medium">{t("Intermediate", "中级")}</option><option value="hard">{t("Advanced", "高级")}</option></select></label><button className="primary" disabled={!!busy || !loaded} onClick={() => void perform("Creating game", () => createGame(humanColor, difficulty))}>{t("New game", "新对局")}</button>{recent.length > 0 && <label className="recent-picker">{t("Recent games", "最近对局")}<select value={game?.game_id ?? ""} disabled={!!busy} onChange={(event) => { const id = event.target.value; if (id) void perform("Loading game", async () => acceptGame(await api<GameState>(`/games/${id}`))); }}><option value="" disabled>{t("Select a game", "选择对局")}</option>{recent.map((item) => <option key={item.game_id} value={item.game_id}>{locale === "zh" ? item.label.replace(/^Branch/, "分支").replace(/^Game/, "对局").replace(/^Saved game/, "已保存对局").replace(/Black/, "黑方").replace(/White/, "白方") : item.label}</option>)}</select></label>}</section>
+      {error && <div className="error-banner" role="alert"><span>{error}</span><button aria-label={t("Dismiss error", "关闭错误信息")} onClick={() => setError(null)}>×</button></div>}
       {!loaded && !busy && bootStarted.current && <button className="primary connection-retry" onClick={() => {
         bootStarted.current = false;
         setBootRetry((attempt) => attempt + 1);
-      }}>Reconnect</button>}
+      }}>{t("Reconnect", "重新连接")}</button>}
       <div className="play-layout">
-        <section className="board-panel" id="game-board" aria-label="Othello board"><div className="board-topline">{game?.difficulty && <span className="turn-label" aria-label="Opponent difficulty">{difficultyName[game.difficulty]}</span>}<span className="turn-label" aria-live="polite">{busy ?? (game ? live && game.status === "finished" ? "Game over" : displayedTurn ? live ? game.turn === game.human_color ? "Your turn" : "AI's turn" : `${colorName(displayedTurn)} to move` : "Game over" : "Preparing a new game…")}</span></div>
-          <div className="board-with-labels"><div className="column-labels" aria-hidden="true">{"abcdefgh".split("").map((column) => <span key={column}>{column}</span>)}</div><div className="board-rows"><div className="row-labels" aria-hidden="true">{Array.from({ length: 8 }, (_, row) => <span key={row}>{row + 1}</span>)}</div><div className={`board ${board ? "" : "empty-board"}`} role="group" aria-label={board ? "Board, a1 is at the top left" : "No game started"}>{Array.from({ length: 64 }, (_, index) => {
+        <section className="board-panel" id="game-board" aria-label={t("Othello board", "翻转棋棋盘")}><div className="board-topline">{game?.difficulty && <span className="turn-label" aria-label={t("Opponent difficulty", "对手难度")}>{localizedDifficulty[game.difficulty]}</span>}<span className="turn-label" aria-live="polite">{(busy ? locale === "zh" ? busyMessages[busy] ?? busy : busy : null) ?? (game ? live && game.status === "finished" ? t("Game over", "对局结束") : displayedTurn ? live ? game.turn === game.human_color ? t("Your turn", "轮到你") : t("AI's turn", "轮到 AI") : t(`${localizedColor(displayedTurn)} to move`, `轮到${localizedColor(displayedTurn)}`) : t("Game over", "对局结束") : t("Preparing a new game…", "正在准备新对局…"))}</span></div>
+          <div className="board-with-labels"><div className="column-labels" aria-hidden="true">{"abcdefgh".split("").map((column) => <span key={column}>{column}</span>)}</div><div className="board-rows"><div className="row-labels" aria-hidden="true">{Array.from({ length: 8 }, (_, row) => <span key={row}>{row + 1}</span>)}</div><div className={`board ${board ? "" : "empty-board"}`} role="group" aria-label={board ? t("Board, a1 is at the top left", "棋盘，左上角为 a1") : t("No game started", "尚未开始对局")}>{Array.from({ length: 64 }, (_, index) => {
             const row = Math.floor(index / 8), column = index % 8;
             const coordinate = `${"abcdefgh"[column]}${row + 1}`, cell = board?.[row]?.[column] ?? ".";
             const legal = canPractice ? !!selectedEvidence?.analysis.candidates.some((entry) => entry.coordinate === coordinate) : live && !!game?.legal_moves.includes(coordinate);
             const recommended = !variation && (practice?.coordinate ? selectedEvidence?.recommended_move === coordinate : visibleHint?.recommended_move === coordinate);
-            return <button key={coordinate} className={`square ${recommended ? "recommended" : ""}`} disabled={!canMove || !legal} aria-label={`${coordinate}, ${cell === "X" ? "black disc" : cell === "O" ? "white disc" : "empty"}${legal ? ", legal move" : ""}${recommended ? ", recommended move" : ""}`} onClick={() => { if (canPractice && practice) { setPractice({...practice, coordinate}); document.getElementById("review-coaching")?.scrollIntoView({block: "start", behavior: "instant"}); return; } if (game) void perform("Playing move", async () => acceptGame(await api<GameState>(`/games/${game.game_id}/moves`, { coordinate, expected_revision: game.revision, request_id: requestId() }))); }}>{cell !== "." && <span className={`disc ${cell === "X" ? "black" : "white"}`} />}{cell === "." && legal && <span className="legal-marker" />}{recommended && <span className="hint-ring" />}</button>;
+            return <button key={coordinate} className={`square ${recommended ? "recommended" : ""}`} disabled={!canMove || !legal} aria-label={`${coordinate}, ${cell === "X" ? t("black disc", "黑棋") : cell === "O" ? t("white disc", "白棋") : t("empty", "空位")}${legal ? t(", legal move", "，合法落点") : ""}${recommended ? t(", recommended move", "，推荐落点") : ""}`} onClick={() => { if (canPractice && practice) { setPractice({...practice, coordinate}); document.getElementById("review-coaching")?.scrollIntoView({block: "start", behavior: "instant"}); return; } if (game) void perform("Playing move", async () => acceptGame(await api<GameState>(`/games/${game.game_id}/moves`, { coordinate, expected_revision: game.revision, request_id: requestId() }))); }}>{cell !== "." && <span className={`disc ${cell === "X" ? "black" : "white"}`} />}{cell === "." && legal && <span className="legal-marker" />}{recommended && <span className="hint-ring" />}</button>;
           })}</div></div></div>
           {game && (game.auto_play || !live || (game.status === "active" && game.turn !== game.human_color && !busy)) && <div className="board-footer">
-            {!live && !variation && <><span>{historyRevision === 0 ? "Starting position" : `Position ${historyRevision}`}</span><button onClick={() => selectPosition(null)}>Back to final position</button></>}
-            {variation && variationComparison && <><span>Search line · {variationComparison.frames.slice(1, variation.frame + 1).map((frame) => frame.coordinate).join(" → ") || "Starting position"}</span><button aria-label="Previous search move" disabled={variation.frame === 0} onClick={() => setVariation({...variation, frame: variation.frame - 1})}>Previous</button><span>{variation.frame} / {variationComparison.frames.length - 1}</span><button aria-label="Next search move" disabled={variation.frame === variationComparison.frames.length - 1} onClick={() => setVariation({...variation, frame: variation.frame + 1})}>Next</button><button onClick={() => setVariation(null)}>Back to position</button></>}
-            {game.auto_play && <span>Replaying with hints</span>}
-            {game.status === "active" && !game.auto_play && game.turn !== game.human_color && !busy && <button className="primary" onClick={() => void requestAi(game)}>Retry AI move</button>}
+            {!live && !variation && <><span>{historyRevision === 0 ? t("Starting position", "初始局面") : t(`Position ${historyRevision}`, `局面 ${historyRevision}`)}</span><button onClick={() => selectPosition(null)}>{t("Back to final position", "返回终局")}</button></>}
+            {variation && variationComparison && <><span>{t("Search line", "搜索续着")} · {variationComparison.frames.slice(1, variation.frame + 1).map((frame) => frame.coordinate).join(" → ") || t("Starting position", "初始局面")}</span><button aria-label={t("Previous search move", "上一步搜索落子")} disabled={variation.frame === 0} onClick={() => setVariation({...variation, frame: variation.frame - 1})}>{t("Previous", "上一步")}</button><span>{variation.frame} / {variationComparison.frames.length - 1}</span><button aria-label={t("Next search move", "下一步搜索落子")} disabled={variation.frame === variationComparison.frames.length - 1} onClick={() => setVariation({...variation, frame: variation.frame + 1})}>{t("Next", "下一步")}</button><button onClick={() => setVariation(null)}>{t("Back to position", "返回局面")}</button></>}
+            {game.auto_play && <span>{t("Replaying with hints", "正在按提示回放")}</span>}
+            {game.status === "active" && !game.auto_play && game.turn !== game.human_color && !busy && <button className="primary" onClick={() => void requestAi(game)}>{t("Retry AI move", "重试 AI 落子")}</button>}
           </div>}
         </section>
-        <aside className="side-panel"><section className="score-card" aria-label={live ? "Disc count" : "Disc count at selected position"}><div className="score-line"><div><i className="mini-disc black" /><span>Black {game?.human_color === "X" && <small>You</small>}</span><strong>{board ? board.join("").split("X").length - 1 : "—"}</strong></div><div><i className="mini-disc white" /><span>White {game?.human_color === "O" && <small>You</small>}</span><strong>{board ? board.join("").split("O").length - 1 : "—"}</strong></div></div>{game?.result && <p className="result-label">{!live && "Final · "}{game.result.winner === "draw" ? "Draw" : game.result.winner === game.human_color ? "You win" : "AI wins"}<span>{game.result.black_count} : {game.result.white_count}</span></p>}</section>
+        <aside className="side-panel"><section className="score-card" aria-label={live ? t("Disc count", "棋子数量") : t("Disc count at selected position", "当前局面的棋子数量")}><div className="score-line"><div><i className="mini-disc black" /><span>{t("Black", "黑方")} {game?.human_color === "X" && <small>{t("You", "你")}</small>}</span><strong>{board ? board.join("").split("X").length - 1 : "—"}</strong></div><div><i className="mini-disc white" /><span>{t("White", "白方")} {game?.human_color === "O" && <small>{t("You", "你")}</small>}</span><strong>{board ? board.join("").split("O").length - 1 : "—"}</strong></div></div>{game?.result && <p className="result-label">{!live && t("Final · ", "终局 · ")}{game.result.winner === "draw" ? t("Draw", "和棋") : game.result.winner === game.human_color ? t("You win", "你获胜") : t("AI wins", "AI 获胜")}<span>{game.result.black_count} : {game.result.white_count}</span></p>}</section>
           {game?.status !== "finished" && <section className="tips-card">
             <div className="card-heading">
-              <span className="section-label">Hints</span>
-              <button className={`toggle ${tips ? "on" : ""}`} role="switch" aria-checked={tips} aria-label="Move hints" disabled={!game || game.auto_play || game.status !== "active"} onClick={() => { tipsRef.current = !tips; setTips(!tips); }}><span /></button>
+              <span className="section-label">{t("Hints", "推荐点")}</span>
+              <button className={`toggle ${tips ? "on" : ""}`} role="switch" aria-checked={tips} aria-label={t("Move hints", "落点提示")} disabled={!game || game.auto_play || game.status !== "active"} onClick={() => { tipsRef.current = !tips; setTips(!tips); }}><span /></button>
             </div>
             {tips && (hintError || (live && game?.turn === game?.human_color && (!visibleHint || !hintConfirmed))) && <div className="tip-status" aria-live="polite">
-              {hintError ? <><span className="inline-error">{hintError}</span><button onClick={() => hint ? setDisplayRetry((value) => value + 1) : setHintRetry((value) => value + 1)}>Retry hint</button></> : "Preparing hint…"}
+              {hintError ? <><span className="inline-error">{hintError}</span><button onClick={() => hint ? setDisplayRetry((value) => value + 1) : setHintRetry((value) => value + 1)}>{t("Retry hint", "重试提示")}</button></> : t("Preparing hint…", "正在计算推荐点…")}
             </div>}
           </section>}
-          {game?.status === "finished" && <section className="history-card" aria-label="Move history"><span className="section-label">Move history</span><div className="history-list"><button className={historyRevision === 0 ? "selected" : ""} onClick={() => selectPosition(0)}>Starting position</button>{game.history.map((event) => <button key={event.event_index} className={historyRevision === event.revision ? "selected" : ""} onClick={() => selectPosition(event.revision)}><span><small>{event.event_index + 1}</small>{colorName(event.actor)}</span><strong>{event.kind === "pass" ? "Pass" : event.coordinate}</strong></button>)}</div></section>}
+          {game?.status === "finished" && <section className="history-card" aria-label={t("Move history", "棋谱")}><span className="section-label">{t("Move history", "棋谱")}</span><div className="history-list"><button className={historyRevision === 0 ? "selected" : ""} onClick={() => selectPosition(0)}>{t("Starting position", "初始局面")}</button>{game.history.map((event) => <button key={event.event_index} className={historyRevision === event.revision ? "selected" : ""} onClick={() => selectPosition(event.revision)}><span><small>{event.event_index + 1}</small>{localizedColor(event.actor)}</span><strong>{event.kind === "pass" ? t("Pass", "跳过") : event.coordinate}</strong></button>)}</div></section>}
         </aside>
       </div>
       {game?.status === "finished" && (
         <section className="review-panel" id="review-coaching">
           <div className="review-heading">
-            <h2>Review</h2>
+            <h2>{t("Review", "复盘")}</h2>
             {(!review || review.format_version !== "grounded-v1" || review.coaching_status === "failed") && <button className="primary" disabled={!!busy || reviewPending} onClick={() => void perform("Requesting review", async () => trackTask({
               task: await api<Task>(`/games/${game.game_id}/reviews`, { request_id: requestId() }), purpose: "review", game_id: game.game_id,
-            }))}>{reviewPending ? "Building review" : review?.format_version === "grounded-v1" ? "Retry coaching" : "Review game"}</button>}
+            }))}>{reviewPending ? t("Building review", "分析中") : review?.format_version === "grounded-v1" ? t("Retry coaching", "重试讲解") : t("Review game", "分析棋局")}</button>}
           </div>
           {review?.format_version === "grounded-v1" ? <>
-            {review.coaching_status === "pending" && <p className="muted" role="status">Choosing lessons. You can already explore the analysis.</p>}
+            {review.coaching_status === "pending" && <p className="muted" role="status">{t("Choosing lessons. You can already explore the analysis.", "正在生成讲解，可以先查看落点对比。")}</p>}
             {review.coaching_status === "failed" && <p className="inline-error">{review.coaching_error}</p>}
-            <ReviewCoach review={review} selectedRevision={historyRevision} practice={practice} variation={variation} busy={!!busy} select={selectPosition} startPractice={startPractice} continueGame={continuePractice} showVariation={showVariation} />
-            {(!practice || practice.coordinate !== null) && <ReviewDetails review={review} selectRevision={selectPosition} />}
+            <ReviewCoach key={game.game_id} review={review} selectedRevision={historyRevision} practice={practice} variation={variation} busy={!!busy} select={selectPosition} startPractice={startPractice} continueGame={continuePractice} showVariation={showVariation} />
+            <details className="review-more"><summary>{t("More analysis and questions", "完整分析与追问")}</summary><ReviewDetails review={review} selectRevision={selectPosition} />
             <form className="question-form" onSubmit={(event) => {
               event.preventDefault();
               const text = question.trim();
@@ -395,26 +399,26 @@ export default function Home() {
                 setQuestion("");
               });
             }}>
-              <div><textarea id="review-question" aria-label="Review question" value={question} maxLength={1900} onChange={(event) => setQuestion(event.target.value)} placeholder={historyRevision === null ? "Ask about this game…" : historyRevision === 0 ? "Ask about the starting position…" : `Ask about position ${historyRevision}…`} required /><button className="primary" disabled={!!busy || !question.trim()}>Ask</button></div>
-            </form>
-          </> : review ? <p className="muted">Generate a new review to explore verified comparisons and coaching.</p> : null}
+              <div><textarea id="review-question" aria-label={t("Review question", "复盘问题")} value={question} maxLength={1900} onChange={(event) => setQuestion(event.target.value)} placeholder={historyRevision === null ? t("Ask about this game…", "询问这盘棋…") : historyRevision === 0 ? t("Ask about the starting position…", "询问初始局面…") : t(`Ask about position ${historyRevision}…`, `询问局面 ${historyRevision}…`)} required /><button className="primary" disabled={!!busy || !question.trim()}>{t("Ask", "提问")}</button></div>
+            </form></details>
+          </> : review ? <p className="muted">{t("Generate a new review to explore verified comparisons and coaching.", "重新分析棋局以查看落点对比。")}</p> : null}
         </section>
       )}
       {game?.status === "finished" && historyRevision !== null && !variation && !practice && (
-        <section className="branch-panel">
-          {awaitingPass && <p>Select a position after the pass.</p>}
-          {displayedTurn === null && <p>Select a position before the game ends.</p>}
+        <details className="branch-options"><summary>{t("Replay options", "回放选项")}</summary><div className="branch-panel">
+          {awaitingPass && <p>{t("Select a position after the pass.", "请选择跳过回合之后的局面。")}</p>}
+          {displayedTurn === null && <p>{t("Select a position before the game ends.", "请选择终局之前的局面。")}</p>}
           <div className="branch-actions">
             <button disabled={!!busy || branchUnavailable} onClick={() => void perform("Creating branch", async () => acceptGame(await api<GameState>(`/games/${game.game_id}/branches`, {
               revision: branchRevision, mode: "manual", request_id: requestId(),
-            })))}>Continue from here</button>
+            })))}>{t("Continue from here", "从此处续下")}</button>
             <button className="primary" disabled={!!busy || branchPending || branchUnavailable} onClick={() => void perform("Starting hint replay", async () => trackTask({
               task: await api<Task>(`/games/${game.game_id}/branches`, { revision: branchRevision, mode: "follow_hints", request_id: requestId() }), purpose: "branch", game_id: game.game_id,
-            }))}>{branchPending ? "Replaying" : "Replay with hints"}</button>
+            }))}>{branchPending ? t("Replaying", "回放中") : t("Replay with hints", "按提示回放")}</button>
           </div>
-        </section>
+        </div></details>
       )}
-      <TaskList entries={currentTasks} busy={!!busy} refresh={() => void perform("Refresh tasks", async () => {
+      <TaskList review={review} entries={currentTasks} busy={!!busy} refresh={() => void perform("Refresh tasks", async () => {
         for (const entry of currentTasks) trackTask({ ...entry, task: await api<Task>(`/tasks/${entry.task.task_id}`) });
       })} openGame={(id) => void perform("Loading branch", async () => acceptGame(await api<GameState>(`/games/${id}`)))} repeatQuestion={(text) => {
         setQuestion(text);

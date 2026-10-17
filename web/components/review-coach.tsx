@@ -1,4 +1,7 @@
-import type { Review, ReviewEvidence } from "@/lib/types";
+import { useState } from "react";
+import { useLocale } from "@/lib/locale";
+import { compareMoves } from "@/lib/review-text";
+import type { Review } from "@/lib/types";
 
 export type Practice = { revision: number; coordinate: string | null };
 export type Variation = { revision: number; coordinate: string; frame: number };
@@ -14,54 +17,38 @@ export function ReviewCoach({ review, selectedRevision, practice, variation, bus
   continueGame: (revision: number, coordinate: string) => void;
   showVariation: (value: Variation | null) => void;
 }) {
+  const {locale, t} = useLocale();
+  const [choice, setChoice] = useState<{revision: number; move: string} | null>(null);
   const focused = review.evidence.find((item) => item.revision === selectedRevision);
-  const card = review.coaching?.find((item) => item.revision === focused?.revision);
   const activePractice = practice?.revision === focused?.revision ? practice : null;
   const hidden = !!activePractice && activePractice.coordinate === null;
-  const picked = focused?.analysis.candidates.find((item) => item.coordinate === activePractice?.coordinate);
-  const best = focused?.analysis.candidates.find((item) => item.coordinate === focused?.recommended_move);
-  const comparisons = focused?.comparisons ?? [];
-  const moves = focused ? [...new Set([focused.actual_move, activePractice?.coordinate ?? focused.actual_move, focused.recommended_move])] : [];
-  const activeVariation = variation?.revision === focused?.revision ? variation : null;
-  const line = comparisons.find((item) => item.coordinate === activeVariation?.coordinate);
-
-  function comparisonTable(entry: ReviewEvidence) {
-    return <div className="table-scroll"><table className="move-comparison">
-      <thead><tr><th>Move</th><th>Score</th><th>Opponent replies</th></tr></thead>
-      <tbody>{moves.map((move) => {
-        const candidate = entry.analysis.candidates.find((item) => item.coordinate === move)!;
-        const details = comparisons.find((item) => item.coordinate === move);
-        const labels = [move === entry.actual_move ? "Played" : null, move === activePractice?.coordinate ? "Your retry" : null, move === entry.recommended_move ? "Search choice" : null].filter(Boolean);
-        return <tr key={move}><td><strong>{move}</strong><span className="comparison-label">{labels.join(" / ")}</span></td><td>{candidate.score}</td><td>{details?.opponent_moves ?? "—"}</td></tr>;
-      })}</tbody>
-    </table></div>;
-  }
+  const move = activePractice?.coordinate ?? (choice && choice.revision === focused?.revision ? choice.move : focused?.actual_move);
+  const best = focused?.analysis.candidates.find((item) => item.coordinate === focused.recommended_move);
+  const selected = focused?.analysis.candidates.find((item) => item.coordinate === move);
+  const lesson = review.coaching?.find((card) => card.revision === focused?.revision);
+  const moves = [...new Set([move, best?.coordinate])].filter((item): item is string => !!item);
+  const summary = review.result;
 
   return <div className="review-coach">
-    <div className="review-summary">{review.summary_facts?.slice(0, 2).map((item) => <p key={item.id}>{item.text}</p>)}</div>
-    {review.key_moves.length > 0 && <div className="decision-picker" aria-label="Key player decisions">
-      {review.key_moves.map((entry) => <button key={entry.revision} aria-pressed={focused?.revision === entry.revision} onClick={() => select(entry.revision)}>Position {entry.revision}<span>{entry.stage ?? "Decision"}</span></button>)}
+    <p className="compact-result">{t("Black", "黑方")} {summary.black_count} : {summary.white_count} {t("White", "白方")}<span>{t("Hints followed", "提示采用")} {review.hint_adoption.adopted_turns}/{review.hint_adoption.shown_turns}</span></p>
+    {review.key_moves.length > 0 && <div className="decision-picker" aria-label={t("Key decisions", "关键落子")}>
+      {review.key_moves.map((entry) => <button key={entry.revision} aria-pressed={focused?.revision === entry.revision} onClick={() => select(entry.revision)}>{t("Position", "局面")} {entry.revision}</button>)}
     </div>}
-    {focused ? <article className="coach-decision">
-      <div className="card-heading"><h3>Position {focused.revision}</h3><button disabled={busy || focused.actor !== review.human_color} onClick={() => startPractice(focused.revision)}>{activePractice ? "Try again" : "Try this position"}</button></div>
-      {hidden ? <p className="practice-instruction" role="status">Choose a move on the board. The comparison stays hidden until you choose.</p> : <>
-        <p className="comparison-perspective">{focused.actor === "X" ? "Black" : "White"} to move · {focused.analysis.score_kind === "exact" ? "Exact endgame analysis" : "Search estimates"}</p>
-        {comparisonTable(focused)}
-        {picked && best && <div className="practice-feedback" role="status">
-          <p>{picked.score === best.score ? "Your move matches the best search score." : `Your move scores ${best.score - picked.score} below the best search score.`} {picked.score_kind === "exact" ? "This is an exact endgame comparison." : "This is a search estimate, not a guaranteed result."}</p>
-          <button className="primary" disabled={busy} onClick={() => continueGame(focused.revision, picked.coordinate)}>Play on from {picked.coordinate}</button>
-        </div>}
-        {card && <div className="coach-lesson"><h3>{card.lesson.title}</h3>
-          {card.facts.filter((item) => !item.id.endsWith(":decision") && !item.id.endsWith(":score")).map((item) => <p key={item.id}>{item.text}</p>)}
-          <p>{card.lesson.text}</p><p className="reflection-question">{card.lesson.question}</p>
-        </div>}
-        {comparisons.length > 0 && <details className="variation-inspector"><summary>Explore search continuations</summary>
-          <div className="variation-moves">{moves.map((move) => <button key={move} aria-pressed={activeVariation?.coordinate === move} onClick={() => showVariation({revision: focused.revision, coordinate: move, frame: 1})}>{move}</button>)}</div>
-          {activeVariation && line && <><p className="variation-caption">One search continuation · {line.frames.slice(1, activeVariation.frame + 1).map((frame) => frame.coordinate).join(" → ") || "Starting position"}</p>
-          </>}
-        </details>}
+    {focused && selected && best ? <article className="coach-decision">
+      <div className="comparison-controls"><label>{t("Compare move", "对比落点")}<select aria-label={t("Compare move", "对比落点")} value={move} disabled={hidden} onChange={(event) => { select(focused.revision); setChoice({revision: focused.revision, move: event.target.value}); }}>
+        {focused.analysis.candidates.map((candidate) => <option key={candidate.coordinate} value={candidate.coordinate}>{candidate.coordinate}{candidate.coordinate === focused.actual_move ? t(" · Played", " · 实际落子") : ""}</option>)}
+      </select></label><button disabled={busy || focused.actor !== review.human_color} onClick={() => startPractice(focused.revision)}>{t("Try on board", "在棋盘上尝试")}</button></div>
+      {hidden ? <p role="status">{t("Choose a move on the board.", "在棋盘上选择一个落点。")}</p> : <>
+        <div className="table-scroll"><table className="move-comparison"><thead><tr><th>{t("Move", "落点")}</th><th>{t("Score", "评分")} ({focused.actor === "X" ? t("Black", "黑方") : t("White", "白方")})</th><th>{t("Opponent replies", "对手合法落点")}</th></tr></thead>
+          <tbody>{moves.map((coordinate) => {
+            const candidate = focused.analysis.candidates.find((item) => item.coordinate === coordinate)!;
+            const details = focused.comparisons?.find((item) => item.coordinate === coordinate);
+            return <tr key={coordinate}><td><strong>{coordinate}</strong><span className="comparison-label">{coordinate === best.coordinate ? t("Engine recommendation", "引擎推荐") : coordinate === focused.actual_move ? t("Played", "实际落子") : t("Selected", "所选落点")}</span></td><td>{candidate.score}</td><td>{details?.opponent_moves ?? "—"}</td></tr>;
+          })}</tbody></table></div>
+        <div className="move-reason">{compareMoves(focused, selected.coordinate, locale, lesson?.lesson_id).map((text) => <p key={text}>{text}</p>)}</div>
+        <div className="comparison-actions"><button disabled={busy} onClick={() => continueGame(focused.revision, selected.coordinate)}>{t("Play on from", "从此处续下")} {selected.coordinate}</button>
+          {focused.comparisons?.length ? <details><summary>{t("Search continuations", "搜索续着")}</summary><div className="variation-moves">{moves.map((coordinate) => <button key={coordinate} aria-pressed={variation?.revision === focused.revision && variation.coordinate === coordinate} onClick={() => showVariation({revision: focused.revision, coordinate, frame: 1})}>{coordinate}</button>)}</div></details> : null}</div>
       </>}
-    </article> : <p>{review.key_moves.length ? "Select a key decision to explore its analysis." : "No player decisions with multiple legal moves were recorded."}</p>}
-    {review.branch_results && review.branch_results.length > 0 && <div className="replay-comparisons">{review.branch_results.map((branch) => <p key={branch.game_id}>Hint replay from position {branch.parent_revision}: Black {branch.result.black_count}, White {branch.result.white_count}. This result applies to that replay.</p>)}</div>}
+    </article> : <p>{t("Select a move to compare its alternatives.", "选择一步落子，查看不同落点的对比。")}</p>}
   </div>;
 }
