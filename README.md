@@ -30,9 +30,11 @@ Install the product backend from `backend/`:
 uv sync --extra dev
 ```
 
-For manual startup, configure `backend/.env` and `web/.env.local` from their examples. Supply Edax paths and a shared backend service token. Choose beginner, intermediate, or advanced when starting a game (Edax levels 1, 4, and 8). Intermediate is the default. Difficulty is saved per game and inherited by branches; changing the selector applies to new games. `EDAX_LEVEL` defaults to 8 for hints and review analysis. `EDAX_OPPONENT_LEVEL` is retained for compatibility with earlier engine configurations. The interface identifies the opponent used for each game.
+For manual startup, configure `backend/.env` and `web/.env.local` from their examples. Supply Edax paths and a shared backend service token. The app prepares a game automatically. Choose Black or White and beginner, intermediate, or advanced (Edax levels 1, 4, and 8). Intermediate is the default. Before your first move, changing these settings replaces the opening game; after play begins, they apply to the next game. Difficulty and hint level are saved per game and inherited by branches. `EDAX_LEVEL` defaults to 8 for general analysis, older games' hints, and the minimum review level. `EDAX_OPPONENT_LEVEL` supports earlier engine configurations. The interface identifies the opponent used for each game.
 
 Set both `TOKEN_FACTORY_API_KEY` and `TOKEN_FACTORY_MODEL_ID` to enable Nemotron reviews. Leave both empty to use games, hints, and branch replay without language-model calls; review requests then report that the service is not configured. Credentials stay on the backend.
+
+The interface and new review answers use English. Nemotron reviews use saved game and engine evidence, with thinking disabled; incomplete responses report an error. The per-move analysis panel provides the underlying scores for checking generated explanations.
 
 To start both services locally, double-click `start.command` on macOS or run:
 

@@ -30,28 +30,28 @@ class StartError(Exception):
 def port_number(value: str) -> int:
     port = int(value)
     if not 1024 <= port <= 65535:
-        raise argparse.ArgumentTypeError("端口必须在 1024–65535 之间")
+        raise argparse.ArgumentTypeError("Port must be between 1024 and 65535")
     return port
 
 
 def check_environment(backend_port: int, web_port: int) -> str:
     node = shutil.which("node")
     if node is None:
-        raise StartError("找不到 Node.js，需要 Node.js 20.9 或以上版本。")
+        raise StartError("Node.js was not found. Install Node.js 20.9 or later.")
     version = subprocess.check_output([node, "-p", "process.versions.node"], text=True).strip()
     if tuple(int(part) for part in version.split(".")) < (20, 9, 0):
-        raise StartError("Node.js 版本过低，需要 20.9 或以上版本。")
+        raise StartError("Node.js is too old. Version 20.9 or later is required.")
     if not (ROOT / "node_modules/next/dist/bin/next").is_file():
-        raise StartError("缺少前端依赖。请在项目根目录执行：npm ci")
+        raise StartError("Frontend dependencies are missing. Run at the repository root: npm ci")
     if backend_port == web_port:
-        raise StartError("前后端需要使用不同端口。")
-    for name, port in (("后端", backend_port), ("前端", web_port)):
+        raise StartError("Frontend and backend must use different ports.")
+    for name, port in (("Backend", backend_port), ("Frontend", web_port)):
         with socket.socket() as listener:
             listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 listener.bind(("127.0.0.1", port))
             except OSError as exc:
-                raise StartError(f"{name}端口 {port} 无法使用，请关闭占用它的服务或指定其他端口。") from exc
+                raise StartError(f"{name} port {port} is unavailable. Stop the service using it or choose another port.") from exc
     return node
 
 
@@ -79,7 +79,7 @@ def prepare_configuration(backend_port: int, write: bool) -> Settings:
     )
     settings.validate_resources()
     if not os.access(settings.edax_executable, os.X_OK):
-        raise StartError("Edax 文件没有执行权限，请检查 EDAX_EXECUTABLE。")
+        raise StartError("Edax is not executable. Check EDAX_EXECUTABLE.")
     if write:
         for path, example in ((backend_file, BACKEND / ".env.example"),
                               (web_file, WEB / ".env.example")):
@@ -104,20 +104,20 @@ def wait_ready(url: str, processes: list[subprocess.Popen],
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline and not stop.is_set():
         if any(child.poll() is not None for child in processes):
-            raise StartError("服务提前退出，请查看 backend/runtime/local-start 中的日志。")
+            raise StartError("A service exited early. Check backend/runtime/local-start logs.")
         try:
             with opener.open(url, timeout=1) as response:
                 if response.status == 200:
                     if backend and json.load(response).get("service") != "nemothello":
-                        raise StartError("后端健康检查返回了其他服务。")
+                        raise StartError("The backend health check reached a different service.")
                     return
         except urllib.error.HTTPError as exc:
-            raise StartError(f"服务返回 HTTP {exc.code}，请查看启动日志：{url}") from exc
+            raise StartError(f"Service returned HTTP {exc.code}. Check startup logs: {url}") from exc
         except OSError:
             pass
         stop.wait(0.2)
     if not stop.is_set():
-        raise StartError(f"服务未在 {timeout} 秒内就绪：{url}")
+        raise StartError(f"Service was not ready within {timeout} seconds: {url}")
 
 
 def stop_services(processes: list[subprocess.Popen]) -> None:
@@ -138,16 +138,16 @@ def stop_services(processes: list[subprocess.Popen]) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="本地启动 Nemothello，不安装依赖。")
+    parser = argparse.ArgumentParser(description="Start Nemothello locally using installed dependencies.")
     parser.add_argument("--backend-port", type=port_number, default=8000)
     parser.add_argument("--web-port", type=port_number, default=3000)
-    parser.add_argument("--no-browser", action="store_true", help="启动后不自动打开浏览器")
-    parser.add_argument("--check", action="store_true", help="只检查环境，不修改配置或启动服务")
+    parser.add_argument("--no-browser", action="store_true", help="Do not open the browser after startup")
+    parser.add_argument("--check", action="store_true", help="Check the environment without changing configuration or starting services")
     args = parser.parse_args()
     node = check_environment(args.backend_port, args.web_port)
     if args.check:
         prepare_configuration(args.backend_port, write=False)
-        print("环境检查通过。启动时会自动补齐配置并同步服务凭据。", flush=True)
+        print("Environment check passed. Startup will fill missing configuration and synchronize service credentials.", flush=True)
         return 0
 
     log_directory = BACKEND / "runtime/local-start"
@@ -160,7 +160,7 @@ def main() -> int:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
-            raise StartError("本项目的启动脚本已经运行，请先关闭原来的启动窗口。") from exc
+            raise StartError("The launcher is already running. Close its terminal window first.") from exc
         settings = prepare_configuration(args.backend_port, write=True)
         common_env = os.environ.copy()
         common_env.update({
@@ -173,7 +173,7 @@ def main() -> int:
         with (log_directory / "backend.log").open("w") as backend_log, \
                 (log_directory / "web.log").open("w") as web_log:
             try:
-                print("正在启动本地服务……", flush=True)
+                print("Starting local services…", flush=True)
                 processes.append(subprocess.Popen(
                     [sys.executable, "-m", "uvicorn", "nemothello.main:app",
                      "--host", "127.0.0.1", "--port", str(args.backend_port)],
@@ -193,23 +193,23 @@ def main() -> int:
                 url = f"http://127.0.0.1:{args.web_port}"
                 wait_ready(url, processes, stop, 60)
                 if not stop.is_set():
-                    print(f"已启动：{url}\n按 Ctrl+C 同时关闭前后端。\n日志：{log_directory}", flush=True)
+                    print(f"Running: {url}\nPress Ctrl+C to stop both services.\nLogs: {log_directory}", flush=True)
                     if not settings.token_factory_api_key.get_secret_value():
-                        print("当前可测试对战、提示和分支；Nemotron 复盘尚未配置。", flush=True)
+                        print("Games, hints, and branches are available. Nemotron reviews are not configured.", flush=True)
                     if not args.no_browser:
                         webbrowser.open(url)
                 while not stop.wait(0.5):
                     if any(process.poll() is not None for process in processes):
-                        raise StartError("服务意外退出，请查看启动日志。")
+                        raise StartError("A service exited unexpectedly. Check the startup logs.")
                 return 0
             finally:
                 stop_services(processes)
-                print("本地服务已关闭。", flush=True)
+                print("Local services stopped.", flush=True)
 
 
 if __name__ == "__main__":
     try:
         sys.exit(main())
     except (StartError, ValueError) as error:
-        print(f"启动失败：{error}", file=sys.stderr)
+        print(f"Startup failed: {error}", file=sys.stderr)
         sys.exit(1)
