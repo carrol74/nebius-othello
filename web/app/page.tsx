@@ -292,14 +292,14 @@ export default function Home() {
             return <button key={coordinate} className={`square ${recommended ? "recommended" : ""}`} disabled={!canMove || !legal} aria-label={`${coordinate}，${cell === "X" ? "黑子" : cell === "O" ? "白子" : "空位"}${legal ? "，合法落子点" : ""}${recommended ? "，推荐点" : ""}`} onClick={() => { if (game) void perform("提交落子", async () => acceptGame(await api<GameState>(`/games/${game.game_id}/moves`, { coordinate, expected_revision: game.revision, request_id: requestId() }))); }}>{cell !== "." && <span className={`disc ${cell === "X" ? "black" : "white"}`} />}{cell === "." && legal && <span className="legal-marker" />}{recommended && <span className="hint-ring" />}</button>;
           })}</div></div></div>
           {!game && <p className="board-note">黑方先行。选择一个合法点，翻转夹住的对方棋子。</p>}
-          {game && <div className="board-footer">
-            <span>{game.auto_play ? "按提示重演正在推进" : live ? "当前局面" : `历史局面 · 版本 ${historyRevision}`}</span>
-            <button onClick={() => setHistoryRevision(null)} disabled={live}>返回当前局面</button>
+          {game && (game.auto_play || !live || (game.status === "active" && game.turn !== game.human_color && !busy)) && <div className="board-footer">
+            {!live && <><span>历史局面 · 版本 {historyRevision}</span><button onClick={() => setHistoryRevision(null)}>返回当前局面</button></>}
+            {game.auto_play && <span>按提示重演正在推进</span>}
             {game.status === "active" && !game.auto_play && game.turn !== game.human_color && !busy && <button className="primary" onClick={() => void requestAi(game)}>重试 AI 落子</button>}
           </div>}
         </section>
         <aside className="side-panel"><section className="score-card"><span className="section-label">{live ? "棋子数" : "所选局面棋子数"}</span><div className="score-line"><div><i className="mini-disc black" /><span>黑方 {game?.human_color === "X" && <small>你</small>}</span><strong>{board ? board.join("").split("X").length - 1 : "—"}</strong></div><div><i className="mini-disc white" /><span>白方 {game?.human_color === "O" && <small>你</small>}</span><strong>{board ? board.join("").split("O").length - 1 : "—"}</strong></div></div>{game?.result && <p className="result-label">{!live && "本盘终局 · "}{game.result.winner === "draw" ? "双方和棋" : game.result.winner === game.human_color ? "你赢了这盘" : "AI 赢了这盘"}<span>{game.result.black_count} : {game.result.white_count}</span></p>}</section>
-          <section className="tips-card">
+          {game?.status !== "finished" && <section className="tips-card">
             <div className="card-heading">
               <span className="section-label">推荐点</span>
               <button className={`toggle ${tips ? "on" : ""}`} role="switch" aria-checked={tips} aria-label="推荐点提示" disabled={!game || game.auto_play || game.status !== "active"} onClick={() => { tipsRef.current = !tips; setTips(!tips); }}><span /></button>
@@ -307,8 +307,8 @@ export default function Home() {
             {tips && <div className="tip-status" aria-live="polite">
               {hintError ? <><span className="inline-error">{hintError}</span><button onClick={() => hint ? setDisplayRetry((value) => value + 1) : setHintRetry((value) => value + 1)}>重试提示</button></> : !live ? "返回当前局面查看提示" : game?.turn !== game?.human_color ? "等待你的回合" : visibleHint ? `推荐 ${visibleHint.recommended_move}${hintConfirmed ? "" : " · 记录展示中"}` : "正在获取推荐点…"}
             </div>}
-          </section>
-          <section className="history-card"><div className="card-heading"><span className="section-label">棋谱</span><span className="muted">{game?.history.length ?? 0} 个事件</span></div><div className="history-list">{game ? <><button className={historyRevision === 0 ? "selected" : ""} onClick={() => setHistoryRevision(0)}><span>初始局面</span><span>开始</span></button>{game.history.map((event) => <button key={event.event_index} className={historyRevision === event.revision ? "selected" : ""} onClick={() => setHistoryRevision(event.revision)}><span><small>{event.event_index + 1}</small>{colorName(event.actor)}</span><strong>{event.kind === "pass" ? "跳过回合" : event.coordinate}</strong></button>)}</> : <p className="muted">对局开始后，落子会保存在这里。</p>}</div></section>
+          </section>}
+          {game?.status === "finished" && <section className="history-card" aria-label="棋谱"><div className="card-heading"><span className="section-label">棋谱</span><span className="muted">{game.history.length} 个事件</span></div><div className="history-list"><button className={historyRevision === 0 ? "selected" : ""} onClick={() => setHistoryRevision(0)}><span>初始局面</span><span>开始</span></button>{game.history.map((event) => <button key={event.event_index} className={historyRevision === event.revision ? "selected" : ""} onClick={() => setHistoryRevision(event.revision)}><span><small>{event.event_index + 1}</small>{colorName(event.actor)}</span><strong>{event.kind === "pass" ? "跳过回合" : event.coordinate}</strong></button>)}</div></section>}
         </aside>
       </div>
       {game?.status === "finished" && (
@@ -338,7 +338,7 @@ export default function Home() {
           </> : <p className="muted">复盘会结合本盘棋谱与 Edax 分析，解释关键选择。</p>}
         </section>
       )}
-      {game && (
+      {game?.status === "finished" && (
         <section className="branch-panel">
           <div>
             <span className="section-label">从这里重新尝试</span>
