@@ -26,13 +26,14 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
 }) {
   const {locale, t} = useLocale();
   const [comparison, setComparison] = useState<TeachingComparison>(lesson.comparison);
-  const [move, setMove] = useState(lesson.comparison.selected_move);
+  const initialComparison = useRef(lesson.comparison);
   const [question, setQuestion] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const comparisonRequest = useRef<AbortController | null>(null);
   const item = lesson.evidence;
-  const activeMove = comparison.choices.find((choice) => choice.coordinate === move) ?? comparison.choices[0];
+  const activeMove = comparison.choices.find((choice) => choice.coordinate === variation?.coordinate)
+    ?? comparison.choices.find((choice) => choice.coordinate === comparison.selected_move) ?? comparison.choices[0];
   const activeVariation = variation?.coordinate === activeMove.coordinate ? variation : null;
   const frames = activeVariation?.lesson_frames ?? activeMove.frames;
   const takeaway = comparisonTakeaway(comparison, locale);
@@ -40,7 +41,12 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
   const focusFact = card?.lesson_id !== "comparison" ? card?.facts.find((fact) => fact.topic === card.lesson_id && !fact.id.endsWith(":score") && !fact.id.endsWith(":decision")) : null;
   const answerFacts = [...(answer?.answer_facts ?? []), ...(answer?.coaching ?? []).flatMap((card) => card.facts)];
 
-  useEffect(() => { setComparison(lesson.comparison); }, [lesson.comparison]);
+  useEffect(() => {
+    const initial = initialComparison.current;
+    const first = initial.choices.find((choice) => choice.coordinate === initial.selected_move)!;
+    showVariation({revision: initial.revision, coordinate: first.coordinate, frame: 1,
+      lesson_frames: first.frames, focus_square: first.target, capture_lines: first.capture_lines});
+  }, [showVariation]);
   useEffect(() => () => comparisonRequest.current?.abort(), []);
 
   function demonstrate(frame: number) {
@@ -58,14 +64,17 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
     try {
       const next = await api<TeachingComparison>(`/games/${game.game_id}/lessons/compare?revision=${lesson.revision}&move=${coordinate}`, undefined, controller.signal);
       if (controller.signal.aborted) return;
-      setComparison(next); setMove(coordinate); showVariation(null);
+      setComparison(next);
+      const first = next.choices.find((choice) => choice.coordinate === coordinate)!;
+      showVariation({revision: next.revision, coordinate, frame: 1,
+        lesson_frames: first.frames, focus_square: first.target, capture_lines: first.capture_lines});
     } catch (failure) { if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : t("Could not compare this move", "无法对比这个落点")); }
     finally { if (!controller.signal.aborted) setLoading(false); }
   }
 
   return <div className="position-coach">
     <div className="teaching-choices" role="group" aria-label={t("Compare moves", "对比落点")}>
-      {comparison.choices.map((choice) => <button key={choice.coordinate} disabled={loading} aria-pressed={choice.coordinate === activeMove.coordinate} onClick={() => {setMove(choice.coordinate); showVariation({revision: lesson.revision, coordinate: choice.coordinate, frame: 1, lesson_frames: choice.frames, focus_square: choice.target, capture_lines: choice.capture_lines});}}>
+      {comparison.choices.map((choice) => <button key={choice.coordinate} disabled={loading} aria-pressed={choice.coordinate === activeMove.coordinate} onClick={() => showVariation({revision: lesson.revision, coordinate: choice.coordinate, frame: 1, lesson_frames: choice.frames, focus_square: choice.target, capture_lines: choice.capture_lines})}>
         {choice.coordinate}<span>{choice.coordinate === comparison.recommended_move ? t("Recommended", "推荐落点") : item.is_played !== false && choice.coordinate === item.actual_move ? t("Played", "实际落子") : t("Your choice", "所选落点")}</span>
       </button>)}
     </div>
