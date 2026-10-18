@@ -6,8 +6,10 @@ from nemothello.coaching import REVIEW_VERSION, enrich_evidence, select_key_move
 from nemothello.errors import AppError
 from nemothello.games import Games
 from nemothello.nemotron import Nemotron
+from nemothello.position_lessons import analyze_position, lesson_context
 from nemothello.rules import Position
 from nemothello.storage import Store
+from nemothello.teaching import compare_lesson
 
 logger = logging.getLogger(__name__)
 
@@ -47,9 +49,17 @@ class Tasks:
                 result = self.branch(owner, task)
             elif task["kind"] == "review":
                 result = self.review(owner, task["game_id"])
+            elif task["kind"] == "lesson":
+                result = self.lesson(owner, task["game_id"], task["inputs"]["revision"], task["task_id"])
             else:
-                review = self.games.review(owner, task["game_id"])
-                response = self.nemotron.explain(review, task["inputs"]["question"])
+                revision = task["inputs"].get("revision")
+                if revision is None:
+                    review = self.games.review(owner, task["game_id"])
+                else:
+                    lesson = self.games.position_lesson(owner, task["game_id"], revision)
+                    game = self.store.get("game", task["game_id"], owner)
+                    review = lesson_context(game, lesson["evidence"], self.store.list_records("hint", owner))
+                response = self.nemotron.explain(review, task["inputs"]["question"], **({"revision": revision} if revision is not None else {}))
                 result = {"answer": response["text"], "model_id": response["model_id"],
                           "usage": response["usage"], "coaching": response["coaching"],
                           "format_version": REVIEW_VERSION, "answer_facts": response["answer_facts"],
@@ -69,6 +79,40 @@ class Tasks:
                     game["auto_play"] = False
                     self.store.save(db, "game", game["game_id"], owner, game)
                 self.store.save(db, "task", task["task_id"], owner, task)
+
+    def lesson(self, owner: str, game_id: str, revision: int, task_id: str) -> dict[str, Any]:
+        game = self.store.get("game", game_id, owner)
+        saved = self.games.position_lesson(owner, game_id, revision)
+        evidence = saved.get("evidence")
+        if evidence is None:
+            reviews = self.store.list_records("review", owner)
+            evidence = next((item for review in reviews if review["game_id"] == game_id
+                             and review.get("format_version") == REVIEW_VERSION
+                             for item in review["evidence"] if item["revision"] == revision), None)
+        if evidence is None:
+            evidence = analyze_position(game, revision, self.games.review_engine_of(game))
+        context = lesson_context(game, evidence, self.store.list_records("hint", owner))
+        lesson = {"game_id": game_id, "revision": revision, "task_id": task_id, "evidence": evidence,
+                  "comparison": compare_lesson(context, revision, evidence["actual_move"]),
+                  "hint_adoption": context["hint_adoption"],
+                  "coaching": [], "coaching_status": "pending", "coaching_error": None,
+                  "model_id": None, "usage": None}
+        key = f"{game_id}:{revision}"
+        with self.store.transaction() as db:
+            self.store.save(db, "lesson", key, owner, lesson)
+        try:
+            response = self.nemotron.explain(context, revision=revision)
+        except Exception as exc:
+            lesson.update(coaching_status="failed", coaching_error=(exc.message if isinstance(exc, AppError)
+                          else "Coaching failed. Retry teaching this position"), usage=getattr(exc, "usage", None))
+            with self.store.transaction() as db:
+                self.store.save(db, "lesson", key, owner, lesson)
+            raise
+        lesson.update(coaching_status="ready", coaching=response["coaching"],
+                      model_id=response["model_id"], usage=response["usage"])
+        with self.store.transaction() as db:
+            self.store.save(db, "lesson", key, owner, lesson)
+        return lesson
 
     def branch(self, owner: str, task: dict[str, Any]) -> dict[str, Any]:
         game_id = task["game_id"]

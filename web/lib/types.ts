@@ -4,6 +4,8 @@ export type TeachingComparison = components["schemas"]["TeachingComparison"];
 export type TeachingMove = components["schemas"]["TeachingMove"];
 export type TeachingFrame = components["schemas"]["TeachingFrame"];
 export type TeachingDefense = components["schemas"]["TeachingDefense"];
+export type PositionLesson = components["schemas"]["PositionLesson"];
+export type QuestionResult = components["schemas"]["QuestionResult"];
 
 export type Color = "X" | "O";
 export type Difficulty = "easy" | "medium" | "hard";
@@ -119,7 +121,7 @@ export interface ReviewFact {
   id: string;
   text: string;
   topic: string;
-  revision: number | null;
+  revision?: number | null;
 }
 
 export interface CoachingCard {
@@ -157,6 +159,7 @@ export interface ReviewEvidence {
   analysis: Analysis;
   shown_hint_ids: string[];
   adopted_hint: boolean;
+  is_played?: boolean;
   stage?: string | null;
   comparisons?: MoveComparison[];
 }
@@ -172,12 +175,14 @@ export type Task = TaskState & (
   | { kind: "review"; result: Review | null }
   | { kind: "branch"; result: { game_id: string; result: GameResult } | null }
   | { kind: "question"; result: { answer: string; model_id: string | null; usage: Record<string, unknown> | null; coaching?: CoachingCard[]; format_version?: string | null; answer_facts?: ReviewFact[]; topic?: string | null } | null }
+  | { kind: "lesson"; result: PositionLesson | null }
 );
 
 export interface TrackedTask {
   task: Task;
-  purpose: "review" | "question" | "branch";
+  purpose: "review" | "question" | "branch" | "lesson";
   game_id: string;
+  revision?: number;
   question?: string;
 }
 

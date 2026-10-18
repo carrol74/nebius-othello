@@ -44,6 +44,11 @@ class QuestionRequest(WriteRequest):
     question: str = Field(min_length=1, max_length=2000)
 
 
+class PositionLessonRequest(WriteRequest):
+    revision: int = Field(ge=0)
+    question: str | None = Field(default=None, min_length=1, max_length=2000)
+
+
 class BranchRequest(WriteRequest):
     revision: int = Field(ge=0)
     mode: Literal["manual", "follow_hints"]
@@ -218,6 +223,7 @@ class ReviewEvidence(BaseModel):
     analysis: Analysis
     shown_hint_ids: list[str]
     adopted_hint: bool
+    is_played: bool = True
     stage: str | None = None
     comparisons: list[MoveComparison] = Field(default_factory=list)
 
@@ -291,18 +297,33 @@ class QuestionResult(BaseModel):
     topic: str | None = None
 
 
+class PositionLesson(BaseModel):
+    game_id: str
+    revision: int
+    task_id: str | None = None
+    evidence: ReviewEvidence
+    comparison: TeachingComparison
+    hint_adoption: HintAdoption
+    coaching: list[CoachingCard] = Field(default_factory=list)
+    coaching_status: Literal["pending", "ready", "failed"]
+    coaching_error: str | None = None
+    model_id: str | None = None
+    usage: dict[str, Any] | None = None
+
+
 class Task(BaseModel):
     task_id: str
-    kind: Literal["review", "question", "branch"]
+    kind: Literal["review", "question", "branch", "lesson"]
     game_id: str
     status: Literal["queued", "running", "succeeded", "failed"]
-    result: Review | BranchResult | QuestionResult | None = None
+    result: Review | BranchResult | QuestionResult | PositionLesson | None = None
     error: dict[str, str] | None = None
     usage: dict[str, Any] | None = None
 
     @model_validator(mode="after")
     def check_result(self) -> "Task":
-        expected = {"review": Review, "branch": BranchResult, "question": QuestionResult}[self.kind]
+        expected = {"review": Review, "branch": BranchResult, "question": QuestionResult,
+                    "lesson": PositionLesson}[self.kind]
         if self.status == "succeeded":
             if not isinstance(self.result, expected):
                 raise ValueError("Task result does not match the task kind")

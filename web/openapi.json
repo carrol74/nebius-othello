@@ -766,6 +766,229 @@
         }
       }
     },
+    "/games/{game_id}/lessons": {
+      "post": {
+        "summary": "Create Position Lesson",
+        "operationId": "create_position_lesson_games__game_id__lessons_post",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PositionLessonRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get Position Lesson",
+        "operationId": "get_position_lesson_games__game_id__lessons_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "revision",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "title": "Revision"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PositionLesson"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReviewLookup"
+                    }
+                  ],
+                  "title": "Response Get Position Lesson Games  Game Id  Lessons Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/games/{game_id}/lessons/compare": {
+      "get": {
+        "summary": "Compare Position Lesson",
+        "operationId": "compare_position_lesson_games__game_id__lessons_compare_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "revision",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "title": "Revision"
+            }
+          },
+          {
+            "name": "move",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$",
+              "title": "Move"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeachingComparison"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/games/{game_id}/branches": {
       "post": {
         "summary": "Branch",
@@ -1800,6 +2023,133 @@
         ],
         "title": "MoveRequest"
       },
+      "PositionLesson": {
+        "properties": {
+          "game_id": {
+            "type": "string",
+            "title": "Game Id"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/ReviewEvidence"
+          },
+          "comparison": {
+            "$ref": "#/components/schemas/TeachingComparison"
+          },
+          "hint_adoption": {
+            "$ref": "#/components/schemas/HintAdoption"
+          },
+          "coaching": {
+            "items": {
+              "$ref": "#/components/schemas/CoachingCard"
+            },
+            "type": "array",
+            "title": "Coaching"
+          },
+          "coaching_status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ready",
+              "failed"
+            ],
+            "title": "Coaching Status"
+          },
+          "coaching_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coaching Error"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "game_id",
+          "revision",
+          "evidence",
+          "comparison",
+          "hint_adoption",
+          "coaching_status"
+        ],
+        "title": "PositionLesson"
+      },
+      "PositionLessonRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 8,
+            "title": "Request Id"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Revision"
+          },
+          "question": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "revision"
+        ],
+        "title": "PositionLessonRequest"
+      },
       "QuestionRequest": {
         "properties": {
           "request_id": {
@@ -2213,6 +2563,11 @@
             "type": "boolean",
             "title": "Adopted Hint"
           },
+          "is_played": {
+            "type": "boolean",
+            "title": "Is Played",
+            "default": true
+          },
           "stage": {
             "anyOf": [
               {
@@ -2365,7 +2720,8 @@
             "enum": [
               "review",
               "question",
-              "branch"
+              "branch",
+              "lesson"
             ],
             "title": "Kind"
           },
@@ -2393,6 +2749,9 @@
               },
               {
                 "$ref": "#/components/schemas/QuestionResult"
+              },
+              {
+                "$ref": "#/components/schemas/PositionLesson"
               },
               {
                 "type": "null"

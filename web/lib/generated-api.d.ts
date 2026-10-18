@@ -208,6 +208,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/games/{game_id}/lessons": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Position Lesson */
+        get: operations["get_position_lesson_games__game_id__lessons_get"];
+        put?: never;
+        /** Create Position Lesson */
+        post: operations["create_position_lesson_games__game_id__lessons_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/games/{game_id}/lessons/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Compare Position Lesson */
+        get: operations["compare_position_lesson_games__game_id__lessons_compare_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/games/{game_id}/branches": {
         parameters: {
             query?: never;
@@ -561,6 +596,42 @@ export interface components {
             /** Coordinate */
             coordinate: string;
         };
+        /** PositionLesson */
+        PositionLesson: {
+            /** Game Id */
+            game_id: string;
+            /** Revision */
+            revision: number;
+            /** Task Id */
+            task_id?: string | null;
+            evidence: components["schemas"]["ReviewEvidence"];
+            comparison: components["schemas"]["TeachingComparison"];
+            hint_adoption: components["schemas"]["HintAdoption"];
+            /** Coaching */
+            coaching?: components["schemas"]["CoachingCard"][];
+            /**
+             * Coaching Status
+             * @enum {string}
+             */
+            coaching_status: "pending" | "ready" | "failed";
+            /** Coaching Error */
+            coaching_error?: string | null;
+            /** Model Id */
+            model_id?: string | null;
+            /** Usage */
+            usage?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** PositionLessonRequest */
+        PositionLessonRequest: {
+            /** Request Id */
+            request_id: string;
+            /** Revision */
+            revision: number;
+            /** Question */
+            question?: string | null;
+        };
         /** QuestionRequest */
         QuestionRequest: {
             /** Request Id */
@@ -685,6 +756,11 @@ export interface components {
             shown_hint_ids: string[];
             /** Adopted Hint */
             adopted_hint: boolean;
+            /**
+             * Is Played
+             * @default true
+             */
+            is_played: boolean;
             /** Stage */
             stage?: string | null;
             /** Comparisons */
@@ -730,7 +806,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "review" | "question" | "branch";
+            kind: "review" | "question" | "branch" | "lesson";
             /** Game Id */
             game_id: string;
             /**
@@ -739,7 +815,7 @@ export interface components {
              */
             status: "queued" | "running" | "succeeded" | "failed";
             /** Result */
-            result?: components["schemas"]["Review"] | components["schemas"]["BranchResult"] | components["schemas"]["QuestionResult"] | null;
+            result?: components["schemas"]["Review"] | components["schemas"]["BranchResult"] | components["schemas"]["QuestionResult"] | components["schemas"]["PositionLesson"] | null;
             /** Error */
             error?: {
                 [key: string]: string;
@@ -1248,6 +1324,117 @@ export interface operations {
         };
     };
     teaching_lesson_games__game_id__review_lesson_get: {
+        parameters: {
+            query: {
+                revision: number;
+                move: string;
+            };
+            header: {
+                authorization: string;
+                "x-session-id": string;
+            };
+            path: {
+                game_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeachingComparison"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_position_lesson_games__game_id__lessons_get: {
+        parameters: {
+            query: {
+                revision: number;
+            };
+            header: {
+                authorization: string;
+                "x-session-id": string;
+            };
+            path: {
+                game_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionLesson"] | components["schemas"]["ReviewLookup"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_position_lesson_games__game_id__lessons_post: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+                "x-session-id": string;
+            };
+            path: {
+                game_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PositionLessonRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Task"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compare_position_lesson_games__game_id__lessons_compare_get: {
         parameters: {
             query: {
                 revision: number;

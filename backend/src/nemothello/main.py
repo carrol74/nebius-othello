@@ -26,6 +26,8 @@ from nemothello.schemas import (
     HintDisplayResult,
     HintRequest,
     MoveRequest,
+    PositionLesson,
+    PositionLessonRequest,
     QuestionRequest,
     Review,
     ReviewLookup,
@@ -201,6 +203,29 @@ def teaching_lesson(game_id: str, owner: Owner, request: Request,
     if "evidence" not in saved:
         raise AppError("REVIEW_NOT_FOUND", "Analyze the game before requesting a lesson", 409)
     return compare_lesson(saved, revision, move)
+
+
+@app.post("/games/{game_id}/lessons", response_model=Task)
+def create_position_lesson(game_id: str, body: PositionLessonRequest, owner: Owner, request: Request):
+    return request.app.state.games.create_position_lesson_task(
+        owner, game_id, body.request_id, body.revision, body.question,
+    )
+
+
+@app.get("/games/{game_id}/lessons", response_model=PositionLesson | ReviewLookup)
+def get_position_lesson(game_id: str, owner: Owner, request: Request,
+                        revision: Annotated[int, Query(ge=0)]):
+    return request.app.state.games.position_lesson(owner, game_id, revision)
+
+
+@app.get("/games/{game_id}/lessons/compare", response_model=TeachingComparison)
+def compare_position_lesson(game_id: str, owner: Owner, request: Request,
+                            revision: Annotated[int, Query(ge=0)],
+                            move: Annotated[str, Query(pattern=r"^[a-h][1-8]$")]):
+    saved = request.app.state.games.position_lesson(owner, game_id, revision)
+    if "evidence" not in saved:
+        raise AppError("LESSON_NOT_FOUND", "Teach this position before comparing moves", 409)
+    return compare_lesson({"evidence": [saved["evidence"]]}, revision, move)
 
 
 @app.post("/games/{game_id}/branches", response_model=GameState | Task)

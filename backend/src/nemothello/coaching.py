@@ -115,12 +115,19 @@ def fact(identifier, text, topic, revision=None):
 
 def summary_facts(review: dict[str, Any]) -> list[dict[str, Any]]:
     result = review["result"]
-    winner = "The game was a draw" if result["winner"] == "draw" else f"{COLORS[result['winner']]} won"
-    facts = [fact("result", f"You played {COLORS[review['human_color']]}. {winner}: Black {result['black_count']}, White {result['white_count']}.", "outcome")]
+    facts = []
+    if result is not None:
+        winner = "The game was a draw" if result["winner"] == "draw" else f"{COLORS[result['winner']]} won"
+        facts.append(fact("result", f"You played {COLORS[review['human_color']]}. {winner}: Black {result['black_count']}, White {result['white_count']}.", "outcome"))
     adopted = review["hint_adoption"]
     facts.append(fact("adoption", f"You followed hints on {adopted['adopted_turns']} of {adopted['shown_turns']} turns with a displayed hint.", "hints"))
     for hint in review["hints"]:
         entry = next((item for item in review["evidence"] if hint["hint_id"] in item["shown_hint_ids"]), None)
+        if entry is None:
+            event = next((item for item in review.get("history", [])
+                          if item["revision"] == hint["revision"] + 1 and item["kind"] == "move"), None)
+            if event:
+                entry = {"actual_move": event["coordinate"]}
         choice = (f"You played {entry['actual_move']} and {'followed it' if entry['actual_move'] == hint['recommended_move'] else 'chose a different move'}."
                   if entry else "No subsequent player move is recorded.")
         facts.append(fact(f"hint:{hint['hint_id']}", f"At position {hint['revision']}, the displayed hint was {hint['recommended_move']}. {choice}", "hints", hint["revision"]))
@@ -141,7 +148,9 @@ def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None):
     prefix = f"p{revision}:"
     score_kind = "exact endgame scores under best play" if played["score_kind"] == best["score_kind"] == "exact" else "search scores; non-exact values are estimates"
     facts = [
-        fact(prefix + "decision", f"At position {revision}, {COLORS[actor]} played {actual}. The analysis recommendation is {recommended}; this is separate from any hint shown during play.", "comparison", revision),
+        fact(prefix + "decision", f"At position {revision}, {COLORS[actor]} "
+             + (f"played {actual}." if item.get("is_played", True) else f"can play {actual}; no move has been recorded yet.")
+             + f" The analysis recommendation is {recommended}; this is separate from any hint shown during play.", "comparison", revision),
         fact(prefix + "score", f"From {COLORS[actor]}'s perspective, {actual} scores {played['score']:g} and {recommended} scores {best['score']:g}. The difference is {item['score_loss']:g}; these are {score_kind}." + (" These alternatives are equally rated." if item["score_loss"] == 0 else " Higher scores favor this player."), "comparison", revision),
         fact(prefix + "mobility", f"After {actual}, {COLORS[opponent(actor)]} has {a['opponent_moves']} legal replies; after {recommended}, {b['opponent_moves']}. Reply count alone does not explain the search preference.", "mobility", revision),
         fact(prefix + "frontier", f"After {actual}, the frontier-disc difference is {a['frontier_difference']}; after {recommended}, {b['frontier_difference']}, counting {COLORS[actor]}'s frontier discs minus the opponent's.", "frontier", revision),
@@ -192,10 +201,14 @@ def pass_context(review: dict[str, Any], revision: int):
     return None
 
 
-def review_context(review: dict[str, Any], question: str | None) -> dict[str, Any]:
+def review_context(review: dict[str, Any], question: str | None, revision: int | None = None) -> dict[str, Any]:
     requested = {int(value) for value in re.findall(r"(?:position(?:\s+revision)?|revision|局面)\s*(\d+)", question or "", re.IGNORECASE)}
+    if revision is not None and requested - {revision}:
+        raise AppError("REVIEW_POSITION", "Move to the requested position before asking about it", 422)
     evidence = review.get("evidence", review["key_moves"])
-    if requested:
+    if revision is not None:
+        selected = [item for item in evidence if item["revision"] == revision]
+    elif requested:
         selected = [item for item in evidence if item["revision"] in requested]
         if len(requested) > 3:
             raise AppError("REVIEW_POSITION", "Ask about at most three positions at a time", 422)
@@ -209,8 +222,8 @@ def review_context(review: dict[str, Any], question: str | None) -> dict[str, An
         positions.append({"revision": item["revision"], "actor": COLORS[item["actor"]],
                           "human": item["actor"] == review["human_color"], "facts": facts,
                           "allowed_lessons": lessons})
-    for revision in sorted(requested - {item["revision"] for item in positions}):
-        position = pass_context(review, revision)
+    for requested_revision in sorted(requested - {item["revision"] for item in positions}):
+        position = pass_context(review, requested_revision)
         if position is None:
             raise AppError("REVIEW_POSITION", "Choose a saved position before a move or pass", 422)
         positions.append(position)

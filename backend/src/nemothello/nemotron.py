@@ -21,7 +21,8 @@ SYSTEM_PROMPT = (
     "Do not generate prose, additional keys, or new facts. Copy identifiers exactly from the "
     "supplied positions. Each selection must use one allowed lesson and one to four fact IDs from "
     "that position, including a fact whose topic matches that lesson. "
-    "For task=review, set topic=review and select every supplied human decision exactly once, "
+    "For task=review, set topic=review and select every supplied position exactly once, "
+    "including positions for the opponent when supplied, "
     "in a useful learning order. Prefer a concrete corner or pass lesson when relevant; "
     "use mobility to compare reply counts and comparison when scores are the main evidence. "
     "For task=question, answer the user's intent with topic=comparison, hints, outcome, strategy, "
@@ -48,10 +49,11 @@ class Nemotron:
         if not self.configured:
             raise AppError("REVIEW_NOT_CONFIGURED", "Token Factory is not configured for coaching", 503)
 
-    def explain(self, evidence: dict[str, Any], question: str | None = None) -> dict[str, Any]:
+    def explain(self, evidence: dict[str, Any], question: str | None = None,
+                *, revision: int | None = None) -> dict[str, Any]:
         if question is None:
             self.ensure_configured()
-        context = review_context(evidence, question)
+        context = review_context(evidence, question, revision)
         factual = factual_question_plan(question)
         if (factual is None and question and any(word in question.lower() for word in ("pass", "跳过", "无合法落点")) and context["positions"]
                 and all(item["allowed_lessons"] == ["pass"] for item in context["positions"])):

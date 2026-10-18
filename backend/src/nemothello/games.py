@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from sqlite3 import Connection
 from threading import RLock
 from typing import Any
@@ -9,6 +9,7 @@ from nemothello.coaching import REVIEW_VERSION, summary_facts
 from nemothello.edax import Edax
 from nemothello.errors import AppError
 from nemothello.opponents import Difficulty, EdaxOpponent
+from nemothello.position_lessons import check_teachable
 from nemothello.rules import Position, opponent
 from nemothello.schemas import GameState
 from nemothello.storage import Store
@@ -104,7 +105,7 @@ class Games:
             raise AppError("BRANCH_POSITION", "A branch must start from an unfinished position with legal moves", 422)
         return {
             "game_id": str(uuid4()), "revision": 0, "board": list(initial.board),
-            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
             "turn": initial.turn, "human_color": human_color, "status": "active",
             "legal_moves": list(initial.moves), "history": [], "result": None,
             "initial_board": list(initial.board), "initial_turn": initial.turn,
@@ -328,3 +329,45 @@ class Games:
             tasks = [t for t in self.store.list_records("task", owner, db)
                      if t["game_id"] == game_id and t["kind"] == "review"]
             return {"task": self.public_task(tasks[-1]) if tasks else None}
+
+    def position_lesson(self, owner: str, game_id: str, revision: int) -> dict[str, Any]:
+        self.store.get("game", game_id, owner)
+        with self.store.transaction() as db:
+            saved = next((item for item in self.store.list_records("lesson", owner, db)
+                          if item["game_id"] == game_id and item["revision"] == revision), None)
+            if saved:
+                return saved
+            tasks = [item for item in self.store.list_records("task", owner, db)
+                     if item["game_id"] == game_id and item["kind"] == "lesson"
+                     and item["inputs"]["revision"] == revision]
+            return {"task": self.public_task(tasks[-1]) if tasks else None}
+
+    def create_position_lesson_task(
+        self, owner: str, game_id: str, request_id: str, revision: int,
+        question: str | None = None,
+    ) -> dict[str, Any]:
+        payload = {"operation": "position_lesson", "game_id": game_id,
+                   "revision": revision, "question": question}
+
+        def operation(db: Connection) -> dict[str, Any]:
+            game = self.store.get("game", game_id, owner, db)
+            check_teachable(game, revision)
+            saved = next((item for item in self.store.list_records("lesson", owner, db)
+                          if item["game_id"] == game_id and item["revision"] == revision), None)
+            if question:
+                if not saved:
+                    raise AppError("LESSON_NOT_FOUND", "Teach this position before asking a question", 409)
+            else:
+                existing = [item for item in self.store.list_records("task", owner, db)
+                            if item["game_id"] == game_id and item["kind"] == "lesson"
+                            and item["inputs"]["revision"] == revision
+                            and (item["status"] in ("queued", "running")
+                                 or (item["status"] == "succeeded" and saved
+                                     and saved["coaching_status"] == "ready"))]
+                if existing:
+                    return self.public_task(existing[-1])
+            task = self.make_task(db, owner, game_id, "question" if question else "lesson",
+                                  {"revision": revision, "question": question})
+            return self.public_task(task)
+
+        return self.store.mutate(owner, request_id, payload, operation)
