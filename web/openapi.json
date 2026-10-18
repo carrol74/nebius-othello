@@ -1290,6 +1290,17 @@
             "type": "string",
             "title": "Game Id"
           },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
           "revision": {
             "type": "integer",
             "title": "Revision"

@@ -399,6 +399,8 @@ export interface components {
         GameState: {
             /** Game Id */
             game_id: string;
+            /** Created At */
+            created_at?: string | null;
             /** Revision */
             revision: number;
             /** Board */

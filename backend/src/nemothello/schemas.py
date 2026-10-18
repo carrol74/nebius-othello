@@ -72,6 +72,7 @@ class GameResult(BaseModel):
 
 class GameState(BaseModel):
     game_id: str
+    created_at: str | None = None
     revision: int
     board: BoardRows
     turn: Color | None

@@ -4,14 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError, requestId } from "@/lib/api";
 import { LanguageSwitch, useLocale } from "@/lib/locale";
 import { captureLineText, cornerName, defenseFeedback, stepText } from "@/lib/teaching-text";
+import { readRecentGames, recentGameLabel, rememberGame } from "@/lib/recent-games";
+import type { RecentGame } from "@/lib/recent-games";
 import { ReviewDetails } from "@/components/review-details";
 import { ReviewCoach } from "@/components/review-coach";
 import type { Practice, Variation } from "@/components/review-coach";
 import { TaskList } from "@/components/task-list";
 import type { Color, Difficulty, GameState, Hint, Review, Task, TrackedTask } from "@/lib/types";
-
-type RecentGame = { game_id: string; label: string };
-const colorName = (color: Color) => color === "X" ? "Black" : "White";
 
 function message(error: unknown) {
   if (error instanceof ApiError) return `${error.message}${error.detail.request_id ? ` · Request ${error.detail.request_id}` : ""}`;
@@ -74,10 +73,7 @@ export default function Home() {
       setTips(false);
       tipsRef.current = false;
     }
-    setRecent((current) => [
-      { game_id: next.game_id, label: `${next.parent_game_id ? "Branch" : "Game"} · ${colorName(next.human_color)} · ${next.game_id.slice(0, 8)}` },
-      ...current.filter((item) => item.game_id !== next.game_id),
-    ].slice(0, 20));
+    setRecent((current) => rememberGame(current, next));
     localStorage.setItem("nemothello_active_game", next.game_id);
     window.history.replaceState(null, "", `?game=${encodeURIComponent(next.game_id)}`);
   }, []);
@@ -112,13 +108,7 @@ export default function Home() {
       const saved = localStorage.getItem("nemothello_recent_games");
       if (saved) {
         try {
-          const parsed: unknown = JSON.parse(saved);
-          if (!Array.isArray(parsed) || !parsed.every((item) => item && typeof item.game_id === "string" && typeof item.label === "string")) throw new Error("Saved game list is invalid");
-          setRecent(parsed.map((item: RecentGame) => ({
-            ...item,
-            label: item.label.startsWith("Game · ") || item.label.startsWith("Branch · ")
-              ? item.label : `Saved game · ${item.game_id.slice(0, 8)}`,
-          })));
+          setRecent(readRecentGames(saved));
         } catch (failure) { setError(message(failure)); }
       }
       const gameId = new URLSearchParams(window.location.search).get("game");
@@ -350,7 +340,7 @@ export default function Home() {
   return (
     <main className="workspace">
       <header className="masthead"><a className="wordmark" href="/">Nemo<span>thello</span><span className="brand-dot" /></a><LanguageSwitch /></header>
-      <section className="game-toolbar" aria-label={t("Game settings", "对局设置")}><div className="color-picker">{!canChangeOpening && game && <span>{t("Next game color", "下一局执棋")}</span>}<button aria-pressed={humanColor === "X"} onClick={() => changeSettings("X", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc black" />{t("Black", "黑方")}</button><button aria-pressed={humanColor === "O"} onClick={() => changeSettings("O", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc white" />{t("White", "白方")}</button></div><label className="difficulty-picker">{!canChangeOpening && game && t("Next game difficulty", "下一局难度")}<select aria-label={canChangeOpening ? t("Difficulty", "难度") : t("Next game difficulty", "下一局难度")} value={difficulty} disabled={!!busy || !loaded} onChange={(event) => changeSettings(humanColor, event.target.value as Difficulty)}><option value="easy">{t("Beginner", "初级")}</option><option value="medium">{t("Intermediate", "中级")}</option><option value="hard">{t("Advanced", "高级")}</option></select></label><button className="primary" disabled={!!busy || !loaded} onClick={() => void perform("Creating game", () => createGame(humanColor, difficulty))}>{t("New game", "新对局")}</button>{recent.length > 0 && <label className="recent-picker">{t("Recent games", "最近对局")}<select value={game?.game_id ?? ""} disabled={!!busy} onChange={(event) => { const id = event.target.value; if (id) void perform("Loading game", async () => acceptGame(await api<GameState>(`/games/${id}`))); }}><option value="" disabled>{t("Select a game", "选择对局")}</option>{recent.map((item) => <option key={item.game_id} value={item.game_id}>{locale === "zh" ? item.label.replace(/^Branch/, "分支").replace(/^Game/, "对局").replace(/^Saved game/, "已保存对局").replace(/Black/, "黑方").replace(/White/, "白方") : item.label}</option>)}</select></label>}</section>
+      <section className="game-toolbar" aria-label={t("Game settings", "对局设置")}><div className="color-picker">{!canChangeOpening && game && <span>{t("Next game color", "下一局执棋")}</span>}<button aria-pressed={humanColor === "X"} onClick={() => changeSettings("X", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc black" />{t("Black", "黑方")}</button><button aria-pressed={humanColor === "O"} onClick={() => changeSettings("O", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc white" />{t("White", "白方")}</button></div><label className="difficulty-picker">{!canChangeOpening && game && t("Next game difficulty", "下一局难度")}<select aria-label={canChangeOpening ? t("Difficulty", "难度") : t("Next game difficulty", "下一局难度")} value={difficulty} disabled={!!busy || !loaded} onChange={(event) => changeSettings(humanColor, event.target.value as Difficulty)}><option value="easy">{t("Beginner", "初级")}</option><option value="medium">{t("Intermediate", "中级")}</option><option value="hard">{t("Advanced", "高级")}</option></select></label><button className="primary" disabled={!!busy || !loaded} onClick={() => void perform("Creating game", () => createGame(humanColor, difficulty))}>{t("New game", "新对局")}</button>{recent.length > 0 && <label className="recent-picker">{t("Recent games", "最近对局")}<select value={game?.game_id ?? ""} disabled={!!busy} onChange={(event) => { const id = event.target.value; if (id) void perform("Loading game", async () => acceptGame(await api<GameState>(`/games/${id}`))); }}><option value="" disabled>{t("Select a game", "选择对局")}</option>{recent.map((item) => <option key={item.game_id} value={item.game_id}>{recentGameLabel(item, locale)}</option>)}</select></label>}</section>
       {error && <div className="error-banner" role="alert"><span>{error}</span><button aria-label={t("Dismiss error", "关闭错误信息")} onClick={() => setError(null)}>×</button></div>}
       {!loaded && !busy && bootStarted.current && <button className="primary connection-retry" onClick={() => {
         bootStarted.current = false;

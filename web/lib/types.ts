@@ -26,6 +26,7 @@ export interface HistoryEvent {
 
 export interface GameState {
   game_id: string;
+  created_at: string | null;
   revision: number;
   board: string[];
   initial_board: string[];

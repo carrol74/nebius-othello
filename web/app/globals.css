@@ -78,8 +78,9 @@ p { line-height: 1.7; }
 .primary { background: var(--accent); border-color: var(--accent); color: #182012; font-weight: 600; }
 .primary:hover:not(:disabled) { background: #ddffb8; border-color: #ddffb8; }
 .difficulty-picker { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 13px; }
-.recent-picker { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 12px; margin-left: auto; }
+.recent-picker { display: flex; gap: 10px; align-items: center; color: var(--muted); font-size: 12px; margin-left: auto; min-width: 0; max-width: 100%; }
 select { max-width: 250px; padding: 10px; color: #e9eee4; background: var(--background); }
+.recent-picker select { max-width: 360px; }
 .error-banner { display: flex; align-items: center; justify-content: space-between; gap: 15px; border: 1px solid #936052; background: #36231e; padding: 8px 16px; border-radius: 10px; margin-bottom: 24px; line-height: 1.6; }
 .error-banner button { border: 0; font-size: 22px; padding: 4px 8px; }
 .connection-retry { margin-bottom: 20px; }
@@ -205,7 +206,7 @@ textarea::placeholder { color: #7b8b7c; }
   .color-picker { flex: 1; }
   .color-picker > span { display: none; }
   .recent-picker { flex-basis: 100%; margin-left: 0; }
-  .recent-picker select { flex: 1; max-width: none; }
+  .recent-picker select { flex: 1; min-width: 0; max-width: none; }
   .play-layout { grid-template-columns: 1fr; }
   .side-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
   .score-card, .tips-card, .history-card { padding: 16px; }

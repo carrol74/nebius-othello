@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import datetime, timezone
 from sqlite3 import Connection
 from threading import RLock
 from typing import Any
@@ -103,6 +104,7 @@ class Games:
             raise AppError("BRANCH_POSITION", "A branch must start from an unfinished position with legal moves", 422)
         return {
             "game_id": str(uuid4()), "revision": 0, "board": list(initial.board),
+            "created_at": datetime.now(timezone.utc).isoformat(),
             "turn": initial.turn, "human_color": human_color, "status": "active",
             "legal_moves": list(initial.moves), "history": [], "result": None,
             "initial_board": list(initial.board), "initial_turn": initial.turn,
