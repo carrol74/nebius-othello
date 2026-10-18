@@ -331,7 +331,8 @@ class Games:
             return {"task": self.public_task(tasks[-1]) if tasks else None}
 
     def position_lesson(self, owner: str, game_id: str, revision: int) -> dict[str, Any]:
-        self.store.get("game", game_id, owner)
+        game = self.store.get("game", game_id, owner)
+        check_teachable(game, revision)
         with self.store.transaction() as db:
             saved = next((item for item in self.store.list_records("lesson", owner, db)
                           if item["game_id"] == game_id and item["revision"] == revision), None)

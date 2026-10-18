@@ -164,19 +164,29 @@ def test_full_review_must_cover_all_selected_human_decisions(native_review):
 
 
 def test_response_schema_limits_question_to_available_position_and_identifiers(native_review):
-    context = review_context(native_review, "For position 11: compare c4 and c1")
+    context = review_context(native_review, "For position 16: compare b1 and b3")
     schema = plan_schema(context)
     assert "review" not in schema["properties"]["topic"]["enum"]
     assert schema["properties"]["selections"]["maxItems"] == 1
     properties = schema["$defs"]["Selection"]["properties"]
-    assert properties["revision"]["enum"] == [11]
+    assert properties["revision"]["enum"] == [16]
     assert set(properties["fact_ids"]["items"]["enum"]) == {item["id"] for item in context["positions"][0]["facts"]}
     plan = {"topic": "comparison", "selections": [
-        {"revision": 11, "fact_ids": ["p11:score"], "lesson_id": "comparison"},
-        {"revision": 11, "fact_ids": ["p11:mobility"], "lesson_id": "mobility"},
+        {"revision": 16, "fact_ids": ["p16:score"], "lesson_id": "comparison"},
+        {"revision": 16, "fact_ids": ["p16:mobility"], "lesson_id": "mobility"},
     ]}
     with pytest.raises(AppError, match="repeated position"):
         validate_plan(json.dumps(plan), context)
+
+
+def test_opponent_questions_fail_before_model_requests(native_review):
+    model = Nemotron("", "https://unused.invalid/v1", "")
+    try:
+        with pytest.raises(AppError) as error:
+            model.explain(native_review, "For position 11: explain this move")
+        assert error.value.code == "REVIEW_OPPONENT"
+    finally:
+        model.close()
 
 
 def test_saved_hint_facts_need_no_credentials_or_model_request(native_review):

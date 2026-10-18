@@ -173,6 +173,10 @@ class Tasks:
                 continue
             if self.stop.is_set():
                 raise AppError("SERVICE_STOPPING", "Service shutdown interrupted review. Create a new task", 503)
+            if event["actor"] != game["human_color"]:
+                position, _ = position.play(event["coordinate"])
+                revision = event["revision"]
+                continue
             analysis = engine.analyze(position.board, position.turn)
             candidates = analysis["candidates"]
             actual = next(c for c in candidates if c["coordinate"] == event["coordinate"])

@@ -7,6 +7,11 @@ export function savedPosition(game: GameState, revision: number) {
   return {board: event.board, turn: event.turn};
 }
 
+export function canTeachPosition(game: GameState, revision: number): boolean {
+  return savedPosition(game, revision).turn === game.human_color
+    && game.history.find((event) => event.revision === revision + 1)?.kind !== "pass";
+}
+
 export function moveFlips(before: string[], event: HistoryEvent): string[] {
   return event.board.flatMap((row, y) => [...row].flatMap((cell, x) =>
     cell !== before[y][x] && `${"abcdefgh"[x]}${y + 1}` !== event.coordinate ? [`${"abcdefgh"[x]}${y + 1}`] : []));

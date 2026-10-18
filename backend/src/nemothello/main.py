@@ -15,6 +15,7 @@ from nemothello.errors import AppError
 from nemothello.games import Games
 from nemothello.nemotron import Nemotron
 from nemothello.opponents import DIFFICULTY_LEVELS, HINT_LEVELS, EdaxOpponent
+from nemothello.position_lessons import check_teachable
 from nemothello.schemas import (
     Analysis,
     AnalyzeRequest,
@@ -199,6 +200,7 @@ def question(game_id: str, body: QuestionRequest, owner: Owner, request: Request
 def teaching_lesson(game_id: str, owner: Owner, request: Request,
                     revision: Annotated[int, Query(ge=0)],
                     move: Annotated[str, Query(pattern=r"^[a-h][1-8]$")]):
+    check_teachable(request.app.state.games.get(game_id, owner), revision)
     saved = request.app.state.games.review(owner, game_id)
     if "evidence" not in saved:
         raise AppError("REVIEW_NOT_FOUND", "Analyze the game before requesting a lesson", 409)

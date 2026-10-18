@@ -14,7 +14,8 @@ from nemothello.storage import Store
 from nemothello.tasks import Tasks
 
 
-def test_real_analysis_survives_coaching_failure_and_retry_reuses_saved_engine_evidence(tmp_path):
+@pytest.mark.parametrize("human_color", ["X", "O"])
+def test_real_analysis_survives_coaching_failure_and_retry_reuses_saved_engine_evidence(tmp_path, human_color):
     root = Path(__file__).resolve().parents[2]
     executable = Path(os.environ.get("TEST_EDAX_EXECUTABLE", root / "deploy/edax/edax"))
     weights = Path(os.environ.get("TEST_EDAX_EVAL_FILE", root / "deploy/edax/eval.dat"))
@@ -28,7 +29,7 @@ def test_real_analysis_survives_coaching_failure_and_retry_reuses_saved_engine_e
     source = json.loads((Path(__file__).parent / "fixtures/review-native-positions.json").read_text())["review"]
     owner = "native-review-test"
     try:
-        game = games.new_game("X")
+        game = games.new_game(human_color)
         for event in source["history"]:
             if event["kind"] == "move":
                 game = advance(game, event["coordinate"])
@@ -43,8 +44,11 @@ def test_real_analysis_survives_coaching_failure_and_retry_reuses_saved_engine_e
         saved = games.review(owner, game["game_id"])
         review = Review.model_validate(saved)
         assert review.format_version == REVIEW_VERSION and review.coaching_status == "failed"
-        assert len(review.evidence) == sum(event["kind"] == "move" for event in source["history"])
-        assert all(item.actor == "X" for item in review.key_moves)
+        assert len(review.evidence) == sum(event["kind"] == "move" and event["actor"] == game["human_color"]
+                                           for event in source["history"])
+        assert all(item.actor == game["human_color"] for item in review.evidence)
+        assert all(item.actor == human_color for item in review.key_moves)
+        assert all(item["turn"] == human_color for item in engine.cache.values())
         assert len(review.key_moves) <= 3 and review.summary_facts
         assert all(item.comparisons for item in review.evidence)
         engine.close()

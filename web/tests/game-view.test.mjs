@@ -5,7 +5,7 @@ import ts from "typescript";
 
 const source = readFileSync(new URL("../lib/game-view.ts", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, {compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
-const {savedPosition, placedBoard, moveFlips} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const {canTeachPosition, savedPosition, placedBoard, moveFlips} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const native = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/teaching-native-cases.json", import.meta.url), "utf8"));
 const frames = native["16"].choices[0].defense_lines.find((item) => item.coordinate === "g6").frames;
 const history = frames.slice(1).map((frame, index) => ({...frame, revision:index+1, kind:"move"}));
@@ -27,5 +27,17 @@ test("slow placement preserves discs until the authoritative flip phase", () => 
       assert.notEqual(placed[row][col],event.board[row][col]);
     }
     assert.deepEqual(before,frames[index].board);
+  }
+});
+
+test("teaching follows the player's color while both sides and passes remain visible", () => {
+  const {review} = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/review-native-positions.json", import.meta.url), "utf8"));
+  const history = review.history.map((event, index) => ({...event, turn: review.history[index+1]?.actor ?? null}));
+  for (const human_color of ["X", "O"]) {
+    const game = {...review, human_color, history};
+    for (let revision=0;revision<=history.length;revision++) {
+      const next = history[revision];
+      assert.equal(canTeachPosition(game, revision), next?.actor === human_color && next.kind === "move");
+    }
   }
 });

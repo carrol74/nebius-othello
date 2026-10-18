@@ -217,6 +217,8 @@ def review_context(review: dict[str, Any], question: str | None, revision: int |
     extra = set(re.findall(r"(?<![a-z0-9])[a-h][1-8](?![a-z0-9])", question or "", re.IGNORECASE))
     positions = []
     for original in selected:
+        if original["actor"] != review["human_color"]:
+            raise AppError("REVIEW_OPPONENT", "Choose one of your own turns for teaching", 422)
         item = original if original.get("comparisons") else enrich_evidence(original)
         facts, lessons = position_facts(item, {move.lower() for move in extra})
         positions.append({"revision": item["revision"], "actor": COLORS[item["actor"]],
@@ -226,6 +228,8 @@ def review_context(review: dict[str, Any], question: str | None, revision: int |
         position = pass_context(review, requested_revision)
         if position is None:
             raise AppError("REVIEW_POSITION", "Choose a saved position before a move or pass", 422)
+        if not position["human"]:
+            raise AppError("REVIEW_OPPONENT", "Choose one of your own turns for teaching", 422)
         positions.append(position)
     return {"summary_facts": summary_facts(review), "positions": positions,
             "lessons": LESSONS, "question": question,

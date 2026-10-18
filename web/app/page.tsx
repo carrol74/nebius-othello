@@ -6,7 +6,7 @@ import { LanguageSwitch, useLocale } from "@/lib/locale";
 import { captureLineText, cornerName, defenseFeedback, stepText } from "@/lib/teaching-text";
 import { readRecentGames, recentGameLabel, rememberGame } from "@/lib/recent-games";
 import type { RecentGame } from "@/lib/recent-games";
-import { moveFlips, placedBoard, savedPosition } from "@/lib/game-view";
+import { canTeachPosition, moveFlips, placedBoard, savedPosition } from "@/lib/game-view";
 import { ReviewCoach } from "@/components/review-coach";
 import type { Variation } from "@/components/review-coach";
 import type { Color, Difficulty, GameState, Hint, HistoryEvent, PositionLesson, QuestionResult, Task, TrackedTask } from "@/lib/types";
@@ -217,7 +217,7 @@ export default function Home() {
   }, [tasks, trackTask, taskPollRetry]);
 
   useEffect(() => {
-    if (mode !== "review" || !game) return;
+    if (mode !== "review" || !game || !canTeachPosition(game, historyRevision)) return;
     let cancelled = false;
     void loadLesson(game.game_id, historyRevision).then((saved) => {
       if (!cancelled && "task" in saved && saved.task) trackTask({task: saved.task, game_id: game.game_id, purpose: "lesson", revision: historyRevision});
@@ -235,12 +235,12 @@ export default function Home() {
   const board = teachingFrame?.board ?? (mode === "play" ? playback?.board : null) ?? position?.board;
   const turn = teachingFrame ? teachingFrame.turn : position?.turn;
   const nextEvent = game?.history.find((item) => item.revision === historyRevision + 1);
-  const canTeach = mode === "review" && !!position?.turn && nextEvent?.kind !== "pass";
+  const canTeach = mode === "review" && !!game && canTeachPosition(game, historyRevision);
   const canDefend = mode === "review" && !!variation?.exercise && variation.frame === 2 && !variation.exercise.attempt && !busy;
   const visibleHint = mode === "play" && hint?.game_id === game?.game_id && hint?.revision === game?.revision ? hint : null;
   const canMove = mode === "play" && !!game && !busy && !playback && !game.auto_play && game.status === "active" && game.turn === game.human_color && (!tips || (!!visibleHint && hintConfirmed));
   const lastMove = mode === "play" ? game?.history.findLast((item) => item.kind === "move") : null;
-  const currentLesson = game ? lessons[lessonKey(game.game_id, historyRevision)] : null;
+  const currentLesson = canTeach && game ? lessons[lessonKey(game.game_id, historyRevision)] : null;
   const variationLabel = variation && currentLesson ? variation.coordinate === currentLesson.evidence.actual_move && currentLesson.evidence.is_played !== false
     ? t("Played move", "实际走法") : variation.coordinate === currentLesson.evidence.recommended_move
       ? t("Recommended move", "推荐走法") : t("Comparison move", "对比走法") : t("Demonstration", "落子演示");
@@ -262,7 +262,7 @@ export default function Home() {
     else {setHumanColor(color); setDifficulty(level);}
   }
   function teach(question?: string) {
-    if (!game) return;
+    if (!game || !canTeach) return;
     const id = game.game_id, revision = historyRevision;
     void perform(async () => trackTask({task: await api<Task>(`/games/${id}/lessons`, {revision, question, request_id: requestId()}), game_id: id, revision, purpose: question ? "question" : "lesson", question}));
   }
@@ -302,7 +302,7 @@ export default function Home() {
         })}</div></div></div>
         {mode === "review" && game && <div className="review-navigation">
           <div className="timeline-buttons"><button aria-label={t("First position", "初始局面")} disabled={historyRevision === 0} onClick={() => selectPosition(0)}>⇤</button><button aria-label={t("Previous move", "上一手")} disabled={historyRevision === 0} onClick={() => selectPosition(historyRevision - 1)}>←</button><input type="range" aria-label={t("Game progress", "棋局进度")} min={0} max={game.revision} step={1} value={historyRevision} onChange={(event) => selectPosition(Number(event.target.value))} /><button aria-label={t("Next move", "下一手")} disabled={historyRevision === game.revision} onClick={() => selectPosition(historyRevision + 1)}>→</button><button aria-label={t("Final position", "最终局面")} disabled={historyRevision === game.revision} onClick={() => selectPosition(game.revision)}>⇥</button></div>
-          <div className="timeline-caption"><span>{variation ? t(`Starts after move ${historyRevision}`, `起点：第 ${historyRevision} 手后`) : nextEvent?.kind === "pass" ? t(`${colorName(nextEvent.actor)} must pass`, `${colorName(nextEvent.actor)}必须跳过回合`) : nextEvent ? t(`Next: ${colorName(nextEvent.actor)} ${nextEvent.coordinate}`, `下一手：${colorName(nextEvent.actor)} ${nextEvent.coordinate}`) : turn ? t("Current position", "当前局面") : t("Final position", "终局")}</span><button className="primary" disabled={busy || !canTeach || pendingLesson || currentLesson?.coaching_status === "ready"} onClick={() => teach()}>{pendingLesson ? t("Analyzing…", "分析中…") : currentLesson?.coaching_status === "failed" || latestLessonTask?.task.status === "failed" ? t("Retry teaching", "重试教学") : currentLesson ? t("Teaching", "教学") : t("Teach this position", "教学")}</button></div>
+          <div className="timeline-caption"><span>{variation ? t(`Starts after move ${historyRevision}`, `起点：第 ${historyRevision} 手后`) : nextEvent?.kind === "pass" ? t(`${colorName(nextEvent.actor)} must pass`, `${colorName(nextEvent.actor)}必须跳过回合`) : nextEvent ? t(`Next: ${colorName(nextEvent.actor)} ${nextEvent.coordinate}`, `下一手：${colorName(nextEvent.actor)} ${nextEvent.coordinate}`) : turn ? t("Current position", "当前局面") : t("Final position", "终局")}</span>{canTeach && <button className="primary" disabled={busy || pendingLesson || currentLesson?.coaching_status === "ready"} onClick={() => teach()}>{pendingLesson ? t("Analyzing…", "分析中…") : currentLesson?.coaching_status === "failed" || latestLessonTask?.task.status === "failed" ? t("Retry teaching", "重试教学") : currentLesson ? t("Teaching", "教学") : t("Teach this position", "教学")}</button>}</div>
         </div>}
         {variation && <div className="board-footer"><button disabled={canDefend || variation.frame === 0} onClick={() => setVariation({...variation, frame: variation.frame - 1})}>{t("Previous step", "上一步")}</button><span>{variation.frame}/{variation.lesson_frames.length - 1}</span><button disabled={canDefend || variation.frame === variation.lesson_frames.length - 1} onClick={() => setVariation({...variation, frame: variation.frame + 1})}>{variation.exercise?.attempt && variation.frame === 3 ? t("See the reply", "看对手应对") : t("Next step", "下一步")}</button><button onClick={() => setVariation(null)}>{t("Back to before the move", "返回落子前局面")}</button>
           {teachingFrame && <p className="board-teaching-text" role="status">{canDefend && variation.exercise ? t(`Choose a defense against the ${cornerName(variation.exercise.target, locale)} capture.`, `选择一步，试着守住${cornerName(variation.exercise.target, locale)}。`) : stepText(teachingFrame, locale)}{!canDefend && variation.frame === 2 && variation.capture_lines?.length ? <span className="capture-explanation">{captureLineText(variation.capture_lines, variation.lesson_frames[2].actor!, locale)}</span> : null}</p>}
@@ -312,9 +312,9 @@ export default function Home() {
       <aside className="side-panel">
         <section className="score-card" aria-label={t("Disc count", "棋子数量")}><div className="score-line">{(["X", "O"] as Color[]).map((color) => <div key={color}><i className={`mini-disc ${color === "X" ? "black" : "white"}`} /><span>{colorName(color)}</span><strong>{board ? [...board.join("")].filter((cell) => cell === color).length : "—"}</strong></div>)}</div>{mode === "play" && game?.result && <p className="result-label">{game.result.winner === "draw" ? t("Draw", "和棋") : game.result.winner === game.human_color ? t("You win", "你获胜") : t("AI wins", "AI 获胜")}</p>}</section>
         {mode === "play" ? <section className="tips-card"><label className="speed-picker">{t("Move speed", "落子速度")}<select aria-label={t("Move speed", "落子速度")} value={speed} onChange={(event) => {const value = event.target.value as Speed; speedRef.current = value; setSpeed(value); localStorage.setItem("nemothello_speed", value);}}><option value="normal">{t("Normal", "普通")}</option><option value="slow">{t("Slow", "慢速")}</option></select></label>{game?.status === "active" && <div className="card-heading"><span>{t("Hints", "推荐点")}</span><button className={`toggle ${tips ? "on" : ""}`} role="switch" aria-checked={tips} aria-label={t("Move hints", "落点提示")} disabled={game.auto_play} onClick={() => {tipsRef.current = !tips; setTips(!tips);}}><span /></button></div>}{hintError && <p role="alert">{hintError}<button onClick={() => setHintRetry((n) => n + 1)}>{t("Retry hint", "重试提示")}</button></p>}</section> : <section className="teaching-panel" aria-label={t("Teaching", "教学")}>
-          {currentLesson && game ? <><ReviewCoach key={lessonKey(game.game_id, historyRevision)} game={game} lesson={currentLesson} variation={variation} pending={pendingLesson} busy={busy} showVariation={setVariation} ask={(text) => teach(text)} answer={questionAnswer} questionPending={!!latestQuestion && ["queued", "running"].includes(latestQuestion.task.status)} continueGame={(revision) => continueGame(revision, false)} replay={(revision) => continueGame(revision, true)} />{currentLesson.coaching_status === "failed" && <p className="inline-error" role="alert">{currentLesson.coaching_error}</p>}</> : <p className="teaching-empty" role="status">{pendingLesson ? t("Analyzing this position…", "正在分析这个局面…") : !turn ? t("Step back to a move you want to understand, then choose Teach this position.", "回退到想学习的一手，再点击教学。") : nextEvent?.kind === "pass" ? t("This player has no legal move. Step forward past the pass.", "这一方没有合法落点，向前一步查看跳过后的局面。") : t("Use the arrows or timeline to choose a position, then choose Teach this position.", "用箭头或进度条选择局面，再点击教学。")}</p>}
-          {currentLesson?.coaching_status !== "failed" && latestLessonTask?.task.error && <p role="alert" className="inline-error">{latestLessonTask.task.error.message}</p>}
-          {latestQuestion?.task.error && <p role="alert" className="inline-error">{latestQuestion.task.error.message}</p>}
+          {currentLesson && game ? <><ReviewCoach key={lessonKey(game.game_id, historyRevision)} game={game} lesson={currentLesson} variation={variation} pending={pendingLesson} busy={busy} showVariation={setVariation} ask={(text) => teach(text)} answer={questionAnswer} questionPending={!!latestQuestion && ["queued", "running"].includes(latestQuestion.task.status)} continueGame={(revision) => continueGame(revision, false)} replay={(revision) => continueGame(revision, true)} />{currentLesson.coaching_status === "failed" && <p className="inline-error" role="alert">{currentLesson.coaching_error}</p>}</> : <p className="teaching-empty" role="status">{!turn ? t("Step back to one of your moves, then choose Teach this position.", "回退到自己的落子，再点击教学。") : nextEvent?.kind === "pass" ? t("This player has no legal move. Step forward past the pass.", "这一方没有合法落点，向前一步查看跳过后的局面。") : !canTeach ? t("Choose one of your own turns for teaching.", "选择自己的回合查看教学。") : pendingLesson ? t("Analyzing this position…", "正在分析这个局面…") : t("Use the arrows or timeline to choose one of your moves, then choose Teach this position.", "用箭头或进度条选择自己的落子，再点击教学。")}</p>}
+          {canTeach && currentLesson?.coaching_status !== "failed" && latestLessonTask?.task.error && <p role="alert" className="inline-error">{latestLessonTask.task.error.message}</p>}
+          {canTeach && latestQuestion?.task.error && <p role="alert" className="inline-error">{latestQuestion.task.error.message}</p>}
           {branchTask && <div className="branch-status" role="status">{["queued", "running"].includes(branchTask.task.status) ? t("Replaying with hints…", "正在按提示回放…") : branchTask.task.error?.message}<button disabled={busy} onClick={() => void perform(async () => acceptGame(await api<GameState>(`/games/${branchTask.task.game_id}`)))}>{t("Open replay", "查看回放")}</button></div>}
         </section>}
       </aside>

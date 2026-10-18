@@ -20,6 +20,8 @@ def check_teachable(game: dict[str, Any], revision: int) -> Position:
         raise AppError("REVIEW_TERMINAL", "Step back to a position before the game ended", 422)
     if not position.moves:
         raise AppError("REVIEW_PASS", "This player must pass. Step forward to the next turn", 422)
+    if position.turn != game["human_color"]:
+        raise AppError("REVIEW_OPPONENT", "Choose one of your own turns for teaching", 422)
     return position
 
 
