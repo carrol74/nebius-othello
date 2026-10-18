@@ -6,119 +6,105 @@ import { LanguageSwitch, useLocale } from "@/lib/locale";
 import { captureLineText, cornerName, defenseFeedback, stepText } from "@/lib/teaching-text";
 import { readRecentGames, recentGameLabel, rememberGame } from "@/lib/recent-games";
 import type { RecentGame } from "@/lib/recent-games";
-import { ReviewDetails } from "@/components/review-details";
+import { moveFlips, placedBoard, savedPosition } from "@/lib/game-view";
 import { ReviewCoach } from "@/components/review-coach";
-import type { Practice, Variation } from "@/components/review-coach";
-import { TaskList } from "@/components/task-list";
-import type { Color, Difficulty, GameState, Hint, Review, Task, TrackedTask } from "@/lib/types";
+import type { Variation } from "@/components/review-coach";
+import type { Color, Difficulty, GameState, Hint, HistoryEvent, PositionLesson, QuestionResult, Task, TrackedTask } from "@/lib/types";
+
+type Mode = "play" | "review";
+type Speed = "normal" | "slow";
+type Playback = {board: string[]; event: HistoryEvent; flipped: string[]; phase: "placed" | "flipped"};
+const lessonKey = (gameId: string, revision: number) => `${gameId}:${revision}`;
 
 function message(error: unknown) {
-  if (error instanceof ApiError) return `${error.message}${error.detail.request_id ? ` · Request ${error.detail.request_id}` : ""}`;
   return error instanceof Error ? error.message : "Request failed. Please try again.";
-}
-
-function firstReviewPosition(review: Review) {
-  return [...review.key_moves].sort((a, b) => b.score_loss - a.score_loss)[0]?.revision ?? null;
 }
 
 export default function Home() {
   const {locale, t} = useLocale();
-  const localizedColor = (color: Color) => color === "X" ? t("Black", "黑方") : t("White", "白方");
-  const localizedDifficulty: Record<Difficulty, string> = {easy: t("Beginner", "初级"), medium: t("Intermediate", "中级"), hard: t("Advanced", "高级")};
-  const busyMessages: Record<string, string> = {"Preparing game": "准备对局", "AI is choosing a move": "AI 正在落子", "Continuing your retry": "正在创建续下对局", "Updating game": "更新对局", "Creating game": "创建对局", "Loading game": "加载对局", "Playing move": "落子中", "Requesting review": "分析棋局", "Sending question": "发送问题", "Creating branch": "创建分支", "Starting hint replay": "开始提示回放", "Refresh tasks": "刷新任务", "Loading branch": "加载分支"};
+  const colorName = (color: Color) => color === "X" ? t("Black", "黑方") : t("White", "白方");
   const [game, setGame] = useState<GameState | null>(null);
+  const [mode, setMode] = useState<Mode>("play");
+  const [speed, setSpeed] = useState<Speed>("normal");
+  const [playback, setPlayback] = useState<Playback | null>(null);
   const [humanColor, setHumanColor] = useState<Color>("X");
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [recent, setRecent] = useState<RecentGame[]>([]);
-  const [busy, setBusy] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [bootRetry, setBootRetry] = useState(0);
   const [tips, setTips] = useState(false);
   const [hint, setHint] = useState<Hint | null>(null);
   const [hintConfirmed, setHintConfirmed] = useState(false);
   const [hintError, setHintError] = useState<string | null>(null);
   const [hintRetry, setHintRetry] = useState(0);
-  const [displayRetry, setDisplayRetry] = useState(0);
-  const [historyRevision, setHistoryRevision] = useState<number | null>(null);
-  const [review, setReview] = useState<Review | null>(null);
-  const [practice, setPractice] = useState<Practice | null>(null);
+  const [historyRevision, setHistoryRevision] = useState(0);
   const [variation, setVariation] = useState<Variation | null>(null);
+  const [lessons, setLessons] = useState<Record<string, PositionLesson | null>>({});
   const [tasks, setTasks] = useState<TrackedTask[]>([]);
-  const [question, setQuestion] = useState("");
-  const [loaded, setLoaded] = useState(false);
-  const [bootRetry, setBootRetry] = useState(0);
+  const [taskPollRetry, setTaskPollRetry] = useState(0);
   const gameRef = useRef<GameState | null>(null);
   const busyRef = useRef(false);
+  const modeRef = useRef<Mode>("play");
+  const speedRef = useRef<Speed>("normal");
   const tipsRef = useRef(false);
   const attemptedAi = useRef<string | null>(null);
-  const displayIds = useRef(new Map<string, string>());
   const bootStarted = useRef(false);
 
   const acceptGame = useCallback((next: GameState) => {
-    const isNew = gameRef.current?.game_id !== next.game_id;
-    const nextKey = `${next.game_id}:${next.revision}`;
-    if (attemptedAi.current !== nextKey) attemptedAi.current = null;
-    displayIds.current.clear();
-    gameRef.current = next;
-    setGame(next);
-    setHistoryRevision(null);
-    setPractice(null);
-    setVariation(null);
-    setHint(null);
-    setHintConfirmed(false);
+    const previous = gameRef.current;
+    const isNew = previous?.game_id !== next.game_id;
     if (isNew) {
       setHumanColor(next.human_color);
       if (next.difficulty) setDifficulty(next.difficulty);
-      setReview(null);
-      setQuestion("");
-      setTips(false);
-      tipsRef.current = false;
+      setMode("play"); modeRef.current = "play";
+      setHistoryRevision(next.revision); setVariation(null); setPlayback(null);
+      setTips(false); tipsRef.current = false;
+    } else if (speedRef.current === "slow" && modeRef.current === "play" && !next.auto_play && !previous.auto_play) {
+      const event = next.history.find((item) => item.revision > previous.revision && item.kind === "move" && item.actor !== next.human_color);
+      if (event) setPlayback({board: placedBoard(previous.board, event), event, flipped: moveFlips(previous.board, event), phase: "placed"});
     }
+    if (attemptedAi.current !== `${next.game_id}:${next.revision}`) attemptedAi.current = null;
+    gameRef.current = next; setGame(next); setHint(null); setHintConfirmed(false);
     setRecent((current) => rememberGame(current, next));
     localStorage.setItem("nemothello_active_game", next.game_id);
     window.history.replaceState(null, "", `?game=${encodeURIComponent(next.game_id)}`);
   }, []);
 
-  const perform = useCallback(async (label: string, action: () => Promise<void>) => {
+  const perform = useCallback(async (action: () => Promise<void>) => {
     if (busyRef.current) return;
-    busyRef.current = true;
-    setBusy(label);
-    setError(null);
-    try {
-      await action();
-    } catch (failure) {
+    busyRef.current = true; setBusy(true); setError(null);
+    try { await action(); }
+    catch (failure) {
       setError(message(failure));
       if (failure instanceof ApiError && failure.status === 409 && gameRef.current) {
         try { acceptGame(await api<GameState>(`/games/${gameRef.current.game_id}`)); }
-        catch (refreshFailure) { setError(`${message(failure)}; Could not refresh the board: ${message(refreshFailure)}`); }
+        catch (refreshFailure) { setError(message(refreshFailure)); }
       }
-    } finally { busyRef.current = false; setBusy(null); }
+    } finally { busyRef.current = false; setBusy(false); }
   }, [acceptGame]);
 
   const createGame = useCallback(async (color: Color, level: Difficulty) => {
-    acceptGame(await api<GameState>("/games", {
-      human_color: color, difficulty: level, request_id: requestId(),
-    }));
+    acceptGame(await api<GameState>("/games", {human_color: color, difficulty: level, request_id: requestId()}));
   }, [acceptGame]);
 
   useEffect(() => {
     if (bootStarted.current) return;
     bootStarted.current = true;
-    void perform("Preparing game", async () => {
-      await api<{ ready: boolean }>("/session");
+    void perform(async () => {
+      await api("/session");
       const saved = localStorage.getItem("nemothello_recent_games");
-      if (saved) {
-        try {
-          setRecent(readRecentGames(saved));
-        } catch (failure) { setError(message(failure)); }
-      }
-      const gameId = new URLSearchParams(window.location.search).get("game");
-      if (gameId) {
-        try {
-          acceptGame(await api<GameState>(`/games/${encodeURIComponent(gameId)}`));
-        } catch (failure) {
+      if (saved) setRecent(readRecentGames(saved));
+      const savedSpeed = localStorage.getItem("nemothello_speed");
+      if (savedSpeed === "slow" || savedSpeed === "normal") {setSpeed(savedSpeed); speedRef.current = savedSpeed;}
+      const id = new URLSearchParams(window.location.search).get("game");
+      if (id) {
+        try { acceptGame(await api<GameState>(`/games/${encodeURIComponent(id)}`)); }
+        catch (failure) {
           if (failure instanceof ApiError && failure.status === 404) {
             localStorage.removeItem("nemothello_active_game");
-            setRecent((current) => current.filter((item) => item.game_id !== gameId));
+            setRecent((current) => current.filter((item) => item.game_id !== id));
             window.history.replaceState(null, "", window.location.pathname);
           }
           throw failure;
@@ -128,310 +114,207 @@ export default function Home() {
     });
   }, [acceptGame, createGame, perform, bootRetry]);
 
-  useEffect(() => { if (loaded) localStorage.setItem("nemothello_recent_games", JSON.stringify(recent)); }, [recent, loaded]);
+  useEffect(() => {if (loaded) localStorage.setItem("nemothello_recent_games", JSON.stringify(recent));}, [recent, loaded]);
 
-  const requestAi = useCallback((current: GameState) => perform("AI is choosing a move", async () => {
-    acceptGame(await api<GameState>(`/games/${current.game_id}/ai-move`, { expected_revision: current.revision, request_id: requestId() }));
+  useEffect(() => {
+    if (!playback) return;
+    const timer = setTimeout(() => setPlayback(playback.phase === "placed" ? {...playback, board: playback.event.board, phase: "flipped"} : null), playback.phase === "placed" ? 500 : 900);
+    return () => clearTimeout(timer);
+  }, [playback]);
+
+  const requestAi = useCallback((current: GameState) => perform(async () => {
+    acceptGame(await api<GameState>(`/games/${current.game_id}/ai-move`, {expected_revision: current.revision, request_id: requestId()}));
   }), [acceptGame, perform]);
 
   useEffect(() => {
-    if (!game || busy || game.auto_play || game.status !== "active" || game.turn === game.human_color) return;
+    if (!game || mode !== "play" || busy || playback || game.auto_play || game.status !== "active" || game.turn === game.human_color) return;
     const key = `${game.game_id}:${game.revision}`;
     if (attemptedAi.current === key) return;
-    attemptedAi.current = key;
-    void requestAi(game);
-  }, [game, busy, requestAi]);
+    const timer = setTimeout(() => {attemptedAi.current = key; void requestAi(game);}, speed === "slow" ? 400 : 0);
+    return () => clearTimeout(timer);
+  }, [game, mode, busy, playback, speed, requestAi]);
 
   useEffect(() => {
     if (!game?.auto_play) return;
-    const gameId = game.game_id;
     const controller = new AbortController();
     let pending = false;
     const timer = setInterval(() => {
       if (pending || document.visibilityState === "hidden") return;
       pending = true;
-      void api<GameState>(`/games/${gameId}`, undefined, controller.signal).then((next) => {
-        if (controller.signal.aborted || gameRef.current?.game_id !== gameId) return;
-        if (!next.auto_play && next.status === "active") attemptedAi.current = `${gameId}:${next.revision}`;
-        gameRef.current = next;
-        setGame(next);
-      }).catch((failure) => {
-        if (!controller.signal.aborted) setError(`Could not update replay: ${message(failure)}`);
-      }).finally(() => { pending = false; });
+      void api<GameState>(`/games/${game.game_id}`, undefined, controller.signal).then((next) => {
+        if (!controller.signal.aborted && gameRef.current?.game_id === next.game_id) acceptGame(next);
+      }).catch((failure) => {if (!controller.signal.aborted) setError(message(failure));}).finally(() => {pending = false;});
     }, 1600);
-    return () => { clearInterval(timer); controller.abort(); };
-  }, [game?.game_id, game?.auto_play]);
+    return () => {clearInterval(timer); controller.abort();};
+  }, [game?.game_id, game?.auto_play, acceptGame]);
 
   useEffect(() => {
     setHint(null); setHintConfirmed(false); setHintError(null);
-    if (!tips || busy || historyRevision !== null || !game || game.auto_play || game.status !== "active" || game.turn !== game.human_color) return;
+    if (mode !== "play" || !tips || busy || playback || !game || game.auto_play || game.status !== "active" || game.turn !== game.human_color) return;
     const controller = new AbortController();
-    const current = game;
-    void api<Hint>(`/games/${current.game_id}/hint`, { expected_revision: current.revision }, controller.signal)
-      .then((next) => {
-        if (controller.signal.aborted || busyRef.current || !tipsRef.current || gameRef.current?.game_id !== next.game_id || gameRef.current?.revision !== next.revision) return;
-        setHint(next);
-      }).catch((failure) => { if (!controller.signal.aborted) setHintError(message(failure)); });
+    void api<Hint>(`/games/${game.game_id}/hint`, {expected_revision: game.revision}, controller.signal).then((next) => {
+      if (!controller.signal.aborted && tipsRef.current && modeRef.current === "play" && gameRef.current?.game_id === next.game_id && gameRef.current?.revision === next.revision) setHint(next);
+    }).catch((failure) => {if (!controller.signal.aborted) setHintError(message(failure));});
     return () => controller.abort();
-  }, [tips, busy, game?.game_id, game?.revision, game?.status, game?.turn, game?.human_color, game?.auto_play, historyRevision, hintRetry]);
+  }, [mode, tips, busy, playback, game?.game_id, game?.revision, game?.status, game?.turn, game?.human_color, game?.auto_play, hintRetry]);
 
   useEffect(() => {
-    if (!hint || !tips || historyRevision !== null) return;
-    let cancelled = false;
-    const displayRequestId = displayIds.current.get(hint.hint_id) ?? requestId();
-    displayIds.current.clear();
-    displayIds.current.set(hint.hint_id, displayRequestId);
-    let paintedFrame = 0;
-    const frame = requestAnimationFrame(() => { paintedFrame = requestAnimationFrame(() => {
-      if (cancelled || !tipsRef.current || gameRef.current?.revision !== hint.revision || gameRef.current?.game_id !== hint.game_id) return;
-      void api(`/games/${hint.game_id}/hint-displays`, { hint_id: hint.hint_id, expected_revision: hint.revision, request_id: displayRequestId })
-        .then(() => {
-          displayIds.current.delete(hint.hint_id);
-          if (!cancelled) { setHintConfirmed(true); setHintError(null); }
-        })
-        .catch((failure) => { if (!cancelled) setHintError(`Could not record hint display: ${message(failure)}`); });
-    }); });
-    return () => { cancelled = true; cancelAnimationFrame(frame); cancelAnimationFrame(paintedFrame); };
-  }, [hint, tips, historyRevision, displayRetry]);
+    if (!hint || !tips || mode !== "play") return;
+    let cancelled = false, painted = 0;
+    const frame = requestAnimationFrame(() => {painted = requestAnimationFrame(() => {
+      if (cancelled || modeRef.current !== "play" || !tipsRef.current || gameRef.current?.game_id !== hint.game_id || gameRef.current?.revision !== hint.revision) return;
+      void api(`/games/${hint.game_id}/hint-displays`, {hint_id: hint.hint_id, expected_revision: hint.revision, request_id: requestId()}).then(() => {if (!cancelled) setHintConfirmed(true);}).catch((failure) => {if (!cancelled) setHintError(message(failure));});
+    });});
+    return () => {cancelled = true; cancelAnimationFrame(frame); cancelAnimationFrame(painted);};
+  }, [hint, tips, mode]);
+
+  const loadLesson = useCallback(async (id: string, revision: number) => {
+    const saved = await api<PositionLesson | {task: Task | null}>(`/games/${id}/lessons?revision=${revision}`);
+    setLessons((current) => ({...current, [lessonKey(id, revision)]: "task" in saved ? null : saved}));
+    return saved;
+  }, []);
 
   const trackTask = useCallback((entry: TrackedTask) => {
-    setTasks((current) => [entry, ...current.filter((item) => item.task.task_id !== entry.task.task_id)]);
-    if (entry.task.kind === "review" && entry.game_id === gameRef.current?.game_id) {
-      if (entry.task.status === "succeeded" && entry.task.result) {
-        setReview(entry.task.result);
-        const first = firstReviewPosition(entry.task.result);
-        setHistoryRevision((current) => current ?? first);
-      } else if (entry.task.status === "running" || entry.task.status === "failed") {
-        void api<Review | { task: Task | null }>(`/games/${entry.game_id}/review`).then((result) => {
-          if (!("task" in result) && gameRef.current?.game_id === entry.game_id) {
-            setReview(result);
-            setHistoryRevision((current) => current ?? firstReviewPosition(result));
-          }
-        }).catch((failure) => { if (gameRef.current?.game_id === entry.game_id) setError(message(failure)); });
-      }
+    setTasks((current) => [entry, ...current.filter((item) => item.task.task_id !== entry.task.task_id)].slice(0, 50));
+    if (entry.task.kind === "lesson" && entry.revision !== undefined) {
+      if (entry.task.result) setLessons((current) => ({...current, [lessonKey(entry.game_id, entry.revision!)]: entry.task.result as PositionLesson}));
+      else void loadLesson(entry.game_id, entry.revision).catch((failure) => setError(message(failure)));
     }
-  }, []);
+  }, [loadLesson]);
 
   useEffect(() => {
     if (!loaded) return;
-    const saved = localStorage.getItem("nemothello_tasks");
-    if (!saved) return;
+    const raw = localStorage.getItem("nemothello_tasks");
+    if (!raw) return;
     const controller = new AbortController();
     try {
-      const entries: unknown = JSON.parse(saved);
-      if (!Array.isArray(entries) || !entries.every((item) => item && typeof item.task_id === "string" && typeof item.game_id === "string" && ["review", "question", "branch"].includes(item.purpose))) throw new Error("Saved task list is invalid");
-      void Promise.allSettled(entries.map((entry) => api<Task>(`/tasks/${encodeURIComponent(entry.task_id)}`, undefined, controller.signal))).then((results) => {
+      const saved: unknown = JSON.parse(raw);
+      if (!Array.isArray(saved) || !saved.every((item) => item && typeof item.task_id === "string" && typeof item.game_id === "string")) throw new Error("Saved tasks are invalid");
+      void Promise.allSettled(saved.map((entry) => api<Task>(`/tasks/${encodeURIComponent(entry.task_id)}`, undefined, controller.signal))).then((results) => {
         if (controller.signal.aborted) return;
-        results.forEach((result, index) => {
-          if (result.status === "fulfilled") trackTask({ task: result.value, purpose: entries[index].purpose, game_id: entries[index].game_id, question: entries[index].question });
-          else setError(`Could not restore task: ${message(result.reason)}`);
-        });
+        results.forEach((result, index) => {if (result.status === "fulfilled") trackTask({...saved[index], task: result.value});});
       });
-    } catch (failure) { setError(message(failure)); }
+    } catch (failure) {setError(message(failure));}
     return () => controller.abort();
   }, [loaded, trackTask]);
 
   useEffect(() => {
-    if (!tasks.length) return;
-    localStorage.setItem("nemothello_tasks", JSON.stringify(tasks.slice(0, 50).map((entry) => ({
-      task_id: entry.task.task_id, purpose: entry.purpose, game_id: entry.game_id, question: entry.question,
-    }))));
+    if (tasks.length) localStorage.setItem("nemothello_tasks", JSON.stringify(tasks.map((entry) => ({task_id: entry.task.task_id, game_id: entry.game_id, purpose: entry.purpose, revision: entry.revision, question: entry.question}))));
   }, [tasks]);
 
   useEffect(() => {
-    if (!game || game.status !== "finished") return;
-    const controller = new AbortController();
-    const gameId = game.game_id;
-    void api<Review | { task: Task | null }>(`/games/${gameId}/review`, undefined, controller.signal).then((result) => {
-      if (controller.signal.aborted || gameRef.current?.game_id !== gameId) return;
-      if ("task" in result) { if (result.task) trackTask({ task: result.task, purpose: "review", game_id: gameId }); }
-      else {
-        setReview(result);
-        setHistoryRevision((current) => current ?? firstReviewPosition(result));
-      }
-    }).catch((failure) => {
-      if (!controller.signal.aborted && !(failure instanceof ApiError && failure.detail.code === "REVIEW_NOT_FOUND")) setError(message(failure));
-    });
-    return () => controller.abort();
-  }, [game?.game_id, game?.status, trackTask]);
-
-  useEffect(() => {
-    const pending = tasks.filter(({ task }) => task.status === "queued" || task.status === "running");
+    const pending = tasks.filter((entry) => ["queued", "running"].includes(entry.task.status));
     if (!pending.length) return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
       void Promise.allSettled(pending.map((entry) => api<Task>(`/tasks/${entry.task.task_id}`, undefined, controller.signal))).then((results) => {
         if (controller.signal.aborted) return;
-        results.forEach((result, index) => {
-          if (result.status === "fulfilled") trackTask({ ...pending[index], task: result.value });
-          else setError(`Could not fetch task: ${message(result.reason)}. Select Refresh tasks to try again.`);
-        });
+        results.forEach((result, index) => {if (result.status === "fulfilled") trackTask({...pending[index], task: result.value}); else setError(message(result.reason));});
+        setTaskPollRetry((current) => results.some((result) => result.status === "rejected") ? current + 1 : 0);
       });
-    }, 1600);
-    return () => { clearTimeout(timer); controller.abort(); };
-  }, [tasks, trackTask]);
+    }, 1200 * 2 ** Math.min(taskPollRetry, 3));
+    return () => {clearTimeout(timer); controller.abort();};
+  }, [tasks, trackTask, taskPollRetry]);
 
-  const selectedEvent = game?.history.find((event) => event.revision === historyRevision);
-  const selectedEvidence = review?.evidence.find((entry) => entry.revision === historyRevision);
-  const variationComparison = variation && review?.evidence.find((entry) => entry.revision === variation.revision)?.comparisons?.find((entry) => entry.coordinate === variation.coordinate);
-  const variationFrames = variation?.lesson_frames ?? variationComparison?.frames;
-  const teachingFrame = variation?.lesson_frames?.[variation.frame];
-  const variationFrame = variation && variationFrames?.[variation.frame];
-  const board = variationFrame?.board ?? selectedEvidence?.analysis.board ?? (historyRevision === 0 ? game?.initial_board : selectedEvent?.board ?? game?.board);
-  const displayedTurn = variationFrame ? variationFrame.turn : selectedEvidence?.actor ?? (historyRevision === 0 ? game?.initial_turn : selectedEvent ? selectedEvent.turn : game?.turn);
-  const live = historyRevision === null;
-  const canPractice = !!practice && practice.coordinate === null && practice.revision === historyRevision && !!selectedEvidence && selectedEvidence.actor === game?.human_color && !busy && !variation;
-  const canDefend = !!variation?.exercise && variation.frame === 2 && !variation.exercise.attempt && !busy;
-  const canMove = canDefend || canPractice || (!!game && live && !busy && !game.auto_play && game.status === "active" && game.turn === game.human_color && (!hint || hintConfirmed));
-  const visibleHint = tips && live && hint?.game_id === game?.game_id && hint?.revision === game?.revision ? hint : null;
-  const currentTasks = tasks.filter((entry) => entry.game_id === game?.game_id || (entry.purpose === "branch" && entry.task.game_id === game?.game_id));
-  const reviewPending = currentTasks.some((entry) => entry.purpose === "review" && ["queued", "running"].includes(entry.task.status));
-  const branchPending = currentTasks.some((entry) => entry.purpose === "branch" && ["queued", "running"].includes(entry.task.status));
-  const branchRevision = historyRevision ?? game?.revision;
-  const awaitingPass = !!selectedEvent && !!game?.history.some((event) => event.kind === "pass" && event.revision === selectedEvent.revision + 1);
-  const branchUnavailable = branchRevision === undefined || displayedTurn === null || awaitingPass || !!game?.auto_play;
-  const canChangeOpening = !!game && !game.parent_game_id && !game.auto_play && game.status === "active"
-    && !game.history.some((event) => event.kind === "move" && event.actor === game.human_color);
+  useEffect(() => {
+    if (mode !== "review" || !game) return;
+    let cancelled = false;
+    void loadLesson(game.game_id, historyRevision).then((saved) => {
+      if (!cancelled && "task" in saved && saved.task) trackTask({task: saved.task, game_id: game.game_id, purpose: "lesson", revision: historyRevision});
+      else if (!cancelled && !("task" in saved) && saved.coaching_status === "pending" && saved.task_id) {
+        void api<Task>(`/tasks/${saved.task_id}`).then((task) => {
+          if (!cancelled) trackTask({task, game_id: game.game_id, purpose: "lesson", revision: historyRevision});
+        }).catch((failure) => {if (!cancelled) setError(message(failure));});
+      }
+    }).catch((failure) => {if (!cancelled) setError(message(failure));});
+    return () => {cancelled = true;};
+  }, [mode, game?.game_id, historyRevision, loadLesson, trackTask]);
 
-  function selectPosition(revision: number | null) {
-    setPractice(null);
-    setVariation(null);
-    setHistoryRevision(revision);
+  const position = game && mode === "review" ? savedPosition(game, historyRevision) : game;
+  const teachingFrame = variation?.lesson_frames[variation.frame];
+  const board = teachingFrame?.board ?? (mode === "play" ? playback?.board : null) ?? position?.board;
+  const turn = teachingFrame ? teachingFrame.turn : position?.turn;
+  const nextEvent = game?.history.find((item) => item.revision === historyRevision + 1);
+  const canTeach = mode === "review" && !!position?.turn && nextEvent?.kind !== "pass";
+  const canDefend = mode === "review" && !!variation?.exercise && variation.frame === 2 && !variation.exercise.attempt && !busy;
+  const visibleHint = mode === "play" && hint?.game_id === game?.game_id && hint?.revision === game?.revision ? hint : null;
+  const canMove = mode === "play" && !!game && !busy && !playback && !game.auto_play && game.status === "active" && game.turn === game.human_color && (!tips || (!!visibleHint && hintConfirmed));
+  const lastMove = mode === "play" ? game?.history.findLast((item) => item.kind === "move") : null;
+  const currentLesson = game ? lessons[lessonKey(game.game_id, historyRevision)] : null;
+  const currentTasks = tasks.filter((entry) => entry.game_id === game?.game_id && entry.revision === historyRevision);
+  const pendingLesson = currentTasks.some((entry) => entry.purpose === "lesson" && ["queued", "running"].includes(entry.task.status));
+  const latestLessonTask = currentTasks.find((entry) => entry.purpose === "lesson");
+  const latestQuestion = currentTasks.find((entry) => entry.purpose === "question");
+  const questionAnswer = latestQuestion?.task.kind === "question" ? latestQuestion.task.result as QuestionResult | null : null;
+  const branchTask = tasks.find((entry) => entry.purpose === "branch" && entry.game_id === game?.game_id);
+  const canChangeOpening = !!game && !game.parent_game_id && !game.auto_play && game.status === "active" && !game.history.some((item) => item.kind === "move" && item.actor === game.human_color);
+
+  function selectPosition(revision: number) {setHistoryRevision(revision); setVariation(null); setError(null);}
+  function switchMode(value: Mode) {
+    modeRef.current = value; setMode(value); setVariation(null); setPlayback(null); setError(null);
+    if (value === "review" && game) setHistoryRevision(game.revision);
   }
-
-  function startPractice(revision: number) {
-    setHistoryRevision(revision);
-    setVariation(null);
-    setPractice({revision, coordinate: null});
-    document.getElementById("game-board")?.scrollIntoView({block: "start", behavior: "instant"});
+  function changeSettings(color: Color, level: Difficulty) {
+    if (canChangeOpening) {if (color !== game?.human_color || level !== game?.difficulty) void perform(() => createGame(color, level));}
+    else {setHumanColor(color); setDifficulty(level);}
   }
-
-  function showVariation(value: Variation | null) {
-    setVariation(value);
-    if (value) { setPractice(null); setHistoryRevision(value.revision); }
-    document.getElementById("game-board")?.scrollIntoView({block: "start", behavior: "instant"});
-  }
-
-  function continuePractice(revision: number, coordinate: string) {
+  function teach(question?: string) {
     if (!game) return;
-    void perform("Continuing your retry", async () => {
-      const branch = await api<GameState>(`/games/${game.game_id}/branches`, {
-        revision, mode: "manual", request_id: requestId(),
-      });
-      acceptGame(branch);
-      acceptGame(await api<GameState>(`/games/${branch.game_id}/moves`, {
-        coordinate, expected_revision: branch.revision, request_id: requestId(),
-      }));
+    const id = game.game_id, revision = historyRevision;
+    void perform(async () => trackTask({task: await api<Task>(`/games/${id}/lessons`, {revision, question, request_id: requestId()}), game_id: id, revision, purpose: question ? "question" : "lesson", question}));
+  }
+  function continueGame(revision: number, replay: boolean) {
+    if (!game) return;
+    const id = game.game_id;
+    void perform(async () => {
+      const result = await api<GameState | Task>(`/games/${id}/branches`, {revision, mode: replay ? "follow_hints" : "manual", request_id: requestId()});
+      if ("task_id" in result) trackTask({task: result, game_id: id, revision, purpose: "branch"});
+      else acceptGame(result);
     });
   }
 
-  function changeSettings(color: Color, level: Difficulty) {
-    if (busyRef.current) return;
-    if (canChangeOpening) {
-      if (color !== game?.human_color || level !== game?.difficulty) {
-        void perform("Updating game", () => createGame(color, level));
-      }
-    } else {
-      setHumanColor(color);
-      setDifficulty(level);
-    }
-  }
-
-  return (
-    <main className="workspace">
-      <header className="masthead"><a className="wordmark" href="/">Nemo<span>thello</span><span className="brand-dot" /></a><LanguageSwitch /></header>
-      <section className="game-toolbar" aria-label={t("Game settings", "对局设置")}><div className="color-picker">{!canChangeOpening && game && <span>{t("Next game color", "下一局执棋")}</span>}<button aria-pressed={humanColor === "X"} onClick={() => changeSettings("X", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc black" />{t("Black", "黑方")}</button><button aria-pressed={humanColor === "O"} onClick={() => changeSettings("O", difficulty)} disabled={!!busy || !loaded}><i className="mini-disc white" />{t("White", "白方")}</button></div><label className="difficulty-picker">{!canChangeOpening && game && t("Next game difficulty", "下一局难度")}<select aria-label={canChangeOpening ? t("Difficulty", "难度") : t("Next game difficulty", "下一局难度")} value={difficulty} disabled={!!busy || !loaded} onChange={(event) => changeSettings(humanColor, event.target.value as Difficulty)}><option value="easy">{t("Beginner", "初级")}</option><option value="medium">{t("Intermediate", "中级")}</option><option value="hard">{t("Advanced", "高级")}</option></select></label><button className="primary" disabled={!!busy || !loaded} onClick={() => void perform("Creating game", () => createGame(humanColor, difficulty))}>{t("New game", "新对局")}</button>{recent.length > 0 && <label className="recent-picker">{t("Recent games", "最近对局")}<select value={game?.game_id ?? ""} disabled={!!busy} onChange={(event) => { const id = event.target.value; if (id) void perform("Loading game", async () => acceptGame(await api<GameState>(`/games/${id}`))); }}><option value="" disabled>{t("Select a game", "选择对局")}</option>{recent.map((item) => <option key={item.game_id} value={item.game_id}>{recentGameLabel(item, locale)}</option>)}</select></label>}</section>
-      {error && <div className="error-banner" role="alert"><span>{error}</span><button aria-label={t("Dismiss error", "关闭错误信息")} onClick={() => setError(null)}>×</button></div>}
-      {!loaded && !busy && bootStarted.current && <button className="primary connection-retry" onClick={() => {
-        bootStarted.current = false;
-        setBootRetry((attempt) => attempt + 1);
-      }}>{t("Reconnect", "重新连接")}</button>}
-      <div className="play-layout">
-        <section className="board-panel" id="game-board" aria-label={t("Othello board", "翻转棋棋盘")}><div className="board-topline">{game?.difficulty && <span className="turn-label" aria-label={t("Opponent difficulty", "对手难度")}>{localizedDifficulty[game.difficulty]}</span>}<span className="turn-label" aria-live="polite">{(busy ? locale === "zh" ? busyMessages[busy] ?? busy : busy : null) ?? (game ? live && game.status === "finished" ? t("Game over", "对局结束") : displayedTurn ? live ? game.turn === game.human_color ? t("Your turn", "轮到你") : t("AI's turn", "轮到 AI") : t(`${localizedColor(displayedTurn)} to move`, `轮到${localizedColor(displayedTurn)}`) : t("Game over", "对局结束") : t("Preparing a new game…", "正在准备新对局…"))}</span></div>
-          <div className="board-with-labels"><div className="column-labels" aria-hidden="true">{"abcdefgh".split("").map((column) => <span key={column}>{column}</span>)}</div><div className="board-rows"><div className="row-labels" aria-hidden="true">{Array.from({ length: 8 }, (_, row) => <span key={row}>{row + 1}</span>)}</div><div className={`board ${board ? "" : "empty-board"}`} role="group" aria-label={board ? t("Board, a1 is at the top left", "棋盘，左上角为 a1") : t("No game started", "尚未开始对局")}>{Array.from({ length: 64 }, (_, index) => {
-            const row = Math.floor(index / 8), column = index % 8;
-            const coordinate = `${"abcdefgh"[column]}${row + 1}`, cell = board?.[row]?.[column] ?? ".";
-            const legal = canDefend ? !!variation?.exercise?.defenses.some((entry) => entry.coordinate === coordinate) : canPractice ? !!selectedEvidence?.analysis.candidates.some((entry) => entry.coordinate === coordinate) : live && !!game?.legal_moves.includes(coordinate);
-            const recommended = !variation && (practice?.coordinate ? selectedEvidence?.recommended_move === coordinate : visibleHint?.recommended_move === coordinate);
-            const flipped = teachingFrame?.flipped.includes(coordinate);
-            const placed = teachingFrame?.coordinate === coordinate;
-            const target = !!teachingFrame && variation?.focus_square === coordinate;
-            const ray = !canDefend && !!teachingFrame && variation!.frame === 2 && variation?.capture_lines?.some((line) => line.includes(coordinate));
-            return <button key={coordinate} className={`square ${recommended ? "recommended" : ""} ${flipped ? "lesson-flipped" : ""} ${placed ? "lesson-placed" : ""} ${ray ? "lesson-ray" : ""} ${target ? "lesson-target" : ""}`} disabled={!canMove || !legal} aria-label={`${coordinate}, ${cell === "X" ? t("black disc", "黑棋") : cell === "O" ? t("white disc", "白棋") : t("empty", "空位")}${legal ? t(", legal move", "，合法落点") : ""}${recommended ? t(", recommended move", "，推荐落点") : ""}${flipped ? t(", flipped this step", "，本步翻转") : ""}${placed ? t(", played this step", "，本步落子") : ""}${target ? t(", corner to watch", "，需要观察的角落") : ""}`} onClick={() => { if (canDefend && variation?.exercise) {
-              const defense = variation.exercise.defenses.find((entry) => entry.coordinate === coordinate);
-              if (defense) setVariation({...variation, frame: 3, lesson_frames: defense.frames, exercise: {...variation.exercise, attempt: coordinate}});
-              return;
-            } if (canPractice && practice) { setPractice({...practice, coordinate}); document.getElementById("review-coaching")?.scrollIntoView({block: "start", behavior: "instant"}); return; } if (game) void perform("Playing move", async () => acceptGame(await api<GameState>(`/games/${game.game_id}/moves`, { coordinate, expected_revision: game.revision, request_id: requestId() }))); }}>{cell !== "." && <span className={`disc ${cell === "X" ? "black" : "white"}`} />}{cell === "." && legal && <span className="legal-marker" />}{recommended && <span className="hint-ring" />}{(placed || target || ray) && <span className="lesson-coordinate">{coordinate}</span>}</button>;
-          })}</div></div></div>
-          {game && (game.auto_play || !live || (game.status === "active" && game.turn !== game.human_color && !busy)) && <div className="board-footer">
-            {!live && !variation && <><span>{historyRevision === 0 ? t("Starting position", "初始局面") : t(`Position ${historyRevision}`, `局面 ${historyRevision}`)}</span><button onClick={() => selectPosition(null)}>{t("Back to final position", "返回终局")}</button></>}
-            {variation && variationFrames && <><span>{variation.lesson_frames ? t("Demonstration", "落子演示") : t("Search line", "搜索续着")} · {variationFrames.slice(1, variation.frame + 1).map((frame) => frame.coordinate === "pass" ? t("Pass", "跳过") : frame.coordinate).join(" → ") || t("Starting position", "初始局面")}</span><button aria-label={t("Previous search move", "上一步搜索落子")} disabled={canDefend || variation.frame === 0} onClick={() => setVariation({...variation, frame: variation.frame - 1})}>{t("Previous", "上一步")}</button><span>{variation.frame} / {variationFrames.length - 1}</span><button aria-label={t("Next search move", "下一步搜索落子")} disabled={canDefend || variation.frame === variationFrames.length - 1} onClick={() => setVariation({...variation, frame: variation.frame + 1})}>{variation.exercise?.attempt && variation.frame === 3 ? t("See the opponent's reply", "看对手的应对") : t("Next", "下一步")}</button><button onClick={() => { setVariation(null); if (variation.exercise) document.getElementById("review-coaching")?.scrollIntoView({block: "start", behavior: "instant"}); }}>{variation.exercise ? canDefend ? t("Back to question", "返回问题") : t("Read the explanation", "看讲解") : t("Back to position", "返回局面")}</button></>}
-            {teachingFrame && <p className="board-teaching-text" role="status">{canDefend && variation?.exercise ? t(`Your turn. Choose a move to stop the opponent taking the ${cornerName(variation.exercise.target, locale)}.`, `轮到你防守。在棋盘上选一步，试着挡住${cornerName(variation.exercise.target, locale)}。`) : stepText(teachingFrame, locale)}{variation && !canDefend && variation.frame === 2 && variation.capture_lines?.length ? <span className="capture-explanation">{captureLineText(variation.capture_lines, variation.lesson_frames![2].actor!, locale)}</span> : null}{variation?.focus_square && <small>{t(`Gold outline: watch ${variation.focus_square}. Bright disc outlines mark flips.`, `金色框：观察 ${variation.focus_square}；亮边：本步翻转的棋子。`)}</small>}</p>}
-            {variation?.exercise?.attempt && variation.frame >= 3 && <><p className="defense-feedback" role="status">{defenseFeedback(variation.coordinate, variation.exercise.attempt, variation.exercise.target, locale)}</p><button onClick={() => setVariation({...variation, frame: 2, exercise: {...variation.exercise!, attempt: null}})}>{t("Try another move", "换一步试试")}</button></>}
-            {game.auto_play && <span>{t("Replaying with hints", "正在按提示回放")}</span>}
-            {game.status === "active" && !game.auto_play && game.turn !== game.human_color && !busy && <button className="primary" onClick={() => void requestAi(game)}>{t("Retry AI move", "重试 AI 落子")}</button>}
-          </div>}
-        </section>
-        <aside className="side-panel"><section className="score-card" aria-label={live ? t("Disc count", "棋子数量") : t("Disc count at selected position", "当前局面的棋子数量")}><div className="score-line"><div><i className="mini-disc black" /><span>{t("Black", "黑方")} {game?.human_color === "X" && <small>{t("You", "你")}</small>}</span><strong>{board ? board.join("").split("X").length - 1 : "—"}</strong></div><div><i className="mini-disc white" /><span>{t("White", "白方")} {game?.human_color === "O" && <small>{t("You", "你")}</small>}</span><strong>{board ? board.join("").split("O").length - 1 : "—"}</strong></div></div>{game?.result && <p className="result-label">{!live && t("Final · ", "终局 · ")}{game.result.winner === "draw" ? t("Draw", "和棋") : game.result.winner === game.human_color ? t("You win", "你获胜") : t("AI wins", "AI 获胜")}<span>{game.result.black_count} : {game.result.white_count}</span></p>}</section>
-          {game?.status !== "finished" && <section className="tips-card">
-            <div className="card-heading">
-              <span className="section-label">{t("Hints", "推荐点")}</span>
-              <button className={`toggle ${tips ? "on" : ""}`} role="switch" aria-checked={tips} aria-label={t("Move hints", "落点提示")} disabled={!game || game.auto_play || game.status !== "active"} onClick={() => { tipsRef.current = !tips; setTips(!tips); }}><span /></button>
-            </div>
-            {tips && (hintError || (live && game?.turn === game?.human_color && (!visibleHint || !hintConfirmed))) && <div className="tip-status" aria-live="polite">
-              {hintError ? <><span className="inline-error">{hintError}</span><button onClick={() => hint ? setDisplayRetry((value) => value + 1) : setHintRetry((value) => value + 1)}>{t("Retry hint", "重试提示")}</button></> : t("Preparing hint…", "正在计算推荐点…")}
-            </div>}
-          </section>}
-          {game?.status === "finished" && <section className="history-card" aria-label={t("Move history", "棋谱")}><span className="section-label">{t("Move history", "棋谱")}</span><div className="history-list"><button className={historyRevision === 0 ? "selected" : ""} onClick={() => selectPosition(0)}>{t("Starting position", "初始局面")}</button>{game.history.map((event) => <button key={event.event_index} className={historyRevision === event.revision ? "selected" : ""} onClick={() => selectPosition(event.revision)}><span><small>{event.event_index + 1}</small>{localizedColor(event.actor)}</span><strong>{event.kind === "pass" ? t("Pass", "跳过") : event.coordinate}</strong></button>)}</div></section>}
-        </aside>
-      </div>
-      {game?.status === "finished" && (
-        <section className="review-panel" id="review-coaching">
-          <div className="review-heading">
-            <h2>{t("Review", "复盘")}</h2>
-            {(!review || review.format_version !== "grounded-v1" || review.coaching_status === "failed") && <button className="primary" disabled={!!busy || reviewPending} onClick={() => void perform("Requesting review", async () => trackTask({
-              task: await api<Task>(`/games/${game.game_id}/reviews`, { request_id: requestId() }), purpose: "review", game_id: game.game_id,
-            }))}>{reviewPending ? t("Building review", "分析中") : review?.format_version === "grounded-v1" ? t("Retry coaching", "重试讲解") : t("Review game", "分析棋局")}</button>}
-          </div>
-          {review?.format_version === "grounded-v1" ? <>
-            {review.coaching_status === "pending" && <p className="muted" role="status">{t("Choosing lessons. You can already explore the analysis.", "正在生成讲解，可以先查看落点对比。")}</p>}
-            {review.coaching_status === "failed" && <p className="inline-error">{review.coaching_error}</p>}
-            <ReviewCoach key={game.game_id} review={review} selectedRevision={historyRevision} practice={practice} variation={variation} busy={!!busy} select={selectPosition} startPractice={startPractice} continueGame={continuePractice} showVariation={showVariation} />
-            <details className="review-more"><summary>{t("More analysis and questions", "完整分析与追问")}</summary><ReviewDetails review={review} selectRevision={selectPosition} />
-            <form className="question-form" onSubmit={(event) => {
-              event.preventDefault();
-              const text = question.trim();
-              if (text) void perform("Sending question", async () => {
-                const contextualQuestion = historyRevision === null ? text : `For position revision ${historyRevision}: ${text}`;
-                trackTask({ task: await api<Task>(`/games/${game.game_id}/review/questions`, { question: contextualQuestion, request_id: requestId() }), purpose: "question", game_id: game.game_id, question: contextualQuestion });
-                setQuestion("");
-              });
-            }}>
-              <div><textarea id="review-question" aria-label={t("Review question", "复盘问题")} value={question} maxLength={1900} onChange={(event) => setQuestion(event.target.value)} placeholder={historyRevision === null ? t("Ask about this game…", "询问这盘棋…") : historyRevision === 0 ? t("Ask about the starting position…", "询问初始局面…") : t(`Ask about position ${historyRevision}…`, `询问局面 ${historyRevision}…`)} required /><button className="primary" disabled={!!busy || !question.trim()}>{t("Ask", "提问")}</button></div>
-            </form></details>
-          </> : review ? <p className="muted">{t("Generate a new review to explore verified comparisons and coaching.", "重新分析棋局以查看落点对比。")}</p> : null}
-        </section>
-      )}
-      {game?.status === "finished" && historyRevision !== null && !variation && !practice && (
-        <details className="branch-options"><summary>{t("Replay options", "回放选项")}</summary><div className="branch-panel">
-          {awaitingPass && <p>{t("Select a position after the pass.", "请选择跳过回合之后的局面。")}</p>}
-          {displayedTurn === null && <p>{t("Select a position before the game ends.", "请选择终局之前的局面。")}</p>}
-          <div className="branch-actions">
-            <button disabled={!!busy || branchUnavailable} onClick={() => void perform("Creating branch", async () => acceptGame(await api<GameState>(`/games/${game.game_id}/branches`, {
-              revision: branchRevision, mode: "manual", request_id: requestId(),
-            })))}>{t("Continue from here", "从此处续下")}</button>
-            <button className="primary" disabled={!!busy || branchPending || branchUnavailable} onClick={() => void perform("Starting hint replay", async () => trackTask({
-              task: await api<Task>(`/games/${game.game_id}/branches`, { revision: branchRevision, mode: "follow_hints", request_id: requestId() }), purpose: "branch", game_id: game.game_id,
-            }))}>{branchPending ? t("Replaying", "回放中") : t("Replay with hints", "按提示回放")}</button>
-          </div>
-        </div></details>
-      )}
-      <TaskList review={review} entries={currentTasks} busy={!!busy} refresh={() => void perform("Refresh tasks", async () => {
-        for (const entry of currentTasks) trackTask({ ...entry, task: await api<Task>(`/tasks/${entry.task.task_id}`) });
-      })} openGame={(id) => void perform("Loading branch", async () => acceptGame(await api<GameState>(`/games/${id}`)))} repeatQuestion={(text) => {
-        setQuestion(text);
-        document.getElementById("review-question")?.focus();
-      }} />
-    </main>
-  );
+  return <main className="workspace">
+    <header className="masthead"><a className="wordmark" href="/">Nemo<span>thello</span><span className="brand-dot" /></a><div className="mode-switch" role="group" aria-label={t("Mode", "模式")}><button aria-pressed={mode === "play"} disabled={!loaded} onClick={() => switchMode("play")}>{t("Play", "对战")}</button><button aria-pressed={mode === "review"} disabled={!loaded} onClick={() => switchMode("review")}>{t("Review", "复盘")}</button></div><LanguageSwitch /></header>
+    <section className="game-toolbar" aria-label={t("Game settings", "对局设置")}>
+      {mode === "play" && <><div className="color-picker"><button aria-pressed={humanColor === "X"} disabled={busy || !loaded || !!playback} onClick={() => changeSettings("X", difficulty)}><i className="mini-disc black" />{t("Black", "黑方")}</button><button aria-pressed={humanColor === "O"} disabled={busy || !loaded || !!playback} onClick={() => changeSettings("O", difficulty)}><i className="mini-disc white" />{t("White", "白方")}</button></div><select aria-label={t("Difficulty", "难度")} value={difficulty} disabled={busy || !loaded || !!playback} onChange={(event) => changeSettings(humanColor, event.target.value as Difficulty)}><option value="easy">{t("Beginner", "初级")}</option><option value="medium">{t("Intermediate", "中级")}</option><option value="hard">{t("Advanced", "高级")}</option></select><button className="primary" disabled={busy || !loaded || !!playback} onClick={() => void perform(() => createGame(humanColor, difficulty))}>{t("New game", "新对局")}</button></>}
+      {recent.length > 0 && <label className="recent-picker">{t("Recent games", "最近对局")}<select aria-label={t("Recent games", "最近对局")} value={game?.game_id ?? ""} disabled={busy} onChange={(event) => void perform(async () => acceptGame(await api<GameState>(`/games/${event.target.value}`)))}><option value="" disabled>{t("Select a game", "选择对局")}</option>{recent.map((item) => <option key={item.game_id} value={item.game_id}>{recentGameLabel(item, locale)}</option>)}</select></label>}
+    </section>
+    {error && <div className="error-banner" role="alert"><span>{error}</span><button aria-label={t("Dismiss error", "关闭错误信息")} onClick={() => setError(null)}>×</button></div>}
+    {!loaded && !busy && <button onClick={() => {bootStarted.current = false; setBootRetry((n) => n + 1);}}>{t("Reconnect", "重新连接")}</button>}
+    <div className={`play-layout ${mode === "review" ? "review-layout" : ""}`}>
+      <section className="board-panel" id="game-board" aria-label={t("Othello board", "翻转棋棋盘")}>
+        <div className="board-topline"><span className="turn-label">{variation ? t("Demonstration", "落子演示") : mode === "review" ? t(`Move ${historyRevision} of ${game?.revision ?? 0}`, `第 ${historyRevision} / ${game?.revision ?? 0} 手`) : game?.difficulty ? ({easy: t("Beginner", "初级"), medium: t("Intermediate", "中级"), hard: t("Advanced", "高级")})[game.difficulty] : ""}</span><span className="turn-label" aria-live="polite">{playback ? t(`${colorName(playback.event.actor)} plays ${playback.event.coordinate}`, `${colorName(playback.event.actor)}下 ${playback.event.coordinate}`) : !loaded ? t("Preparing game…", "正在准备对局…") : turn ? mode === "play" ? turn === game?.human_color ? t("Your turn", "轮到你") : t("AI's turn", "轮到 AI") : t(`${colorName(turn)} to move`, `轮到${colorName(turn)}`) : t("Game over", "对局结束")}</span></div>
+        <div className="board-with-labels"><div className="column-labels" aria-hidden="true">{"abcdefgh".split("").map((column) => <span key={column}>{column}</span>)}</div><div className="board-rows"><div className="row-labels" aria-hidden="true">{Array.from({length: 8}, (_, row) => <span key={row}>{row + 1}</span>)}</div><div className="board" role="group" aria-label={t("Board, a1 is at the top left", "棋盘，左上角为 a1")}>{Array.from({length: 64}, (_, index) => {
+          const row = Math.floor(index / 8), column = index % 8, coordinate = `${"abcdefgh"[column]}${row + 1}`, cell = board?.[row]?.[column] ?? ".";
+          const legal = canDefend ? !!variation?.exercise?.defenses.some((item) => item.coordinate === coordinate) : canMove && !!game?.legal_moves.includes(coordinate);
+          const recommended = mode === "play" ? visibleHint?.recommended_move === coordinate : !variation && currentLesson?.evidence.recommended_move === coordinate;
+          const placed = teachingFrame?.coordinate === coordinate || (!teachingFrame && lastMove?.coordinate === coordinate);
+          const flipped = teachingFrame?.flipped.includes(coordinate) || (mode === "play" && playback?.phase === "flipped" && playback.flipped.includes(coordinate));
+          const target = !!teachingFrame && variation?.focus_square === coordinate;
+          const ray = !!teachingFrame && !canDefend && variation?.frame === 2 && variation.capture_lines?.some((line) => line.includes(coordinate));
+          return <button key={coordinate} className={`square ${recommended ? "recommended" : ""} ${placed ? "lesson-placed" : ""} ${flipped ? "lesson-flipped" : ""} ${target ? "lesson-target" : ""} ${ray ? "lesson-ray" : ""} ${flipped && playback ? "slow-flip" : ""}`} disabled={!legal} aria-label={`${coordinate}, ${cell === "X" ? t("black disc", "黑棋") : cell === "O" ? t("white disc", "白棋") : t("empty", "空位")}${legal ? t(", legal move", "，合法落点") : ""}${recommended ? t(", recommended move", "，推荐落点") : ""}${placed ? t(", last move", "，最近落子") : ""}${flipped ? t(", flipped this step", "，本步翻转") : ""}`} onClick={() => {
+            if (canDefend && variation?.exercise) {const defense = variation.exercise.defenses.find((item) => item.coordinate === coordinate); if (defense) setVariation({...variation, frame: 3, lesson_frames: defense.frames, exercise: {...variation.exercise, attempt: coordinate}});}
+            else if (game && canMove) void perform(async () => acceptGame(await api<GameState>(`/games/${game.game_id}/moves`, {coordinate, expected_revision: game.revision, request_id: requestId()})));
+          }}>{cell !== "." && <span className={`disc ${cell === "X" ? "black" : "white"}`} />}{cell === "." && legal && <span className="legal-marker" />}{recommended && <span className="hint-ring" />}{(placed || target || ray || recommended) && <span className="lesson-coordinate">{coordinate}</span>}</button>;
+        })}</div></div></div>
+        {mode === "review" && game && <div className="review-navigation">
+          <div className="timeline-buttons"><button aria-label={t("First position", "初始局面")} disabled={historyRevision === 0} onClick={() => selectPosition(0)}>⇤</button><button aria-label={t("Previous move", "上一手")} disabled={historyRevision === 0} onClick={() => selectPosition(historyRevision - 1)}>←</button><input type="range" aria-label={t("Game progress", "棋局进度")} min={0} max={game.revision} step={1} value={historyRevision} onChange={(event) => selectPosition(Number(event.target.value))} /><button aria-label={t("Next move", "下一手")} disabled={historyRevision === game.revision} onClick={() => selectPosition(historyRevision + 1)}>→</button><button aria-label={t("Final position", "最终局面")} disabled={historyRevision === game.revision} onClick={() => selectPosition(game.revision)}>⇥</button></div>
+          <div className="timeline-caption"><span>{nextEvent?.kind === "pass" ? t(`${colorName(nextEvent.actor)} must pass`, `${colorName(nextEvent.actor)}必须跳过回合`) : nextEvent ? t(`Next: ${colorName(nextEvent.actor)} ${nextEvent.coordinate}`, `下一手：${colorName(nextEvent.actor)} ${nextEvent.coordinate}`) : turn ? t("Current position", "当前局面") : t("Final position", "终局")}</span><button className="primary" disabled={busy || !canTeach || pendingLesson || currentLesson?.coaching_status === "ready"} onClick={() => teach()}>{pendingLesson ? t("Analyzing…", "分析中…") : currentLesson?.coaching_status === "failed" || latestLessonTask?.task.status === "failed" ? t("Retry teaching", "重试教学") : currentLesson ? t("Teaching", "教学") : t("Teach this position", "教学")}</button></div>
+        </div>}
+        {variation && <div className="board-footer"><button disabled={canDefend || variation.frame === 0} onClick={() => setVariation({...variation, frame: variation.frame - 1})}>{t("Previous step", "上一步")}</button><span>{variation.frame}/{variation.lesson_frames.length - 1}</span><button disabled={canDefend || variation.frame === variation.lesson_frames.length - 1} onClick={() => setVariation({...variation, frame: variation.frame + 1})}>{variation.exercise?.attempt && variation.frame === 3 ? t("See the reply", "看对手应对") : t("Next step", "下一步")}</button><button onClick={() => setVariation(null)}>{t("Back to game position", "返回棋局")}</button>
+          {teachingFrame && <p className="board-teaching-text" role="status">{canDefend && variation.exercise ? t(`Choose a defense against the ${cornerName(variation.exercise.target, locale)} capture.`, `选择一步，试着守住${cornerName(variation.exercise.target, locale)}。`) : stepText(teachingFrame, locale)}{!canDefend && variation.frame === 2 && variation.capture_lines?.length ? <span className="capture-explanation">{captureLineText(variation.capture_lines, variation.lesson_frames[2].actor!, locale)}</span> : null}</p>}
+          {variation.exercise?.attempt && variation.frame >= 3 && <><p className="defense-feedback">{defenseFeedback(variation.coordinate, variation.exercise.attempt, variation.exercise.target, locale)}</p><button onClick={() => setVariation({...variation, frame: 2, exercise: {...variation.exercise!, attempt: null}})}>{t("Try another defense", "换一步试试")}</button></>}
+        </div>}
+      </section>
+      <aside className="side-panel">
+        <section className="score-card" aria-label={t("Disc count", "棋子数量")}><div className="score-line">{(["X", "O"] as Color[]).map((color) => <div key={color}><i className={`mini-disc ${color === "X" ? "black" : "white"}`} /><span>{colorName(color)}</span><strong>{board ? [...board.join("")].filter((cell) => cell === color).length : "—"}</strong></div>)}</div>{mode === "play" && game?.result && <p className="result-label">{game.result.winner === "draw" ? t("Draw", "和棋") : game.result.winner === game.human_color ? t("You win", "你获胜") : t("AI wins", "AI 获胜")}</p>}</section>
+        {mode === "play" ? <section className="tips-card"><label className="speed-picker">{t("Move speed", "落子速度")}<select aria-label={t("Move speed", "落子速度")} value={speed} onChange={(event) => {const value = event.target.value as Speed; speedRef.current = value; setSpeed(value); localStorage.setItem("nemothello_speed", value);}}><option value="normal">{t("Normal", "普通")}</option><option value="slow">{t("Slow", "慢速")}</option></select></label>{game?.status === "active" && <div className="card-heading"><span>{t("Hints", "推荐点")}</span><button className={`toggle ${tips ? "on" : ""}`} role="switch" aria-checked={tips} aria-label={t("Move hints", "落点提示")} disabled={game.auto_play} onClick={() => {tipsRef.current = !tips; setTips(!tips);}}><span /></button></div>}{hintError && <p role="alert">{hintError}<button onClick={() => setHintRetry((n) => n + 1)}>{t("Retry hint", "重试提示")}</button></p>}</section> : <section className="teaching-panel" aria-label={t("Teaching", "教学")}>
+          {currentLesson && game ? <><ReviewCoach key={lessonKey(game.game_id, historyRevision)} game={game} lesson={currentLesson} variation={variation} pending={pendingLesson} busy={busy} showVariation={setVariation} ask={(text) => teach(text)} answer={questionAnswer} questionPending={!!latestQuestion && ["queued", "running"].includes(latestQuestion.task.status)} continueGame={(revision) => continueGame(revision, false)} replay={(revision) => continueGame(revision, true)} />{currentLesson.coaching_status === "failed" && <p className="inline-error" role="alert">{currentLesson.coaching_error}</p>}</> : <p className="teaching-empty" role="status">{pendingLesson ? t("Analyzing this position…", "正在分析这个局面…") : !turn ? t("Step back to a move you want to understand, then choose Teach this position.", "回退到想学习的一手，再点击教学。") : nextEvent?.kind === "pass" ? t("This player has no legal move. Step forward past the pass.", "这一方没有合法落点，向前一步查看跳过后的局面。") : t("Use the arrows or timeline to choose a position, then choose Teach this position.", "用箭头或进度条选择局面，再点击教学。")}</p>}
+          {currentLesson?.coaching_status !== "failed" && latestLessonTask?.task.error && <p role="alert" className="inline-error">{latestLessonTask.task.error.message}</p>}
+          {latestQuestion?.task.error && <p role="alert" className="inline-error">{latestQuestion.task.error.message}</p>}
+          {branchTask && <div className="branch-status" role="status">{["queued", "running"].includes(branchTask.task.status) ? t("Replaying with hints…", "正在按提示回放…") : branchTask.task.error?.message}<button disabled={busy} onClick={() => void perform(async () => acceptGame(await api<GameState>(`/games/${branchTask.task.game_id}`)))}>{t("Open replay", "查看回放")}</button></div>}
+        </section>}
+      </aside>
+    </div>
+  </main>;
 }

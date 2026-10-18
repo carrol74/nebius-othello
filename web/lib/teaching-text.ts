@@ -57,9 +57,7 @@ export function lessonText(comparison: TeachingComparison, move: TeachingMove, l
   ];
   if (move.kind === "corner_taken") return [zh ? `${move.coordinate} 本身就是角落。下在这里，这颗棋子会一直保留到终局。点击演示，查看同时翻转了哪些棋子。` : `${move.coordinate} is a corner. Playing there keeps that disc safe through the end of the game. Step through to see which other discs it flips.`];
   if (move.kind === "pass") return [zh ? `下 ${move.coordinate} 后，${other}没有合法落点，必须跳过回合。${own}因此可以再下一步。点击演示，注意跳过回合时棋盘没有变化。` : `After ${move.coordinate}, ${other} has no legal move and must pass, so ${own} gets another move. In the demonstration, notice that passing does not change the board.`];
-  return move.frames.slice(1, 3).map((frame) => stepText(frame, locale)).concat([
-    zh ? "先看对手的回应会翻转哪些棋子，再切换另一种落子进行对照。" : "Check what the opponent's reply flips, then switch moves to compare the two lines.",
-  ]);
+  return move.frames.slice(1, 3).map((frame) => stepText(frame, locale));
 }
 
 export function comparisonTakeaway(comparison: TeachingComparison, locale: Locale): string | null {

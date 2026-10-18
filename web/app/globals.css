@@ -28,6 +28,35 @@ p { line-height: 1.7; }
 .language-switch { display: flex; margin-left: auto; gap: 4px; }
 .language-switch button { padding: 8px 11px; font-size: 13px; }
 .language-switch button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.mode-switch { display: flex; gap: 4px; padding: 4px; background: #19221c; border-radius: 10px; }
+.mode-switch button { border-color: transparent; padding: 9px 22px; font-size: 14px; }
+.mode-switch button[aria-pressed="true"] { color: var(--accent); background: #2a3727; }
+.review-navigation { margin-top: 20px; }
+.timeline-buttons { display: flex; align-items: center; gap: 8px; }
+.timeline-buttons button { padding: 8px 11px; font-size: 18px; }
+.timeline-buttons input { flex: 1; min-width: 40px; accent-color: var(--accent); cursor: pointer; }
+.timeline-caption { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; font-size: 13px; color: var(--muted); }
+.timeline-caption button { font-size: 13px; }
+.teaching-panel { padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); min-width: 0; }
+.teaching-empty { margin: 0; color: var(--muted); font-size: 14px; }
+.position-coach { font-size: 14px; }
+.position-coach .teaching-choices { margin-top: 0; }
+.position-coach .teaching-choices button { flex: 1; min-width: 100px; }
+.position-coach .concrete-lesson { font-size: 14px; }
+.position-coach .concrete-takeaway { padding-left: 12px; }
+.position-coach .teaching-steps { gap: 6px; }
+.position-coach .teaching-steps button { font-size: 12px; padding: 8px; }
+.lesson-tools { margin-top: 16px; padding: 12px 0; border: 0; border-top: 1px solid var(--border); border-radius: 0; }
+.lesson-tools[open] summary { margin-bottom: 14px; }
+.position-coach .question-form { margin-top: 20px; }
+.position-coach .question-form > div { gap: 8px; }
+.question-form input { min-width: 0; flex: 1; color: inherit; background: var(--background); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font: inherit; font-size: 13px; }
+.question-form input:focus-visible { outline: 2px solid var(--accent); }
+.position-answer { white-space: pre-wrap; line-height: 1.8; border-left: 2px solid var(--accent); padding-left: 12px; margin-top: 16px; }
+.speed-picker { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 13px; }
+.speed-picker + .card-heading { margin-top: 20px; }
+.slow-flip .disc { animation: flip-disc 600ms ease-in-out; }
+@keyframes flip-disc { from {transform: rotateY(90deg);} to {transform: rotateY(0);} }
 .compact-result { display: flex; flex-wrap: wrap; gap: 12px 24px; color: var(--muted); font-size: 13px; }
 .comparison-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 0 0 18px; }
 .comparison-controls label { display: flex; align-items: center; gap: 12px; font-size: 14px; }
@@ -85,7 +114,7 @@ select { max-width: 250px; padding: 10px; color: #e9eee4; background: var(--back
 .error-banner button { border: 0; font-size: 22px; padding: 4px 8px; }
 .connection-retry { margin-bottom: 20px; }
 .play-layout { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr); gap: 30px; }
-.board-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 22px; align-self: start; }
+.board-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 22px; align-self: start; min-width: 0; }
 .board-topline, .card-heading, .review-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .section-label { font-size: 12px; letter-spacing: .08em; color: var(--accent); }
 .turn-label { font-size: 13px; color: var(--muted); }
@@ -112,7 +141,7 @@ select { max-width: 250px; padding: 10px; color: #e9eee4; background: var(--back
 .board-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 18px; font-size: 12px; color: var(--muted); }
 .board-footer > span { margin-right: auto; }
 .board-footer button { font-size: 12px; padding: 8px 10px; }
-.side-panel { display: flex; flex-direction: column; gap: 18px; }
+.side-panel { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 .score-card, .tips-card, .history-card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
 .score-line { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 .score-line > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -202,13 +231,16 @@ textarea::placeholder { color: #7b8b7c; }
   .workspace { padding: 22px 14px 12px; }
   .wordmark { font-size: 28px; }
   .masthead { padding-bottom: 20px; }
+  .mode-switch { order: 3; width: 100%; }
+  .mode-switch button { flex: 1; }
   .game-toolbar { gap: 14px; margin: 22px 0; }
   .color-picker { flex: 1; }
   .color-picker > span { display: none; }
   .recent-picker { flex-basis: 100%; margin-left: 0; }
   .recent-picker select { flex: 1; min-width: 0; max-width: none; }
-  .play-layout { grid-template-columns: 1fr; }
-  .side-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .play-layout { grid-template-columns: minmax(0, 1fr); }
+  .side-panel { display: flex; gap: 12px; }
+  .teaching-panel { padding: 16px; }
   .score-card, .tips-card, .history-card { padding: 16px; }
   .history-card { grid-column: 1 / -1; }
   .history-list { max-height: 180px; }

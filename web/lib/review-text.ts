@@ -1,5 +1,5 @@
 import type { Locale } from "./locale";
-import type { Review, ReviewFact } from "./types";
+import type { Review, ReviewEvidence, ReviewFact } from "./types";
 
 export function factText(fact: ReviewFact, review: Review, locale: Locale): string {
   if (locale === "en") return fact.text;
@@ -22,12 +22,18 @@ export function factText(fact: ReviewFact, review: Review, locale: Locale): stri
     if (pass) return fact.id.endsWith(":decision") ? `局面 ${fact.revision}，${color(pass.actor)}跳过回合。` : `此时${color(pass.actor)}没有合法落点，对手仍可落子，因此必须跳过回合。棋盘和棋子数量不变。`;
     return fact.text;
   }
+  return positionFactText(fact, entry, locale);
+}
+
+export function positionFactText(fact: ReviewFact, entry: ReviewEvidence, locale: Locale): string {
+  if (locale === "en") return fact.text;
+  const color = (actor: string) => actor === "X" ? "黑方" : "白方";
   const actual = entry.analysis.candidates.find((item) => item.coordinate === entry.actual_move)!;
   const best = entry.analysis.candidates.find((item) => item.coordinate === entry.recommended_move)!;
   const a = entry.comparisons?.find((item) => item.coordinate === entry.actual_move);
   const b = entry.comparisons?.find((item) => item.coordinate === entry.recommended_move);
   const kind = fact.id.split(":")[1];
-  if (kind === "decision") return `局面 ${entry.revision}，${color(entry.actor)}选择了 ${entry.actual_move}，引擎推荐 ${entry.recommended_move}。`;
+  if (kind === "decision") return `局面 ${entry.revision}，${color(entry.actor)}${entry.is_played === false ? "可以下" : "选择了"} ${entry.actual_move}，引擎推荐 ${entry.recommended_move}。`;
   if (kind === "score" || kind === "endgame") return `从${color(entry.actor)}视角，${actual.coordinate} 评分 ${actual.score}，${best.coordinate} 评分 ${best.score}，相差 ${entry.score_loss}。${actual.score_kind === "exact" && best.score_kind === "exact" ? "这是双方最佳应对下的精确终局子差。" : "这是搜索估计。"}`;
   if (kind === "mobility" && a && b) return `${a.coordinate} 后对手有 ${a.opponent_moves} 个合法落点，${b.coordinate} 后有 ${b.opponent_moves} 个。数量不能单独解释搜索推荐。`;
   if (kind === "frontier" && a && b) return `${a.coordinate} 后双方前沿棋子的数量差为 ${a.frontier_difference}，${b.coordinate} 后为 ${b.frontier_difference}，均按${color(entry.actor)}减去对手计算。前沿棋子指邻接空位的棋子。`;
