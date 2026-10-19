@@ -4,7 +4,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from nemothello.board_features import CORNERS, candidate_features
-from nemothello.decision import assess_decision
+from nemothello.decision import assess_decision, reference_move
 from nemothello.errors import AppError
 from nemothello.rules import apply_move, legal_moves, opponent
 
@@ -144,11 +144,11 @@ def summary_facts(review: dict[str, Any]) -> list[dict[str, Any]]:
     return facts
 
 
-def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None):
+def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None, comparison_move: str | None = None):
     revision, actor = item["revision"], item["actor"]
     actual = item["actual_move"]
     assessment = assess_decision(item, actual)
-    recommended = assessment["best_moves"][0]
+    recommended = comparison_move or reference_move(item, actual, assessment) or actual
     candidates = {entry["coordinate"]: entry for entry in item["analysis"]["candidates"]}
     comparisons = {entry["coordinate"]: entry for entry in item["comparisons"]}
     played, best = candidates[actual], candidates[recommended]
@@ -167,14 +167,15 @@ def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None):
     score_kind = "exact endgame scores under best play" if assessment["score_kind"] == "exact" else "search scores; non-exact values are estimates"
     judgment = (f" This is one of the equally highest-rated moves: {', '.join(assessment['best_moves'])}."
                 if assessment["status"] == "tied_best" else " This is the highest-rated legal move."
-                if assessment["status"] == "best" else f" The search rates {recommended} higher.")
+                if assessment["status"] == "best" else f" The search rates {assessment['best_moves'][0]} higher.")
+    difference = abs(played["score"] - best["score"])
     facts = [
         fact(prefix + "decision", f"At position {revision}, {COLORS[actor]} "
              + (f"played {actual}." if item.get("is_played", True) else
                 f"is comparing {actual}; the recorded move was {item['recorded_move']}." if item.get("recorded_move") else
                 f"can play {actual}; no move has been recorded yet.")
              + judgment + f" There are {assessment['legal_move_count']} legal moves. This assessment is separate from any hint shown during play.", "comparison", revision),
-        fact(prefix + "score", f"From {COLORS[actor]}'s perspective, {actual} scores {played['score']:g} and {recommended} scores {best['score']:g}. The difference is {assessment['score_loss']:g}; these are {score_kind}." + (" These alternatives are equally rated." if assessment["score_loss"] == 0 else " Higher scores favor this player."), "comparison", revision),
+        fact(prefix + "score", f"From {COLORS[actor]}'s perspective, {actual} scores {played['score']:g} and {recommended} scores {best['score']:g}. The difference is {difference:g}; these are {score_kind}." + (" These alternatives are equally rated." if difference == 0 else " Higher scores favor this player."), "comparison", revision),
         fact(prefix + "mobility", f"After {actual}, {COLORS[opponent(actor)]} has {a['opponent_moves']} legal replies; after {recommended}, {b['opponent_moves']}. Reply count alone does not explain the search preference.", "mobility", revision),
         fact(prefix + "frontier", f"After {actual}, the frontier-disc difference is {a['frontier_difference']}; after {recommended}, {b['frontier_difference']}, counting {COLORS[actor]}'s frontier discs minus the opponent's.", "frontier", revision),
     ]
@@ -269,8 +270,10 @@ def review_context(review: dict[str, Any], question: str | None, revision: int |
         if view:
             item = {**item, "actual_move": view["selected_move"],
                     "is_played": view["assessment"]["is_played"], "recorded_move": view["recorded_move"]}
-        facts, lessons = position_facts(item, {move.lower() for move in extra})
         teaching = view["teaching"] if view else review.get("teaching_comparison") if revision == item["revision"] else None
+        reference = next((choice["coordinate"] for choice in teaching["choices"]
+                          if choice["coordinate"] != item["actual_move"]), None) if teaching else None
+        facts, lessons = position_facts(item, {move.lower() for move in extra}, reference)
         if teaching and assess_decision(item, item["actual_move"])["status"] != "forced":
             proof_facts = verified_teaching_facts(teaching, item["revision"])
             facts.extend(proof_facts)

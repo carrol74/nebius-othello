@@ -60,6 +60,8 @@ def test_every_nonforced_choice_gets_a_distinct_reference_and_grounded_insight(e
             else:
                 assert len(lesson.choices) == 2
                 assert first.coordinate != lesson.reference_move == lesson.choices[1].coordinate
+                if item.get("is_played", True):
+                    assert item["actual_move"] in {choice.coordinate for choice in lesson.choices}
                 equal = first.score == lesson.choices[1].score
                 assert (lesson.insight.kind == "equal") == equal
             insight_kinds.add(lesson.insight.kind)
@@ -83,6 +85,21 @@ def test_an_unplayed_position_does_not_label_any_option_as_played(evidence):
     for candidate in item["analysis"]["candidates"]:
         result = compare_lesson({"evidence": [item]}, item["revision"], candidate["coordinate"])
         assert all(not choice["assessment"]["is_played"] for choice in result["choices"])
+
+
+def test_a_best_game_move_is_compared_with_a_different_move_in_coaching_facts(evidence):
+    checked = 0
+    for item in evidence:
+        assessment = assess_decision(item, item["actual_move"])
+        if assessment["status"] not in ("best", "tied_best"):
+            continue
+        facts, _ = position_facts(enrich_evidence(item))
+        mobility = next(fact["text"] for fact in facts if fact["id"].endswith(":mobility"))
+        assert mobility.lower().count(f"after {item['actual_move']}") == 1
+        comparison = compare_lesson({"evidence": [item]}, item["revision"], item["actual_move"])
+        assert f"after {comparison['reference_move']}" in mobility
+        checked += 1
+    assert checked > 1
 
 
 @pytest.mark.parametrize("corruption", ["missing_candidate", "duplicate_candidate", "nonfinite_score"])

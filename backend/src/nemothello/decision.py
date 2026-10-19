@@ -31,9 +31,9 @@ def reference_move(item, coordinate, assessment):
     candidates = item["analysis"]["candidates"]
     if assessment["status"] == "forced":
         return None
-    if assessment["status"] == "lower_rated":
-        return assessment["best_moves"][0]
     if item.get("is_played", True) and item["actual_move"] != coordinate:
         return item["actual_move"]
+    if assessment["status"] == "lower_rated":
+        return assessment["best_moves"][0]
     others = [candidate for candidate in candidates if candidate["coordinate"] != coordinate]
     return max(others, key=lambda candidate: candidate["score"])["coordinate"]

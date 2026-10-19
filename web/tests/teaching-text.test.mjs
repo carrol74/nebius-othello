@@ -13,7 +13,7 @@ const forced = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/for
 test("both languages teach the verified corner threat with the actual response", () => {
   const item = cases["16"], choice = item.choices[0];
   for (const locale of ["en", "zh"]) {
-    const text = lessonText(item, choice, locale).join(" ");
+    const text = [...lessonText(item, choice, locale), comparisonTakeaway(item, locale)].join(" ");
     for (const fact of ["b1", "e1", "a1"]) assert.ok(text.includes(fact));
     assert.doesNotMatch(text, /-30|-10|20/);
     assert.ok(comparisonTakeaway(item, locale).includes("b3"));
@@ -28,8 +28,8 @@ test("both languages teach the verified corner threat with the actual response",
 test("a forced move is labeled as played and compulsory with no recommendation or blame", () => {
   const item = forced.evidence, choice = forced.comparison.choices[0];
   assert.equal(item.analysis.candidates.length, 1);
-  assert.equal(teachingChoiceLabel(choice, "en"), "Played · Only legal move");
-  assert.equal(teachingChoiceLabel(choice, "zh"), "实际落子 · 唯一合法落点");
+  assert.equal(teachingChoiceLabel(choice, "en"), "Your game move");
+  assert.equal(teachingChoiceLabel(choice, "zh"), "你当时下的");
   for (const locale of ["en", "zh"]) {
     const text = lessonText(forced.comparison, choice, locale).join(" ");
     assert.ok(text.includes("d8") && text.includes("h8"));
@@ -45,10 +45,11 @@ test("a highest-rated move retains an alternative and does not promise a favorab
   assert.equal(comparison.reference_move, "b1");
   const text = lessonText(comparison, best, "en").join(" ");
   assert.match(text, /highest|equally best/);
-  assert.match(text, /score still favors White/);
+  assert.match(text, /position still favors White/);
   assert.doesNotMatch(text, /only legal/);
   const opening = cases["0"].choices[0];
-  assert.equal(teachingChoiceLabel(opening, "en"), "Played · Tied best rated");
+  assert.equal(teachingChoiceLabel(opening, "en"), "Your game move");
+  assert.equal(teachingChoiceLabel(best, "zh"), "假设改下");
 });
 
 test("equally rated alternatives have no score-based preference in either language", () => {
@@ -57,16 +58,27 @@ test("equally rated alternatives have no score-based preference in either langua
   assert.notEqual(opening.choices[0].coordinate, opening.choices[1].coordinate);
   for (const locale of ["en", "zh"]) {
     const text = lessonText(opening, opening.choices[1], locale).join(" ");
-    assert.match(text, /equally best|并列/);
+    assert.match(text, /tied for the highest|并列/);
     assert.doesNotMatch(text, /失误|mistake|only legal/);
   }
-  assert.match(comparisonTakeaway(opening, "en"), /equally rated/);
+  assert.equal(comparisonTakeaway(opening, "en"), null);
 });
 
 test("exact outcomes and search estimates keep different labels", () => {
   const exact = cases["47"], estimate = cases["16"];
-  assert.match(lessonText(exact, exact.choices[0], "en")[0], /Exact endgame analysis/);
+  assert.match(lessonText(exact, exact.choices[0], "en")[0], /exact endgame analysis/i);
   assert.match(lessonText(estimate, estimate.choices[0], "en")[0], /current search/);
+});
+
+test("step narration is reserved for the board and choice labels describe their origin", () => {
+  for (const locale of ["en", "zh"]) {
+    const comparison = cases["16-best"];
+    for (const choice of comparison.choices) {
+      const label = teachingChoiceLabel(choice, locale);
+      assert.doesNotMatch(label, /selected|Your choice|所选|评分|highest/);
+      assert.doesNotMatch(lessonText(comparison, choice, locale).join(" "), /Black plays|White plays|黑方下|白方下/);
+    }
+  }
 });
 
 test("shared corner access is never presented as the cause of a score difference", () => {
