@@ -402,6 +402,36 @@ export interface components {
             lesson_id: string;
             lesson: components["schemas"]["Lesson"];
         };
+        /** CornerProof */
+        CornerProof: {
+            /** Target */
+            target: string;
+            /**
+             * Attacker
+             * @enum {string}
+             */
+            attacker: "X" | "O";
+            /**
+             * Max Plies
+             * @constant
+             */
+            max_plies: 3;
+            /** Forced */
+            forced: boolean;
+            /** Attack */
+            attack: string | "pass" | null;
+            /** Defenses */
+            defenses: (string | "pass")[];
+            /** Refutations */
+            refutations: components["schemas"]["CornerRefutation"][];
+        };
+        /** CornerRefutation */
+        CornerRefutation: {
+            /** Attack */
+            attack: string | "pass";
+            /** Defense */
+            defense: string | "pass" | null;
+        };
         /** CreateGame */
         CreateGame: {
             /** Request Id */
@@ -590,6 +620,13 @@ export interface components {
             /** Question */
             question: string;
         };
+        /** LessonView */
+        LessonView: {
+            /** Selected Move */
+            selected_move: string;
+            /** Line */
+            line: (string | "pass")[];
+        };
         /** MoveComparison */
         MoveComparison: {
             /** Coordinate */
@@ -659,6 +696,7 @@ export interface components {
             revision: number;
             /** Question */
             question?: string | null;
+            view?: components["schemas"]["LessonView"] | null;
         };
         /** QuestionRequest */
         QuestionRequest: {
@@ -685,6 +723,7 @@ export interface components {
             answer_facts?: components["schemas"]["ReviewFact"][];
             /** Topic */
             topic?: string | null;
+            view?: components["schemas"]["LessonView"] | null;
         };
         /** Review */
         Review: {
@@ -878,6 +917,8 @@ export interface components {
             coordinate: string;
             /** Frames */
             frames: components["schemas"]["TeachingFrame"][];
+            /** Capture Lines */
+            capture_lines?: string[][];
         };
         /** TeachingFrame */
         TeachingFrame: {
@@ -898,7 +939,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "forced" | "equal" | "corner_access" | "illustrated_corner" | "shared_corner" | "search";
+            kind: "forced" | "equal" | "corner_access" | "illustrated_corner" | "shared_corner" | "search" | "corner_defense";
             /** Better Move */
             better_move: string | null;
             /** Worse Move */
@@ -912,6 +953,9 @@ export interface components {
              * @enum {string}
              */
             score_kind: "estimate" | "exact";
+            proof?: components["schemas"]["CornerProof"] | null;
+            /** Example */
+            example?: (string | "pass")[];
         };
         /** TeachingMove */
         TeachingMove: {
@@ -949,6 +993,7 @@ export interface components {
             /** Frames */
             frames: components["schemas"]["TeachingFrame"][];
             assessment: components["schemas"]["DecisionAssessment"];
+            corner_proof?: components["schemas"]["CornerProof"] | null;
         };
         /** ValidationError */
         ValidationError: {

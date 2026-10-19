@@ -11,7 +11,9 @@
       "worse_move": null,
       "target": null,
       "gap": null,
-      "score_kind": "estimate"
+      "score_kind": "estimate",
+      "proof": null,
+      "example": []
     },
     "choices": [
       {
@@ -39,6 +41,7 @@
         "defense_lines": [],
         "capture_lines": [],
         "line_source": "engine",
+        "corner_proof": null,
         "frames": [
           {
             "board": [
@@ -139,6 +142,7 @@
         "defense_lines": [],
         "capture_lines": [],
         "line_source": "engine",
+        "corner_proof": null,
         "frames": [
           {
             "board": [
@@ -223,12 +227,67 @@
     "recommended_move": "b3",
     "reference_move": "b3",
     "insight": {
-      "kind": "illustrated_corner",
+      "kind": "corner_defense",
       "better_move": "b3",
       "worse_move": "b1",
       "target": "a1",
-      "gap": "b1",
-      "score_kind": "estimate"
+      "gap": null,
+      "score_kind": "estimate",
+      "proof": {
+        "target": "a1",
+        "attacker": "O",
+        "max_plies": 3,
+        "forced": false,
+        "attack": null,
+        "defenses": [],
+        "refutations": [
+          {
+            "attack": "b1",
+            "defense": "a1"
+          },
+          {
+            "attack": "e1",
+            "defense": "b1"
+          },
+          {
+            "attack": "g1",
+            "defense": "b1"
+          },
+          {
+            "attack": "a2",
+            "defense": "b1"
+          },
+          {
+            "attack": "b2",
+            "defense": "g3"
+          },
+          {
+            "attack": "a3",
+            "defense": "b1"
+          },
+          {
+            "attack": "b4",
+            "defense": "b1"
+          },
+          {
+            "attack": "b5",
+            "defense": "b1"
+          },
+          {
+            "attack": "c6",
+            "defense": "b1"
+          },
+          {
+            "attack": "a7",
+            "defense": "b1"
+          }
+        ]
+      },
+      "example": [
+        "b3",
+        "e1",
+        "b1"
+      ]
     },
     "choices": [
       {
@@ -356,6 +415,21 @@
                   "c3"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ],
+              [
+                "a1",
+                "b2",
+                "c3",
+                "d4"
+              ]
             ]
           },
           {
@@ -451,6 +525,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           },
           {
@@ -548,6 +631,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           },
           {
@@ -647,6 +739,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           },
           {
@@ -746,6 +847,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           },
           {
@@ -843,6 +953,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           },
           {
@@ -938,6 +1057,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           },
           {
@@ -1037,6 +1165,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           },
           {
@@ -1135,6 +1272,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           }
         ],
@@ -1145,9 +1291,34 @@
             "c1",
             "d1",
             "e1"
+          ],
+          [
+            "a1",
+            "b2",
+            "c3",
+            "d4"
           ]
         ],
         "line_source": "rules",
+        "corner_proof": {
+          "target": "a1",
+          "attacker": "O",
+          "max_plies": 3,
+          "forced": true,
+          "attack": "e1",
+          "defenses": [
+            "b2",
+            "b3",
+            "g3",
+            "g4",
+            "g5",
+            "d6",
+            "e6",
+            "f6",
+            "g6"
+          ],
+          "refutations": []
+        },
         "frames": [
           {
             "board": [
@@ -1267,7 +1438,8 @@
         "checked_defenses": [],
         "defense_lines": [],
         "capture_lines": [],
-        "line_source": "engine",
+        "line_source": "rules",
+        "corner_proof": null,
         "frames": [
           {
             "board": [
@@ -1305,38 +1477,41 @@
           },
           {
             "board": [
-              "..OX.X..",
-              "..XXXX..",
+              "..OOOX..",
+              "..XXOX..",
               ".XXOOO..",
-              ".OOOOO..",
+              "..XOOO..",
               "..XOOO..",
               ".X......",
               "........",
               "........"
             ],
             "turn": "X",
-            "coordinate": "b4",
+            "coordinate": "e1",
             "actor": "O",
             "flipped": [
-              "c4"
+              "d1",
+              "e2"
             ]
           },
           {
             "board": [
-              "..OX.X..",
-              "..XXXX..",
-              "XXXOOO..",
-              ".XOOOO..",
+              ".XXXXX..",
+              "..XXOX..",
+              ".XXOOO..",
+              "..XOOO..",
               "..XOOO..",
               ".X......",
               "........",
               "........"
             ],
             "turn": "O",
-            "coordinate": "a3",
+            "coordinate": "b1",
             "actor": "X",
             "flipped": [
-              "b4"
+              "c1",
+              "d1",
+              "e1"
             ]
           }
         ],
@@ -1351,12 +1526,67 @@
     "recommended_move": "b3",
     "reference_move": "b1",
     "insight": {
-      "kind": "illustrated_corner",
+      "kind": "corner_defense",
       "better_move": "b3",
       "worse_move": "b1",
       "target": "a1",
-      "gap": "b1",
-      "score_kind": "estimate"
+      "gap": null,
+      "score_kind": "estimate",
+      "proof": {
+        "target": "a1",
+        "attacker": "O",
+        "max_plies": 3,
+        "forced": false,
+        "attack": null,
+        "defenses": [],
+        "refutations": [
+          {
+            "attack": "b1",
+            "defense": "a1"
+          },
+          {
+            "attack": "e1",
+            "defense": "b1"
+          },
+          {
+            "attack": "g1",
+            "defense": "b1"
+          },
+          {
+            "attack": "a2",
+            "defense": "b1"
+          },
+          {
+            "attack": "b2",
+            "defense": "g3"
+          },
+          {
+            "attack": "a3",
+            "defense": "b1"
+          },
+          {
+            "attack": "b4",
+            "defense": "b1"
+          },
+          {
+            "attack": "b5",
+            "defense": "b1"
+          },
+          {
+            "attack": "c6",
+            "defense": "b1"
+          },
+          {
+            "attack": "a7",
+            "defense": "b1"
+          }
+        ]
+      },
+      "example": [
+        "b3",
+        "e1",
+        "b1"
+      ]
     },
     "choices": [
       {
@@ -1380,7 +1610,8 @@
         "checked_defenses": [],
         "defense_lines": [],
         "capture_lines": [],
-        "line_source": "engine",
+        "line_source": "rules",
+        "corner_proof": null,
         "frames": [
           {
             "board": [
@@ -1418,38 +1649,41 @@
           },
           {
             "board": [
-              "..OX.X..",
-              "..XXXX..",
+              "..OOOX..",
+              "..XXOX..",
               ".XXOOO..",
-              ".OOOOO..",
+              "..XOOO..",
               "..XOOO..",
               ".X......",
               "........",
               "........"
             ],
             "turn": "X",
-            "coordinate": "b4",
+            "coordinate": "e1",
             "actor": "O",
             "flipped": [
-              "c4"
+              "d1",
+              "e2"
             ]
           },
           {
             "board": [
-              "..OX.X..",
-              "..XXXX..",
-              "XXXOOO..",
-              ".XOOOO..",
+              ".XXXXX..",
+              "..XXOX..",
+              ".XXOOO..",
+              "..XOOO..",
               "..XOOO..",
               ".X......",
               "........",
               "........"
             ],
             "turn": "O",
-            "coordinate": "a3",
+            "coordinate": "b1",
             "actor": "X",
             "flipped": [
-              "b4"
+              "c1",
+              "d1",
+              "e1"
             ]
           }
         ],
@@ -1580,6 +1814,21 @@
                   "c3"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ],
+              [
+                "a1",
+                "b2",
+                "c3",
+                "d4"
+              ]
             ]
           },
           {
@@ -1675,6 +1924,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           },
           {
@@ -1772,6 +2030,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           },
           {
@@ -1871,6 +2138,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           },
           {
@@ -1970,6 +2246,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           },
           {
@@ -2067,6 +2352,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           },
           {
@@ -2162,6 +2456,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           },
           {
@@ -2261,6 +2564,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           },
           {
@@ -2359,6 +2671,15 @@
                   "d1"
                 ]
               }
+            ],
+            "capture_lines": [
+              [
+                "a1",
+                "b1",
+                "c1",
+                "d1",
+                "e1"
+              ]
             ]
           }
         ],
@@ -2369,9 +2690,34 @@
             "c1",
             "d1",
             "e1"
+          ],
+          [
+            "a1",
+            "b2",
+            "c3",
+            "d4"
           ]
         ],
         "line_source": "rules",
+        "corner_proof": {
+          "target": "a1",
+          "attacker": "O",
+          "max_plies": 3,
+          "forced": true,
+          "attack": "e1",
+          "defenses": [
+            "b2",
+            "b3",
+            "g3",
+            "g4",
+            "g5",
+            "d6",
+            "e6",
+            "f6",
+            "g6"
+          ],
+          "refutations": []
+        },
         "frames": [
           {
             "board": [
@@ -2484,7 +2830,9 @@
       "worse_move": "a3",
       "target": "a1",
       "gap": null,
-      "score_kind": "estimate"
+      "score_kind": "estimate",
+      "proof": null,
+      "example": []
     },
     "choices": [
       {
@@ -2522,6 +2870,15 @@
           ]
         ],
         "line_source": "rules",
+        "corner_proof": {
+          "target": "a1",
+          "attacker": "O",
+          "max_plies": 3,
+          "forced": true,
+          "attack": "a1",
+          "defenses": [],
+          "refutations": []
+        },
         "frames": [
           {
             "board": [
@@ -2611,6 +2968,15 @@
           ]
         ],
         "line_source": "rules",
+        "corner_proof": {
+          "target": "a1",
+          "attacker": "O",
+          "max_plies": 3,
+          "forced": true,
+          "attack": "a1",
+          "defenses": [],
+          "refutations": []
+        },
         "frames": [
           {
             "board": [
@@ -2686,7 +3052,9 @@
       "worse_move": null,
       "target": null,
       "gap": null,
-      "score_kind": "exact"
+      "score_kind": "exact",
+      "proof": null,
+      "example": []
     },
     "choices": [
       {
@@ -2713,6 +3081,7 @@
         "defense_lines": [],
         "capture_lines": [],
         "line_source": "engine",
+        "corner_proof": null,
         "frames": [
           {
             "board": [
@@ -2819,6 +3188,7 @@
         "defense_lines": [],
         "capture_lines": [],
         "line_source": "engine",
+        "corner_proof": null,
         "frames": [
           {
             "board": [

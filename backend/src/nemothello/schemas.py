@@ -44,9 +44,21 @@ class QuestionRequest(WriteRequest):
     question: str = Field(min_length=1, max_length=2000)
 
 
+class LessonView(RequestModel):
+    selected_move: Coordinate
+    line: list[Coordinate | Literal["pass"]] = Field(max_length=4)
+
+
 class PositionLessonRequest(WriteRequest):
     revision: int = Field(ge=0)
     question: str | None = Field(default=None, min_length=1, max_length=2000)
+    view: LessonView | None = None
+
+    @model_validator(mode="after")
+    def view_requires_question(self):
+        if self.view is not None and self.question is None:
+            raise ValueError("A teaching view is only used with a question")
+        return self
 
 
 class BranchRequest(WriteRequest):
@@ -156,6 +168,7 @@ class TeachingFrame(VariationFrame):
 class TeachingDefense(BaseModel):
     coordinate: Coordinate
     frames: list[TeachingFrame]
+    capture_lines: list[list[Coordinate]] = Field(default_factory=list)
 
 
 class DecisionAssessment(BaseModel):
@@ -166,6 +179,21 @@ class DecisionAssessment(BaseModel):
     score_loss: float = Field(ge=0)
     score_kind: Literal["estimate", "exact"]
     position: Literal["ahead", "behind", "level"]
+
+
+class CornerRefutation(BaseModel):
+    attack: Coordinate | Literal["pass"]
+    defense: Coordinate | Literal["pass"] | None
+
+
+class CornerProof(BaseModel):
+    target: Coordinate
+    attacker: Color
+    max_plies: Literal[3]
+    forced: bool
+    attack: Coordinate | Literal["pass"] | None
+    defenses: list[Coordinate | Literal["pass"]]
+    refutations: list[CornerRefutation]
 
 
 class TeachingMove(BaseModel):
@@ -182,15 +210,18 @@ class TeachingMove(BaseModel):
     line_source: Literal["engine", "rules"]
     frames: list[TeachingFrame]
     assessment: DecisionAssessment
+    corner_proof: CornerProof | None = None
 
 
 class TeachingInsight(BaseModel):
-    kind: Literal["forced", "equal", "corner_access", "illustrated_corner", "shared_corner", "search"]
+    kind: Literal["forced", "equal", "corner_access", "illustrated_corner", "shared_corner", "search", "corner_defense"]
     better_move: Coordinate | None
     worse_move: Coordinate | None
     target: Coordinate | None
     gap: Coordinate | None
     score_kind: Literal["estimate", "exact"]
+    proof: CornerProof | None = None
+    example: list[Coordinate | Literal["pass"]] = Field(default_factory=list)
 
 
 class TeachingComparison(BaseModel):
@@ -317,6 +348,7 @@ class QuestionResult(BaseModel):
     format_version: str | None = None
     answer_facts: list[ReviewFact] = Field(default_factory=list)
     topic: str | None = None
+    view: LessonView | None = None
 
 
 class PositionLesson(BaseModel):

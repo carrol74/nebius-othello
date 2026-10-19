@@ -6,6 +6,7 @@ export type TeachingFrame = components["schemas"]["TeachingFrame"];
 export type TeachingDefense = components["schemas"]["TeachingDefense"];
 export type PositionLesson = components["schemas"]["PositionLesson"];
 export type QuestionResult = components["schemas"]["QuestionResult"];
+export type LessonView = components["schemas"]["LessonView"];
 
 export type Color = "X" | "O";
 export type Difficulty = "easy" | "medium" | "hard";
@@ -174,7 +175,7 @@ interface TaskState {
 export type Task = TaskState & (
   | { kind: "review"; result: Review | null }
   | { kind: "branch"; result: { game_id: string; result: GameResult } | null }
-  | { kind: "question"; result: { answer: string; model_id: string | null; usage: Record<string, unknown> | null; coaching?: CoachingCard[]; format_version?: string | null; answer_facts?: ReviewFact[]; topic?: string | null } | null }
+  | { kind: "question"; result: QuestionResult | null }
   | { kind: "lesson"; result: PositionLesson | null }
 );
 

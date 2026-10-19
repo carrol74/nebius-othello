@@ -13,6 +13,7 @@ from nemothello.position_lessons import check_teachable, previous_decision_revis
 from nemothello.rules import Position, opponent
 from nemothello.schemas import GameState
 from nemothello.teaching import compare_lesson
+from nemothello.lesson_view import resolve_lesson_view
 from nemothello.storage import Store
 
 
@@ -352,9 +353,10 @@ class Games:
     def create_position_lesson_task(
         self, owner: str, game_id: str, request_id: str, revision: int,
         question: str | None = None,
+        view: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         payload = {"operation": "position_lesson", "game_id": game_id,
-                   "revision": revision, "question": question}
+                   "revision": revision, "question": question, "view": view}
 
         def operation(db: Connection) -> dict[str, Any]:
             game = self.store.get("game", game_id, owner, db)
@@ -364,6 +366,8 @@ class Games:
             if question:
                 if not saved:
                     raise AppError("LESSON_NOT_FOUND", "Teach this position before asking a question", 409)
+                resolved = resolve_lesson_view(saved["evidence"], view)
+                question_view = {key: resolved[key] for key in ("selected_move", "line")}
             else:
                 existing = [item for item in self.store.list_records("task", owner, db)
                             if item["game_id"] == game_id and item["kind"] == "lesson"
@@ -374,7 +378,8 @@ class Games:
                 if existing:
                     return self.public_task(existing[-1])
             task = self.make_task(db, owner, game_id, "question" if question else "lesson",
-                                  {"revision": revision, "question": question})
+                                  {"revision": revision, "question": question,
+                                   "view": question_view if question else None})
             return self.public_task(task)
 
         return self.store.mutate(owner, request_id, payload, operation)

@@ -1438,7 +1438,9 @@
       "worse_move": null,
       "target": null,
       "gap": null,
-      "score_kind": "exact"
+      "score_kind": "exact",
+      "proof": null,
+      "example": []
     },
     "choices": [
       {
@@ -1471,6 +1473,15 @@
           ]
         ],
         "line_source": "rules",
+        "corner_proof": {
+          "target": "h8",
+          "attacker": "O",
+          "max_plies": 3,
+          "forced": true,
+          "attack": "h8",
+          "defenses": [],
+          "refutations": []
+        },
         "frames": [
           {
             "board": [

@@ -63,7 +63,7 @@ def test_every_nonforced_choice_gets_a_distinct_reference_and_grounded_insight(e
                 equal = first.score == lesson.choices[1].score
                 assert (lesson.insight.kind == "equal") == equal
             insight_kinds.add(lesson.insight.kind)
-    assert {"forced", "equal", "shared_corner", "illustrated_corner", "search"} <= insight_kinds
+    assert {"forced", "equal", "shared_corner", "corner_defense", "search"} <= insight_kinds
 
 
 def test_ties_and_unfavorable_best_moves_are_never_turned_into_mistakes(evidence):

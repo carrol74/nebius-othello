@@ -5,7 +5,7 @@ import ts from "typescript";
 
 const source = readFileSync(new URL("../lib/teaching-text.ts", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, {compilerOptions: {module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022}}).outputText;
-const {lessonText, lessonPrompt, defenseFeedback, comparisonTakeaway, stepText, captureLineText, teachingChoiceLabel} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const {lessonText, lessonPrompt, defenseFeedback, comparisonTakeaway, stepText, captureLineText, teachingChoiceLabel, teachingFactText} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const cases = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/teaching-native-cases.json", import.meta.url), "utf8"));
 const {review} = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/review-native-positions.json", import.meta.url), "utf8"));
 const forced = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/forced-move-native.json", import.meta.url), "utf8"));
@@ -89,5 +89,19 @@ test("feedback names the attempted move and points back to the earlier decision"
     const text = defenseFeedback(branch.coordinate, "g6", branch.target, locale);
     for (const fact of ["g6", "a1", "b1"]) assert.ok(text.includes(fact));
   }
-  assert.match(comparisonTakeaway(cases["16"], "zh"), /b1 仍然空着/);
+  assert.match(comparisonTakeaway(cases["16"], "zh"), /全部合法回应/);
+  assert.match(comparisonTakeaway(cases["16"], "zh"), /e1.*b1 防守/);
+  assert.match(comparisonTakeaway(cases["16"], "en"), /not the rest of the game/);
+});
+
+test("verified proof facts keep their scope and coordinates in both languages", () => {
+  for (const locale of ["en", "zh"]) {
+    const proof = teachingFactText(cases["16"], "p16:proof_b1", locale);
+    for (const coordinate of ["b1", "e1", "a1"]) assert.ok(proof.includes(coordinate));
+    assert.match(proof, /three plies|三步/);
+    const defense = teachingFactText(cases["16"], "p16:defense", locale);
+    assert.match(defense, /every legal next reply|全部合法回应/);
+  }
+  assert.doesNotMatch(teachingFactText(cases["16"], "p16:proof_b1", "zh"), /Black|White|After|verified/);
+  assert.equal(teachingFactText(cases["16"], "p16:score", "zh"), null);
 });

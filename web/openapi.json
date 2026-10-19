@@ -1444,6 +1444,121 @@
         ],
         "title": "CoachingCard"
       },
+      "CornerProof": {
+        "properties": {
+          "target": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Target"
+          },
+          "attacker": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Attacker"
+          },
+          "max_plies": {
+            "type": "integer",
+            "const": 3,
+            "title": "Max Plies"
+          },
+          "forced": {
+            "type": "boolean",
+            "title": "Forced"
+          },
+          "attack": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "string",
+                "const": "pass"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attack"
+          },
+          "defenses": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-h][1-8]$"
+                },
+                {
+                  "type": "string",
+                  "const": "pass"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Defenses"
+          },
+          "refutations": {
+            "items": {
+              "$ref": "#/components/schemas/CornerRefutation"
+            },
+            "type": "array",
+            "title": "Refutations"
+          }
+        },
+        "type": "object",
+        "required": [
+          "target",
+          "attacker",
+          "max_plies",
+          "forced",
+          "attack",
+          "defenses",
+          "refutations"
+        ],
+        "title": "CornerProof"
+      },
+      "CornerRefutation": {
+        "properties": {
+          "attack": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "string",
+                "const": "pass"
+              }
+            ],
+            "title": "Attack"
+          },
+          "defense": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "string",
+                "const": "pass"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Defense"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attack",
+          "defense"
+        ],
+        "title": "CornerRefutation"
+      },
       "CreateGame": {
         "properties": {
           "request_id": {
@@ -1989,6 +2104,39 @@
         ],
         "title": "Lesson"
       },
+      "LessonView": {
+        "properties": {
+          "selected_move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Selected Move"
+          },
+          "line": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-h][1-8]$"
+                },
+                {
+                  "type": "string",
+                  "const": "pass"
+                }
+              ]
+            },
+            "type": "array",
+            "maxItems": 4,
+            "title": "Line"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "selected_move",
+          "line"
+        ],
+        "title": "LessonView"
+      },
       "MoveComparison": {
         "properties": {
           "coordinate": {
@@ -2215,6 +2363,16 @@
               }
             ],
             "title": "Question"
+          },
+          "view": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LessonView"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -2312,6 +2470,16 @@
               }
             ],
             "title": "Topic"
+          },
+          "view": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LessonView"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -2942,6 +3110,17 @@
             },
             "type": "array",
             "title": "Frames"
+          },
+          "capture_lines": {
+            "items": {
+              "items": {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Capture Lines"
           }
         },
         "type": "object",
@@ -3033,7 +3212,8 @@
               "corner_access",
               "illustrated_corner",
               "shared_corner",
-              "search"
+              "search",
+              "corner_defense"
             ],
             "title": "Kind"
           },
@@ -3092,6 +3272,32 @@
               "exact"
             ],
             "title": "Score Kind"
+          },
+          "proof": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CornerProof"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "example": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-h][1-8]$"
+                },
+                {
+                  "type": "string",
+                  "const": "pass"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Example"
           }
         },
         "type": "object",
@@ -3210,6 +3416,16 @@
           },
           "assessment": {
             "$ref": "#/components/schemas/DecisionAssessment"
+          },
+          "corner_proof": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CornerProof"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",

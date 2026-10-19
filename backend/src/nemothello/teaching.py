@@ -3,6 +3,7 @@ from itertools import pairwise
 from nemothello.board_features import CORNERS
 from nemothello.coaching import variation_frames
 from nemothello.decision import assess_decision, reference_move
+from nemothello.corner_proof import prove_corner
 from nemothello.errors import AppError
 from nemothello.rules import (
     DIRECTIONS,
@@ -56,34 +57,42 @@ def teach_move(item, move):
     lesson = {"coordinate": move, "score": candidate["score"], "score_kind": candidate["score_kind"],
               "assessment": assess_decision(item, move),
               "kind": "line", "target": None, "opponent_reply": None,
-              "checked_defenses": [], "defense_lines": [], "capture_lines": [], "line_source": "engine"}
+              "checked_defenses": [], "defense_lines": [], "capture_lines": [], "line_source": "engine",
+              "corner_proof": None}
     demonstration = pv[:3]
     if move in CORNERS:
         lesson.update(kind="corner_taken", target=move)
     elif corner_access(after, other):
         target = corner_access(after, other)[0]
         lesson.update(kind="corner_given", target=target, opponent_reply=target, line_source="rules")
+        lesson["corner_proof"] = prove_corner(after, actor, target)
         lesson["capture_lines"] = capture_lines(after, other, target)
         demonstration = [move, target]
     elif not legal_moves(after, other) and legal_moves(after, actor):
         lesson.update(kind="pass")
         demonstration = [move, "pass"]
-    elif len(pv) > 1 and pv[1] != "pass":
-        reply = pv[1]
-        replied = apply_move(after, other, reply)
-        defenses = legal_moves(replied, actor)
-        for target in corner_access(replied, other):
-            if all(target in legal_moves(apply_move(replied, actor, defense), other) for defense in defenses):
+    else:
+        preferred = pv[1] if len(pv) > 1 else None
+        for target in CORNERS:
+            row, col = square(target)
+            if after[row][col] != ".":
+                continue
+            proof = prove_corner(after, actor, target, preferred)
+            if proof["forced"]:
+                reply = proof["attack"]
+                defenses = [move for move in proof["defenses"] if move != "pass"]
                 defense = pv[2] if len(pv) > 2 and pv[2] in defenses else next(iter(defenses), "pass")
                 lesson.update(kind="corner_forced", target=target, opponent_reply=reply,
-                              checked_defenses=list(defenses), line_source="rules")
-                lesson["capture_lines"] = capture_lines(replied, other, target)
-                lesson["defense_lines"] = [{"coordinate": response,
-                    "frames": teaching_frames(board, actor, [move, reply, response, target])}
-                    for response in defenses]
+                              checked_defenses=defenses, line_source="rules", corner_proof=proof)
+                for response in defenses:
+                    frames = teaching_frames(board, actor, [move, reply, response, target])
+                    lesson["defense_lines"].append({"coordinate": response, "frames": frames,
+                        "capture_lines": capture_lines(tuple(frames[-2]["board"]), other, target)})
                 demonstration = [move, reply, defense, target]
                 break
     lesson["frames"] = teaching_frames(board, actor, demonstration)
+    if lesson["kind"] in ("corner_given", "corner_forced"):
+        lesson["capture_lines"] = capture_lines(tuple(lesson["frames"][-2]["board"]), other, lesson["target"])
     lesson["opponent_corner_moves_after_reply"] = (
         corner_access(tuple(lesson["frames"][2]["board"]), other)
         if len(lesson["frames"]) > 2 else []
@@ -94,7 +103,7 @@ def teach_move(item, move):
 def comparison_insight(choices):
     first = choices[0]
     result = {"kind": "forced", "better_move": None, "worse_move": None, "target": None, "gap": None,
-              "score_kind": first["assessment"]["score_kind"]}
+              "score_kind": first["assessment"]["score_kind"], "proof": None, "example": []}
     if first["assessment"]["status"] == "forced":
         return result
     other = choices[1]
@@ -105,7 +114,23 @@ def comparison_insight(choices):
     corner_kinds = {"corner_given", "corner_forced"}
     if worse["kind"] in corner_kinds:
         target = worse["target"]
-        if better["kind"] in corner_kinds and better["target"] == target:
+        defense_proof = prove_corner(tuple(better["frames"][1]["board"]), better["frames"][0]["turn"], target)
+        if not defense_proof["forced"]:
+            result.update(kind="corner_defense", target=target, proof=defense_proof)
+            refutations = defense_proof["refutations"]
+            example = next((entry for entry in refutations if entry["attack"] == worse["opponent_reply"]),
+                           next(iter(refutations), None))
+            if example and better["kind"] == "line":
+                moves = [better["coordinate"], example["attack"]]
+                if example["defense"] is not None:
+                    moves.append(example["defense"])
+                better["frames"] = teaching_frames(tuple(better["frames"][0]["board"]),
+                                                    better["frames"][0]["turn"], moves)
+                better["line_source"] = "rules"
+                better["opponent_corner_moves_after_reply"] = (
+                    corner_access(tuple(better["frames"][2]["board"]), defense_proof["attacker"]))
+                result["example"] = moves
+        elif better["kind"] in corner_kinds and better["target"] == target:
             result.update(kind="shared_corner", target=target)
         elif worse["kind"] == "corner_given" and target not in corner_access(
                 tuple(better["frames"][1]["board"]), opponent(better["frames"][0]["turn"])):

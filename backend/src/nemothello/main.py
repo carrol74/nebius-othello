@@ -211,6 +211,7 @@ def teaching_lesson(game_id: str, owner: Owner, request: Request,
 def create_position_lesson(game_id: str, body: PositionLessonRequest, owner: Owner, request: Request):
     return request.app.state.games.create_position_lesson_task(
         owner, game_id, body.request_id, body.revision, body.question,
+        body.view.model_dump() if body.view is not None else None,
     )
 
 

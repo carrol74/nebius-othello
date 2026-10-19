@@ -184,6 +184,17 @@ def test_real_forced_lesson_task_succeeds_without_model_and_returns_previous_cho
         assert restored["comparison"]["choices"][0]["assessment"]["status"] == "forced"
         assert restored["comparison"]["insight"]["kind"] == "forced"
         assert engine.process is None
+        view = {"selected_move": "d8", "line": ["d8", "h8"]}
+        question = games.create_position_lesson_task("owner", game["game_id"], "forced-question",
+                                                     58, "Does this guarantee a win?", view)
+        queued = store.get("task", question["task_id"], "owner")
+        assert queued["inputs"]["view"] == view
+        tasks.process("owner", queued)
+        answered = store.get("task", question["task_id"], "owner")
+        assert answered["status"] == "succeeded", answered["error"]
+        assert answered["result"]["view"] == view
+        assert answered["result"]["model_id"] is None
+        assert engine.process is None
     finally:
         engine.close()
         model.close()

@@ -21,7 +21,7 @@ def test_concrete_corner_trap_checks_every_defense(review):
     assert len(bad.checked_defenses) == 9
     assert [frame.coordinate for frame in bad.frames] == [None, "b1", "e1", "b2", "a1"]
     assert bad.frames[1].flipped == ["c1"] and bad.frames[2].flipped == ["e2"]
-    assert bad.capture_lines == [["a1", "b1", "c1", "d1", "e1"]]
+    assert bad.capture_lines == [["a1", "b1", "c1", "d1", "e1"], ["a1", "b2", "c3", "d4"]]
     board = tuple(bad.frames[2].board)
     assert tuple(bad.checked_defenses) == legal_moves(board, "X")
     for move in bad.checked_defenses:
@@ -30,9 +30,13 @@ def test_concrete_corner_trap_checks_every_defense(review):
     for line in bad.defense_lines:
         assert line.frames[3].coordinate == line.coordinate
         assert line.frames[4].board[0][0] == "O"
+        assert {square for ray in line.capture_lines for square in ray[1:-1]} == set(line.frames[4].flipped)
     assert bad.frames[-1].board[0][0] == "O"
     assert better.coordinate == "b3" and better.kind == "line"
-    assert "a1" not in legal_moves(tuple(better.frames[2].board), "O")
+    assert [frame.coordinate for frame in better.frames] == [None, "b3", "e1", "b1"]
+    assert "a1" not in legal_moves(tuple(better.frames[3].board), "O")
+    assert lesson.insight.kind == "corner_defense"
+    assert len(lesson.insight.proof.refutations) == 10
 
 
 def test_all_native_lessons_use_legal_steps_and_exact_flip_highlights(review):

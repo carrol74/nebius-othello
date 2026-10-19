@@ -170,7 +170,9 @@ def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None):
                 if assessment["status"] == "best" else f" The search rates {recommended} higher.")
     facts = [
         fact(prefix + "decision", f"At position {revision}, {COLORS[actor]} "
-             + (f"played {actual}." if item.get("is_played", True) else f"can play {actual}; no move has been recorded yet.")
+             + (f"played {actual}." if item.get("is_played", True) else
+                f"is comparing {actual}; the recorded move was {item['recorded_move']}." if item.get("recorded_move") else
+                f"can play {actual}; no move has been recorded yet.")
              + judgment + f" There are {assessment['legal_move_count']} legal moves. This assessment is separate from any hint shown during play.", "comparison", revision),
         fact(prefix + "score", f"From {COLORS[actor]}'s perspective, {actual} scores {played['score']:g} and {recommended} scores {best['score']:g}. The difference is {assessment['score_loss']:g}; these are {score_kind}." + (" These alternatives are equally rated." if assessment["score_loss"] == 0 else " Higher scores favor this player."), "comparison", revision),
         fact(prefix + "mobility", f"After {actual}, {COLORS[opponent(actor)]} has {a['opponent_moves']} legal replies; after {recommended}, {b['opponent_moves']}. Reply count alone does not explain the search preference.", "mobility", revision),
@@ -222,6 +224,28 @@ def pass_context(review: dict[str, Any], revision: int):
     return None
 
 
+def verified_teaching_facts(teaching, revision):
+    facts = []
+    for choice in teaching["choices"]:
+        proof = choice["corner_proof"]
+        if not proof:
+            continue
+        attack = proof["attack"]
+        action = f"take {proof['target']} immediately" if attack == proof["target"] else (
+            f"play {attack}; every legal defense then still permits {proof['target']} on the next turn")
+        facts.append(fact(f"p{revision}:proof_{choice['coordinate']}",
+                          f"After {choice['coordinate']}, {COLORS[proof['attacker']]} can {action}. "
+                          "This is a rules-verified corner threat within three plies after the root move; "
+                          "it does not establish the reason for the full search-score difference.", "corners", revision))
+    insight = teaching["insight"]
+    if insight["kind"] == "corner_defense":
+        facts.append(fact(f"p{revision}:defense", f"After {insight['better_move']}, every legal first reply "
+                          f"has a defense that prevents {insight['target']} on the following turn. "
+                          "This is verified within three plies after the root move, not permanent corner safety.",
+                          "corners", revision))
+    return facts
+
+
 def review_context(review: dict[str, Any], question: str | None, revision: int | None = None) -> dict[str, Any]:
     requested = {int(value) for value in re.findall(r"(?:position(?:\s+revision)?|revision|局面)\s*(\d+)", question or "", re.IGNORECASE)}
     if revision is not None and requested - {revision}:
@@ -241,9 +265,29 @@ def review_context(review: dict[str, Any], question: str | None, revision: int |
         if original["actor"] != review["human_color"]:
             raise AppError("REVIEW_OPPONENT", "Choose one of your own turns for teaching", 422)
         item = original if original.get("comparisons") else enrich_evidence(original)
+        view = review.get("teaching_view") if revision == item["revision"] else None
+        if view:
+            item = {**item, "actual_move": view["selected_move"],
+                    "is_played": view["assessment"]["is_played"], "recorded_move": view["recorded_move"]}
         facts, lessons = position_facts(item, {move.lower() for move in extra})
+        teaching = view["teaching"] if view else review.get("teaching_comparison") if revision == item["revision"] else None
+        if teaching and assess_decision(item, item["actual_move"])["status"] != "forced":
+            proof_facts = verified_teaching_facts(teaching, item["revision"])
+            facts.extend(proof_facts)
+            if proof_facts and "corners" not in lessons:
+                lessons.append("corners")
+        if view:
+            line = " → ".join(view["line"]) or "before the selected move"
+            last = (f"Last move: {COLORS[view['actor']]} {view['line'][-1]}, flipping "
+                    + (", ".join(view["flipped"]) or "no discs") + ". ") if view["line"] else ""
+            turn = (f"{COLORS[view['turn']]} to move; legal squares: "
+                    + (", ".join(view["legal_moves"]) or "none; this player must pass")) if view["turn"] else "The game has ended"
+            facts.append(fact(f"p{item['revision']}:view", f"The question refers to the {view['selected_move']} line: {line}. "
+                              + last + turn + ". Scores describe the root choice, not this later board.",
+                              "comparison", item["revision"]))
         positions.append({"revision": item["revision"], "actor": COLORS[item["actor"]],
                           "decision": assess_decision(item, item["actual_move"]),
+                          **({"view": view} if view else {}),
                           "human": item["actor"] == review["human_color"], "facts": facts,
                           "allowed_lessons": lessons})
     for requested_revision in sorted(requested - {item["revision"] for item in positions}):
@@ -334,6 +378,8 @@ def render_plan(plan: CoachingPlan, context: dict[str, Any]):
         position = positions[selection.revision]
         facts = {item["id"]: item for item in position["facts"]}
         required = [f"p{selection.revision}:decision"]
+        if f"p{selection.revision}:view" in facts:
+            required.append(f"p{selection.revision}:view")
         if f"p{selection.revision}:score" in facts:
             required.append(f"p{selection.revision}:score")
         if context["task"] == "question" and f"p{selection.revision}:mobility" in facts:

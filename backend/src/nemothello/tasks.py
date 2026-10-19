@@ -10,6 +10,7 @@ from nemothello.position_lessons import analyze_position, lesson_context, previo
 from nemothello.rules import Position
 from nemothello.storage import Store
 from nemothello.teaching import compare_lesson
+from nemothello.lesson_view import resolve_lesson_view
 
 logger = logging.getLogger(__name__)
 
@@ -59,11 +60,12 @@ class Tasks:
                     lesson = self.games.position_lesson(owner, task["game_id"], revision)
                     game = self.store.get("game", task["game_id"], owner)
                     review = lesson_context(game, lesson["evidence"], self.store.list_records("hint", owner))
+                    review["teaching_view"] = resolve_lesson_view(lesson["evidence"], task["inputs"].get("view"))
                 response = self.nemotron.explain(review, task["inputs"]["question"], **({"revision": revision} if revision is not None else {}))
                 result = {"answer": response["text"], "model_id": response["model_id"],
                           "usage": response["usage"], "coaching": response["coaching"],
                           "format_version": REVIEW_VERSION, "answer_facts": response["answer_facts"],
-                          "topic": response["topic"]}
+                          "topic": response["topic"], "view": task["inputs"].get("view")}
             task.update(status="succeeded", result=result, error=None, usage=result.get("usage"))
         except Exception as exc:
             logger.exception("Task failed task_id=%s", task["task_id"])
@@ -99,6 +101,9 @@ class Tasks:
                   "coaching": [], "coaching_status": "pending", "coaching_error": None,
                   "model_id": None, "usage": None}
         key = f"{game_id}:{revision}"
+        context["teaching_comparison"] = {"insight": lesson["comparison"]["insight"], "choices": [
+            {"coordinate": entry["coordinate"], "corner_proof": entry["corner_proof"]}
+            for entry in lesson["comparison"]["choices"]]}
         with self.store.transaction() as db:
             self.store.save(db, "lesson", key, owner, lesson)
         try:

@@ -108,6 +108,15 @@ export function comparisonTakeaway(comparison: TeachingComparison, locale: Local
     ? `这两种走法都会让对手拿到 ${insight.target}，光看谁能占角还分不出优劣。${insight.score_kind === "exact" ? "终局分析" : "当前搜索"}评分偏向 ${insight.better_move}，但这段抢角演示本身还解释不了评分差距。`
     : `Both moves let the opponent take ${insight.target}. Corner access alone does not tell us which move is better. ${insight.score_kind === "exact" ? "Endgame analysis" : "The current search"} favors ${insight.better_move}, but this corner demonstration does not establish the reason for that score gap.`;
   const best = comparison.choices.find((item) => item.coordinate === insight.better_move)!;
+  if (insight.kind === "corner_defense") {
+    const line = insight.example ?? [];
+    const example = line.length === 3 ? zh
+      ? `图中对手下 ${line[1]}，你可以用 ${line[2]} 防守，挡住随后占 ${insight.target}。`
+      : `In the example, answer ${line[1]} with ${line[2]} to stop the following ${insight.target} capture.` : "";
+    return zh
+      ? `下 ${insight.worse_move}，对手有办法抢到 ${insight.target}。改走 ${insight.better_move}，已检查对手下一步的全部合法回应，每种回应下都有防守，能阻止它再下一手占这个角。${example}结论只覆盖这段变化，不代表这个角以后一直安全。`
+      : `After ${insight.worse_move}, the opponent has a way to take ${insight.target}. After ${insight.better_move}, every legal next reply was checked: each has a defense that prevents the corner capture on the following turn. ${example} This covers that short sequence, not the rest of the game.`;
+  }
   if (insight.kind === "corner_access") return zh
     ? `下 ${insight.worse_move} 后，对手下一步就能下 ${insight.target}；下 ${insight.better_move} 后，${insight.target} 暂时不是它的合法落点。这是两种走法已核实的一处差别。`
     : `After ${insight.worse_move}, the opponent can play ${insight.target} immediately. After ${insight.better_move}, ${insight.target} is not a legal reply on the next turn. This is one verified difference between the moves.`;
@@ -118,4 +127,20 @@ export function comparisonTakeaway(comparison: TeachingComparison, locale: Local
   }
   return zh ? `当前评分偏向 ${insight.better_move}。这两条短续着展示了可能的回应，还不足以归纳出评分差距的单一原因。切换落点，比较对手下在哪里、翻转哪些棋子。`
     : `The current scores favor ${insight.better_move}. These short lines show possible replies but do not establish a single reason for the score gap. Switch moves to compare the reply squares and flipped discs.`;
+}
+
+export function teachingFactText(comparison: TeachingComparison, id: string, locale: Locale): string | null {
+  const kind = id.split(":")[1];
+  if (kind === "defense") return comparisonTakeaway(comparison, locale);
+  if (!kind?.startsWith("proof_")) return null;
+  const coordinate = kind.slice(6);
+  const proof = comparison.choices.find((choice) => choice.coordinate === coordinate)?.corner_proof;
+  if (!proof) return null;
+  const zh = locale === "zh";
+  const actor = proof.attacker === "X" ? zh ? "黑方" : "Black" : zh ? "白方" : "White";
+  const action = proof.attack === proof.target ? zh ? `可以直接占 ${proof.target}` : `can take ${proof.target} immediately`
+    : zh ? `可以先下 ${proof.attack}，随后无论怎样合法防守，仍能下 ${proof.target}`
+      : `can play ${proof.attack}, after which every legal defense still permits ${proof.target}`;
+  return zh ? `下 ${coordinate} 后，${actor}${action}。已按棋规核验落子后的三步以内变化，这不能单独解释全部评分差距。`
+    : `After ${coordinate}, ${actor} ${action}. This is verified within three plies after the root move and does not explain the full score gap.`;
 }
