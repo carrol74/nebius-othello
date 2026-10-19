@@ -28,6 +28,16 @@ p { line-height: 1.7; }
 .language-switch { display: flex; margin-left: auto; gap: 4px; }
 .language-switch button { padding: 8px 11px; font-size: 13px; }
 .language-switch button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.header-tools { display: flex; gap: 12px; align-items: center; margin-left: auto; }
+.rules-button { padding: 8px 11px; font-size: 13px; color: var(--muted); }
+.rules-dialog { width: min(420px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); padding: 0; color: inherit; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 20px 70px #0008; }
+.rules-dialog::backdrop { background: #080e0bb3; }
+.rules-content { padding: 22px; }
+.rules-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.rules-heading h2 { margin: 0; font-size: 18px; }
+.rules-heading button { padding: 3px 10px; font-size: 22px; }
+.rules-content ul { padding-left: 20px; margin: 18px 0 0; font-size: 14px; line-height: 1.7; }
+.rules-content li + li { margin-top: 12px; }
 .mode-switch { display: flex; gap: 4px; padding: 4px; background: #19221c; border-radius: 10px; }
 .mode-switch button { border-color: transparent; padding: 9px 22px; font-size: 14px; }
 .mode-switch button[aria-pressed="true"] { color: var(--accent); background: #2a3727; }
@@ -54,7 +64,7 @@ p { line-height: 1.7; }
 .question-form input:focus-visible { outline: 2px solid var(--accent); }
 .position-answer { white-space: pre-wrap; line-height: 1.8; border-left: 2px solid var(--accent); padding-left: 12px; margin-top: 16px; }
 .speed-picker { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 13px; }
-.speed-picker + .card-heading { margin-top: 20px; }
+.tips-card .card-heading { margin-top: 20px; }
 .slow-flip .disc { animation: flip-disc 600ms ease-in-out; }
 @keyframes flip-disc { from {transform: rotateY(90deg);} to {transform: rotateY(0);} }
 .compact-result { display: flex; flex-wrap: wrap; gap: 12px 24px; color: var(--muted); font-size: 13px; }
@@ -230,7 +240,8 @@ textarea::placeholder { color: #7b8b7c; }
 @media (max-width: 680px) {
   .workspace { padding: 22px 14px 12px; }
   .wordmark { font-size: 28px; }
-  .masthead { padding-bottom: 20px; }
+  .masthead { padding-bottom: 20px; gap: 14px; }
+  .header-tools { gap: 8px; }
   .mode-switch { order: 3; width: 100%; }
   .mode-switch button { flex: 1; }
   .game-toolbar { gap: 14px; margin: 22px 0; }
