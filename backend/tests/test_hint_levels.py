@@ -76,7 +76,7 @@ def test_real_follow_hints_replay_uses_inherited_level_to_terminal(client, diffi
     task = post(client, f"/games/{game['game_id']}/branches", revision=0, mode="follow_hints")
     deadline = time.monotonic() + 30
     while task["status"] in ("queued", "running") and time.monotonic() < deadline:
-        time.sleep(.02)
+        time.sleep(1.2)
         response = client.get(f"/tasks/{task['task_id']}")
         assert response.status_code == 200, response.text
         task = response.json()
