@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale";
-import { comparisonTakeaway, lessonText } from "@/lib/teaching-text";
+import { comparisonTakeaway, lessonText, teachingChoiceLabel } from "@/lib/teaching-text";
 import { positionFactText } from "@/lib/review-text";
 import type { GameState, PositionLesson, QuestionResult, TeachingComparison, TeachingDefense, TeachingFrame } from "@/lib/types";
 
@@ -11,7 +11,7 @@ export type Variation = {
   exercise?: {defenses: TeachingDefense[]; target: string; attempt: string | null};
 };
 
-export function ReviewCoach({game, lesson, variation, pending, busy, showVariation, ask, answer, questionPending, continueGame, replay}: {
+export function ReviewCoach({game, lesson, variation, pending, busy, showVariation, ask, answer, questionPending, continueGame, replay, revisit}: {
   game: GameState;
   lesson: PositionLesson;
   variation: Variation | null;
@@ -23,6 +23,7 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
   questionPending: boolean;
   continueGame: (revision: number) => void;
   replay: (revision: number) => void;
+  revisit: (revision: number) => void;
 }) {
   const {locale, t} = useLocale();
   const [comparison, setComparison] = useState<TeachingComparison>(lesson.comparison);
@@ -32,11 +33,13 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
   const [loading, setLoading] = useState(false);
   const comparisonRequest = useRef<AbortController | null>(null);
   const item = lesson.evidence;
+  const legalMoveCount = item.analysis.candidates.length;
+  const forcedMove = legalMoveCount === 1;
   const activeMove = comparison.choices.find((choice) => choice.coordinate === variation?.coordinate)
     ?? comparison.choices.find((choice) => choice.coordinate === comparison.selected_move) ?? comparison.choices[0];
   const activeVariation = variation?.coordinate === activeMove.coordinate ? variation : null;
   const frames = activeVariation?.lesson_frames ?? activeMove.frames;
-  const takeaway = comparisonTakeaway(comparison, locale);
+  const takeaway = forcedMove ? t("To study a choice you could change, return to an earlier turn with more than one legal move.", "想学习可以调整的选择，请回看更早有多个合法落点的回合。") : comparisonTakeaway(comparison, locale);
   const card = lesson.coaching?.[0];
   const focusFact = card?.lesson_id !== "comparison" ? card?.facts.find((fact) => fact.topic === card.lesson_id && !fact.id.endsWith(":score") && !fact.id.endsWith(":decision")) : null;
   const answerFacts = [...(answer?.answer_facts ?? []), ...(answer?.coaching ?? []).flatMap((card) => card.facts)];
@@ -73,29 +76,30 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
   }
 
   return <div className="position-coach">
-    <div className="teaching-choices" role="group" aria-label={t("Compare moves", "对比落点")}>
+    <div className="teaching-choices" role="group" aria-label={forcedMove ? t("Forced move", "唯一合法落点") : t("Compare moves", "对比落点")}>
       {comparison.choices.map((choice) => <button key={choice.coordinate} disabled={loading} aria-pressed={choice.coordinate === activeMove.coordinate} onClick={() => showVariation({revision: lesson.revision, coordinate: choice.coordinate, frame: 1, lesson_frames: choice.frames, focus_square: choice.target, capture_lines: choice.capture_lines})}>
-        {choice.coordinate}<span>{choice.coordinate === comparison.recommended_move ? t("Recommended", "推荐落点") : item.is_played !== false && choice.coordinate === item.actual_move ? t("Played", "实际落子") : t("Your choice", "所选落点")}</span>
+        {choice.coordinate}<span>{teachingChoiceLabel(item, choice.coordinate, locale)}</span>
       </button>)}
     </div>
-    <div className="concrete-lesson">{lessonText(comparison, activeMove, locale).map((text) => <p key={text}>{text}</p>)}</div>
-    {activeMove.kind === "line" && focusFact && <p>{positionFactText(focusFact, item, locale)}</p>}
+    <div className="concrete-lesson">{lessonText(comparison, activeMove, locale, legalMoveCount).map((text) => <p key={text}>{text}</p>)}</div>
+    {!forcedMove && activeMove.kind === "line" && focusFact && <p>{positionFactText(focusFact, item, locale)}</p>}
     {takeaway && <p className="concrete-takeaway">{takeaway}</p>}
+    {forcedMove && lesson.previous_decision_revision != null && <button disabled={busy} onClick={() => revisit(lesson.previous_decision_revision!)}>{t("Review the last turn with a choice", "回看上一次有选择的回合")}</button>}
     <div className="teaching-steps" role="group" aria-label={t("Demonstration steps", "落子演示步骤")}>
       {frames.slice(1).map((frame, index) => <button key={index} aria-pressed={activeVariation?.frame === index + 1} onClick={() => demonstrate(index + 1)}><small>{index + 1}</small>{frame.actor === "X" ? t("Black", "黑方") : t("White", "白方")} <strong>{frame.coordinate === "pass" ? t("Pass", "跳过") : frame.coordinate}</strong></button>)}
     </div>
-    {activeMove.kind === "corner_forced" && activeMove.defense_lines.length > 0 && <button disabled={busy} onClick={() => showVariation({
+    {!forcedMove && activeMove.kind === "corner_forced" && activeMove.defense_lines.length > 0 && <button disabled={busy} onClick={() => showVariation({
       revision: lesson.revision, coordinate: activeMove.coordinate, frame: 2, lesson_frames: activeMove.frames,
       focus_square: activeMove.target, capture_lines: activeMove.capture_lines,
       exercise: {defenses: activeMove.defense_lines, target: activeMove.target!, attempt: null},
     })}>{t("Try defending", "试着防守")}</button>}
     {pending && <p className="muted" role="status">{t("The coach is choosing what to focus on…", "正在为这个局面选择讲解重点…")}</p>}
-    <details className="lesson-tools"><summary>{t("Compare another move", "比较其他落点")}</summary>
+    {!forcedMove && <details className="lesson-tools"><summary>{t("Compare another move", "比较其他落点")}</summary>
       <label>{t("Move", "落点")} <select aria-label={t("Move to compare", "要对比的落点")} disabled={loading} value={comparison.selected_move} onChange={(event) => void compare(event.target.value)}>{item.analysis.candidates.map((candidate) => <option key={candidate.coordinate}>{candidate.coordinate}</option>)}</select></label>
       {error && <p role="alert">{error}</p>}
       <table><thead><tr><th>{t("Move", "落点")}</th><th>{t("Search score", "搜索评分")}</th></tr></thead><tbody>{comparison.choices.map((choice) => <tr key={choice.coordinate}><td>{choice.coordinate}</td><td>{choice.score}</td></tr>)}</tbody></table>
       <p className="muted">{t("Scores favor the player to move. Estimates are not win probabilities.", "评分从当前行动方的视角计算，估计值不代表胜率。")}</p>
-    </details>
+    </details>}
     <form className="question-form" onSubmit={(event) => {event.preventDefault(); if (question.trim()) {ask(question.trim()); setQuestion("");}}}>
       <div><input aria-label={t("Ask about this position", "询问这个局面")} value={question} maxLength={1800} onChange={(event) => setQuestion(event.target.value)} placeholder={t("Why this move? Ask a question…", "对这一步有疑问？继续提问…")} /><button disabled={busy || questionPending || !question.trim()}>{questionPending ? t("Answering…", "回答中…") : t("Ask", "提问")}</button></div>
     </form>

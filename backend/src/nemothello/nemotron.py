@@ -22,7 +22,6 @@ SYSTEM_PROMPT = (
     "supplied positions. Each selection must use one allowed lesson and one to four fact IDs from "
     "that position, including a fact whose topic matches that lesson. "
     "For task=review, set topic=review and select every supplied position exactly once, "
-    "including positions for the opponent when supplied, "
     "in a useful learning order. Prefer a concrete corner or pass lesson when relevant; "
     "use mobility to compare reply counts and comparison when scores are the main evidence. "
     "For task=question, answer the user's intent with topic=comparison, hints, outcome, strategy, "
@@ -51,10 +50,18 @@ class Nemotron:
 
     def explain(self, evidence: dict[str, Any], question: str | None = None,
                 *, revision: int | None = None) -> dict[str, Any]:
-        if question is None:
+        forced = revision is not None and any(
+            item["revision"] == revision and len(item["analysis"]["candidates"]) == 1
+            for item in evidence.get("evidence", [])
+        )
+        if question is None and not forced:
             self.ensure_configured()
         context = review_context(evidence, question, revision)
         factual = factual_question_plan(question)
+        if forced and question is None:
+            factual = CoachingPlan(topic="review", selections=[
+                Selection(revision=revision, fact_ids=[f"p{revision}:forced_move"], lesson_id="forced_move"),
+            ])
         if (factual is None and question and any(word in question.lower() for word in ("pass", "跳过", "无合法落点")) and context["positions"]
                 and all(item["allowed_lessons"] == ["pass"] for item in context["positions"])):
             factual = CoachingPlan(topic="strategy", selections=[

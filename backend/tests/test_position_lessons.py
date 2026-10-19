@@ -8,8 +8,10 @@ from nemothello.edax import Edax
 from nemothello.errors import AppError
 from nemothello.games import Games, advance
 from nemothello.opponents import EdaxOpponent
-from nemothello.position_lessons import check_teachable, lesson_context, position_at
+from nemothello.nemotron import Nemotron
+from nemothello.position_lessons import check_teachable, lesson_context, position_at, previous_decision_revision
 from nemothello.storage import Store
+from nemothello.tasks import Tasks
 
 
 @pytest.fixture
@@ -109,3 +111,67 @@ def test_opponent_lesson_lookup_and_tasks_are_rejected_without_starting_analysis
         assert error.value.code == "REVIEW_OPPONENT"
     assert store.list_records("task", "owner") == []
     assert engine.process is None
+
+
+@pytest.fixture
+def forced_case():
+    return json.loads((Path(__file__).parent / "fixtures/forced-move-native.json").read_text())
+
+
+def test_native_forced_position_leads_back_to_last_real_choice(forced_case):
+    game = forced_case["game"]
+    assert position_at(game, 58).moves == ("d8",)
+    assert previous_decision_revision(game, 58) == 42
+    assert position_at(game, 42).moves == ("b3", "a4")
+    replayed = {**game, "board": game["initial_board"], "turn": game["initial_turn"],
+                "revision": 0, "history": [], "result": None}
+    for event in game["history"]:
+        if event["kind"] == "move":
+            advance(replayed, event["coordinate"])
+    assert replayed["board"] == game["board"] and replayed["result"] == game["result"]
+    for event in game["history"]:
+        before = event["revision"] - 1
+        if 42 < before <= 58 and event["kind"] == "move" and event["actor"] == game["human_color"]:
+            assert len(position_at(game, before).moves) == 1
+
+
+def test_forced_lesson_is_factual_and_needs_no_model_credentials(forced_case):
+    context = lesson_context(forced_case["game"], forced_case["evidence"], [])
+    model = Nemotron("", "https://unused.invalid/v1", "")
+    try:
+        response = model.explain(context, revision=58)
+        assert response["model_id"] is None and response["usage"] is None
+        assert response["coaching"][0]["lesson_id"] == "forced_move"
+        assert "only legal move" in response["text"] and "h8" in response["text"]
+        assert "recommendation" not in response["text"]
+    finally:
+        model.close()
+
+
+def test_real_forced_lesson_task_succeeds_without_model_and_returns_previous_choice(forced_case, tmp_path):
+    root = Path(__file__).resolve().parents[2]
+    executable, weights = root / "deploy/edax/edax", root / "deploy/edax/eval.dat"
+    if not executable.is_file() or not weights.is_file():
+        pytest.skip("Native Edax and eval.dat are required")
+    engine = Edax(executable, weights, "4.6", 4)
+    model = Nemotron("", "https://unused.invalid/v1", "")
+    store = Store(tmp_path / "games.sqlite3")
+    games = Games(store, EdaxOpponent(engine), engine, 3)
+    tasks = Tasks(store, games, model)
+    try:
+        game = games.new_game("X")
+        for event in forced_case["game"]["history"]:
+            if event["kind"] == "move":
+                advance(game, event["coordinate"])
+        with store.transaction() as db:
+            store.save(db, "game", game["game_id"], "owner", game)
+        task = games.create_position_lesson_task("owner", game["game_id"], "forced-lesson", 58)
+        tasks.process("owner", store.get("task", task["task_id"], "owner"))
+        result = store.get("task", task["task_id"], "owner")
+        assert result["status"] == "succeeded", result["error"]
+        assert result["result"]["model_id"] is None and result["result"]["usage"] is None
+        assert result["result"]["previous_decision_revision"] == 42
+        assert games.position_lesson("owner", game["game_id"], 58)["previous_decision_revision"] == 42
+    finally:
+        engine.close()
+        model.close()

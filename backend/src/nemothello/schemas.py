@@ -301,6 +301,7 @@ class PositionLesson(BaseModel):
     game_id: str
     revision: int
     task_id: str | None = None
+    previous_decision_revision: int | None = None
     evidence: ReviewEvidence
     comparison: TeachingComparison
     hint_adoption: HintAdoption

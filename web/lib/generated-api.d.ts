@@ -604,6 +604,8 @@ export interface components {
             revision: number;
             /** Task Id */
             task_id?: string | null;
+            /** Previous Decision Revision */
+            previous_decision_revision?: number | null;
             evidence: components["schemas"]["ReviewEvidence"];
             comparison: components["schemas"]["TeachingComparison"];
             hint_adoption: components["schemas"]["HintAdoption"];

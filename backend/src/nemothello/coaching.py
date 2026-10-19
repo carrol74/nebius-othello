@@ -10,6 +10,11 @@ from nemothello.rules import apply_move, legal_moves, opponent
 REVIEW_VERSION = "grounded-v1"
 COLORS = {"X": "Black", "O": "White"}
 LESSONS = {
+    "forced_move": {
+        "title": "Recognize a forced move",
+        "text": "When only one square is legal, you must play it. To study a decision you could change, revisit an earlier turn with more than one legal move.",
+        "question": "At which earlier turn did you still have a choice?",
+    },
     "comparison": {
         "title": "Compare the whole position",
         "text": "Compare alternatives from the same player's perspective. The search score considers later replies; immediate disc gains alone do not determine the best move.",
@@ -146,6 +151,16 @@ def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None):
     played, best = candidates[actual], candidates[recommended]
     a, b = comparisons[actual], comparisons[recommended]
     prefix = f"p{revision}:"
+    if len(candidates) == 1:
+        decision = (f"At position {revision}, {COLORS[actor]} played {actual}." if item.get("is_played", True)
+                    else f"At position {revision}, {COLORS[actor]} must play {actual}; no move has been recorded yet.")
+        consequence = (f" After {actual}, {COLORS[opponent(actor)]} can take "
+                       + ", ".join(a["opponent_corners"]) + ".") if a["opponent_corners"] else ""
+        return [fact(prefix + "decision", decision, "forced_move", revision),
+                fact(prefix + "forced_move", f"{actual} is the only legal move for {COLORS[actor]}. "
+                     "There is no alternative to compare on this turn." + consequence
+                     + " Revisit an earlier turn with more than one legal move to study a choice you could change.",
+                     "forced_move", revision)], ["forced_move"]
     score_kind = "exact endgame scores under best play" if played["score_kind"] == best["score_kind"] == "exact" else "search scores; non-exact values are estimates"
     facts = [
         fact(prefix + "decision", f"At position {revision}, {COLORS[actor]} "

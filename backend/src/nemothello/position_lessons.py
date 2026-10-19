@@ -25,6 +25,15 @@ def check_teachable(game: dict[str, Any], revision: int) -> Position:
     return position
 
 
+def previous_decision_revision(game: dict[str, Any], revision: int) -> int | None:
+    for event in reversed(game["history"]):
+        before = event["revision"] - 1
+        if before < revision and event["kind"] == "move" and event["actor"] == game["human_color"]:
+            if len(position_at(game, before).moves) > 1:
+                return before
+    return None
+
+
 def analyze_position(game: dict[str, Any], revision: int, engine) -> dict[str, Any]:
     position = check_teachable(game, revision)
     analysis = {key: value for key, value in engine.analyze(position.board, position.turn).items()

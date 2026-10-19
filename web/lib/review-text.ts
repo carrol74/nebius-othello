@@ -33,6 +33,10 @@ export function positionFactText(fact: ReviewFact, entry: ReviewEvidence, locale
   const a = entry.comparisons?.find((item) => item.coordinate === entry.actual_move);
   const b = entry.comparisons?.find((item) => item.coordinate === entry.recommended_move);
   const kind = fact.id.split(":")[1];
+  if (entry.analysis.candidates.length === 1) {
+    if (kind === "decision") return `局面 ${entry.revision}，${color(entry.actor)}${entry.is_played === false ? "必须下" : "实际落子"} ${entry.actual_move}，这是唯一合法落点。`;
+    if (kind === "forced_move") return `${entry.actual_move} 是${color(entry.actor)}唯一的合法落点，这一回合没有其他走法可选。${a?.opponent_corners.length ? `随后${color(entry.actor === "X" ? "O" : "X")}可以占 ${a.opponent_corners.join("、")}。` : ""}想学习可调整的选择，请回看更早有多个合法落点的回合。`;
+  }
   if (kind === "decision") return `局面 ${entry.revision}，${color(entry.actor)}${entry.is_played === false ? "可以下" : "选择了"} ${entry.actual_move}，引擎推荐 ${entry.recommended_move}。`;
   if (kind === "score" || kind === "endgame") return `从${color(entry.actor)}视角，${actual.coordinate} 评分 ${actual.score}，${best.coordinate} 评分 ${best.score}，相差 ${entry.score_loss}。${actual.score_kind === "exact" && best.score_kind === "exact" ? "这是双方最佳应对下的精确终局子差。" : "这是搜索估计。"}`;
   if (kind === "mobility" && a && b) return `${a.coordinate} 后对手有 ${a.opponent_moves} 个合法落点，${b.coordinate} 后有 ${b.opponent_moves} 个。数量不能单独解释搜索推荐。`;

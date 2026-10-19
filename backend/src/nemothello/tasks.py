@@ -6,7 +6,7 @@ from nemothello.coaching import REVIEW_VERSION, enrich_evidence, select_key_move
 from nemothello.errors import AppError
 from nemothello.games import Games
 from nemothello.nemotron import Nemotron
-from nemothello.position_lessons import analyze_position, lesson_context
+from nemothello.position_lessons import analyze_position, lesson_context, previous_decision_revision
 from nemothello.rules import Position
 from nemothello.storage import Store
 from nemothello.teaching import compare_lesson
@@ -93,6 +93,7 @@ class Tasks:
             evidence = analyze_position(game, revision, self.games.review_engine_of(game))
         context = lesson_context(game, evidence, self.store.list_records("hint", owner))
         lesson = {"game_id": game_id, "revision": revision, "task_id": task_id, "evidence": evidence,
+                  "previous_decision_revision": previous_decision_revision(game, revision),
                   "comparison": compare_lesson(context, revision, evidence["actual_move"]),
                   "hint_adoption": context["hint_adoption"],
                   "coaching": [], "coaching_status": "pending", "coaching_error": None,

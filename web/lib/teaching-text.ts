@@ -1,5 +1,14 @@
 import type { Locale } from "./locale";
-import type { TeachingComparison, TeachingFrame, TeachingMove } from "./types";
+import type { ReviewEvidence, TeachingComparison, TeachingFrame, TeachingMove } from "./types";
+
+export function teachingChoiceLabel(item: ReviewEvidence, coordinate: string, locale: Locale): string {
+  const zh = locale === "zh";
+  const labels = [];
+  if (item.is_played !== false && coordinate === item.actual_move) labels.push(zh ? "实际落子" : "Played");
+  if (item.analysis.candidates.length === 1) labels.push(zh ? "唯一合法落点" : "Only legal move");
+  else if (coordinate === item.recommended_move) labels.push(zh ? "推荐落点" : "Recommended");
+  return labels.length ? labels.join(" · ") : zh ? "所选落点" : "Your choice";
+}
 
 export function cornerName(square: string, locale: Locale): string {
   const names: Record<string, [string, string]> = {a1:["top-left corner", "左上角"], h1:["top-right corner", "右上角"], a8:["bottom-left corner", "左下角"], h8:["bottom-right corner", "右下角"]};
@@ -41,7 +50,31 @@ export function captureLineText(lines: string[][], actor: "X" | "O", locale: Loc
   return zh ? `看${direction}：${anchor} 已经有一颗${color}棋子。${color}再下 ${target}，就会把中间的 ${discs} 夹住，全部翻成${color}棋子。` : `Look at ${direction}: ${color} already has a disc at ${anchor}. Playing ${target} traps ${discs} between two ${color} discs and flips them.`;
 }
 
-export function lessonText(comparison: TeachingComparison, move: TeachingMove, locale: Locale): string[] {
+export function lessonText(comparison: TeachingComparison, move: TeachingMove, locale: Locale, legalMoveCount: number): string[] {
+  const zh = locale === "zh";
+  const own = comparison.actor === "X" ? zh ? "黑方" : "Black" : zh ? "白方" : "White";
+  const other = comparison.actor === "X" ? zh ? "白方" : "White" : zh ? "黑方" : "Black";
+  if (legalMoveCount === 1) {
+    const context = zh ? `${move.coordinate} 是${own}此时唯一的合法落点，这一回合没有其他走法可以选择。`
+      : `${move.coordinate} is ${own}'s only legal move here. There is no alternative to choose on this turn.`;
+    const capture = captureLineText(move.capture_lines, comparison.actor === "X" ? "O" : "X", locale);
+    if (move.kind === "corner_given") return [context,
+      zh ? `下完 ${move.coordinate}，${other}可以占${cornerName(move.target!, locale)}。这里演示的是必走一步后的回应。`
+        : `After the forced ${move.coordinate}, ${other} can take the ${cornerName(move.target!, locale)}. This demonstrates the reply to a move you had to make.`,
+      ...(capture ? [capture] : [])];
+    if (move.kind === "corner_forced") return [context,
+      zh ? `在这条续着里，${other}先下 ${move.opponent_reply}，随后占${cornerName(move.target!, locale)}。要寻找可以调整的选择，需要回看更早的回合。`
+        : `In this continuation, ${other} plays ${move.opponent_reply} and can then take the ${cornerName(move.target!, locale)}. Look earlier in the game for a decision you could change.`,
+      ...(capture ? [capture] : [])];
+    return [context, ...moveConsequence(comparison, move, locale)];
+  }
+  const context = move.coordinate === comparison.recommended_move ? [zh
+    ? `${move.coordinate} 是 ${legalMoveCount} 个合法落点中评分最高的走法之一。${move.score < 0 ? `当前评分仍偏向${other}。` : ""}`
+    : `${move.coordinate} is among the highest-rated of ${legalMoveCount} legal moves.${move.score < 0 ? ` The current score still favors ${other}.` : ""}`] : [];
+  return [...context, ...moveConsequence(comparison, move, locale)];
+}
+
+function moveConsequence(comparison: TeachingComparison, move: TeachingMove, locale: Locale): string[] {
   const zh = locale === "zh";
   const other = comparison.actor === "X" ? zh ? "白方" : "White" : zh ? "黑方" : "Black";
   const own = comparison.actor === "X" ? zh ? "黑方" : "Black" : zh ? "白方" : "White";

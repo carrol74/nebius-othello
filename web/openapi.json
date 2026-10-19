@@ -2044,6 +2044,17 @@
             ],
             "title": "Task Id"
           },
+          "previous_decision_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Decision Revision"
+          },
           "evidence": {
             "$ref": "#/components/schemas/ReviewEvidence"
           },
