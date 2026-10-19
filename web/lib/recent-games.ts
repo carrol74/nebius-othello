@@ -7,6 +7,7 @@ export type RecentGame = {
   human_color: Color | null;
   branch: boolean;
   number: number;
+  status?: "finished";
 };
 
 export function readRecentGames(saved: string): RecentGame[] {
@@ -22,10 +23,12 @@ export function readRecentGames(saved: string): RecentGame[] {
       : typeof item.label === "string" && item.label.includes("White") ? "O" : null,
     branch: typeof item.branch === "boolean" ? item.branch : typeof item.label === "string" && item.label.startsWith("Branch"),
     number: Number.isInteger(item.number) && item.number > 0 ? item.number : items.length - index,
+    status: item.status === "finished" ? "finished" : undefined,
   }));
 }
 
 export function rememberGame(current: RecentGame[], game: GameState): RecentGame[] {
+  if (game.status !== "finished") return current.filter((item) => item.game_id !== game.game_id);
   const previous = current.find((item) => item.game_id === game.game_id);
   return [{
     game_id: game.game_id,
@@ -33,6 +36,7 @@ export function rememberGame(current: RecentGame[], game: GameState): RecentGame
     human_color: game.human_color,
     branch: !!game.parent_game_id,
     number: previous?.number ?? Math.max(0, ...current.map((item) => item.number)) + 1,
+    status: "finished" as const,
   }, ...current.filter((item) => item.game_id !== game.game_id)].slice(0, 20);
 }
 
