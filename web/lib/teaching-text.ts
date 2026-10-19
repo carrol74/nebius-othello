@@ -1,12 +1,15 @@
 import type { Locale } from "./locale";
-import type { ReviewEvidence, TeachingComparison, TeachingFrame, TeachingMove } from "./types";
+import type { TeachingComparison, TeachingFrame, TeachingMove } from "./types";
 
-export function teachingChoiceLabel(item: ReviewEvidence, coordinate: string, locale: Locale): string {
+export function teachingChoiceLabel(move: TeachingMove, locale: Locale): string {
   const zh = locale === "zh";
   const labels = [];
-  if (item.is_played !== false && coordinate === item.actual_move) labels.push(zh ? "实际落子" : "Played");
-  if (item.analysis.candidates.length === 1) labels.push(zh ? "唯一合法落点" : "Only legal move");
-  else if (coordinate === item.recommended_move) labels.push(zh ? "推荐落点" : "Recommended");
+  if (move.assessment.is_played) labels.push(zh ? "实际落子" : "Played");
+  const status = move.assessment.status;
+  if (status === "forced") labels.push(zh ? "唯一合法落点" : "Only legal move");
+  else if (status === "best") labels.push(zh ? "评分最高" : "Best rated");
+  else if (status === "tied_best") labels.push(zh ? "并列最高" : "Tied best rated");
+  else if (move.assessment.is_played) labels.push(zh ? "评分较低" : "Lower rated");
   return labels.length ? labels.join(" · ") : zh ? "所选落点" : "Your choice";
 }
 
@@ -27,7 +30,7 @@ export function lessonPrompt(comparison: TeachingComparison, move: TeachingMove,
 }
 
 export function defenseFeedback(rootMove: string, attempted: string, target: string, locale: Locale): string {
-  return locale === "zh" ? `你下 ${attempted} 后，对手仍能占${cornerName(target, locale)}。需要调整的是更早的 ${rootMove}；走到这里，已经守不住这个角。` : `After your ${attempted}, the opponent can still take the ${cornerName(target, locale)}. The move to reconsider is the earlier ${rootMove}; by this point the corner cannot be saved.`;
+  return locale === "zh" ? `你下 ${attempted} 后，对手仍能占${cornerName(target, locale)}。这说明这条续着里的防守没有挡住抢角；可以返回 ${rootMove} 前的局面，比较另一条走法。` : `After your ${attempted}, the opponent can still take the ${cornerName(target, locale)} in this continuation. Return to the position before ${rootMove} to compare the other line.`;
 }
 
 export function stepText(frame: TeachingFrame, locale: Locale): string {
@@ -50,28 +53,29 @@ export function captureLineText(lines: string[][], actor: "X" | "O", locale: Loc
   return zh ? `看${direction}：${anchor} 已经有一颗${color}棋子。${color}再下 ${target}，就会把中间的 ${discs} 夹住，全部翻成${color}棋子。` : `Look at ${direction}: ${color} already has a disc at ${anchor}. Playing ${target} traps ${discs} between two ${color} discs and flips them.`;
 }
 
-export function lessonText(comparison: TeachingComparison, move: TeachingMove, locale: Locale, legalMoveCount: number): string[] {
+export function lessonText(comparison: TeachingComparison, move: TeachingMove, locale: Locale): string[] {
   const zh = locale === "zh";
   const own = comparison.actor === "X" ? zh ? "黑方" : "Black" : zh ? "白方" : "White";
   const other = comparison.actor === "X" ? zh ? "白方" : "White" : zh ? "黑方" : "Black";
-  if (legalMoveCount === 1) {
+  const assessment = move.assessment;
+  if (assessment.status === "forced") {
     const context = zh ? `${move.coordinate} 是${own}此时唯一的合法落点，这一回合没有其他走法可以选择。`
       : `${move.coordinate} is ${own}'s only legal move here. There is no alternative to choose on this turn.`;
-    const capture = captureLineText(move.capture_lines, comparison.actor === "X" ? "O" : "X", locale);
-    if (move.kind === "corner_given") return [context,
-      zh ? `下完 ${move.coordinate}，${other}可以占${cornerName(move.target!, locale)}。这里演示的是必走一步后的回应。`
-        : `After the forced ${move.coordinate}, ${other} can take the ${cornerName(move.target!, locale)}. This demonstrates the reply to a move you had to make.`,
-      ...(capture ? [capture] : [])];
-    if (move.kind === "corner_forced") return [context,
-      zh ? `在这条续着里，${other}先下 ${move.opponent_reply}，随后占${cornerName(move.target!, locale)}。要寻找可以调整的选择，需要回看更早的回合。`
-        : `In this continuation, ${other} plays ${move.opponent_reply} and can then take the ${cornerName(move.target!, locale)}. Look earlier in the game for a decision you could change.`,
-      ...(capture ? [capture] : [])];
     return [context, ...moveConsequence(comparison, move, locale)];
   }
-  const context = move.coordinate === comparison.recommended_move ? [zh
-    ? `${move.coordinate} 是 ${legalMoveCount} 个合法落点中评分最高的走法之一。${move.score < 0 ? `当前评分仍偏向${other}。` : ""}`
-    : `${move.coordinate} is among the highest-rated of ${legalMoveCount} legal moves.${move.score < 0 ? ` The current score still favors ${other}.` : ""}`] : [];
-  return [...context, ...moveConsequence(comparison, move, locale)];
+  const basis = assessment.score_kind === "exact" ? zh ? "精确终局分析" : "Exact endgame analysis" : zh ? "当前搜索" : "The current search";
+  const context = assessment.status === "tied_best" ? zh
+    ? `${basis}把 ${assessment.best_moves.join("、")} 并列为最高评分。${move.coordinate} 是其中之一。`
+    : `${basis} rates ${assessment.best_moves.join(", ")} equally best. ${move.coordinate} is one of these tied moves.`
+    : assessment.status === "best" ? zh
+      ? `${basis}中，${move.coordinate} 在 ${assessment.legal_move_count} 个合法落点里评分最高。`
+      : `${basis} rates ${move.coordinate} highest among ${assessment.legal_move_count} legal moves.`
+      : zh ? `${basis}对 ${assessment.best_moves.join("、")} 的评分高于 ${move.coordinate}。`
+        : `${basis} rates ${assessment.best_moves.join(", ")} above ${move.coordinate}.`;
+  const evaluation = assessment.position === "behind" ? [zh
+    ? `${assessment.score_kind === "estimate" ? "当前估计" : "精确终局"}评分仍偏向${other}，即使选择最高评分的走法，局面也仍然不利。`
+    : `The ${assessment.score_kind === "estimate" ? "estimated" : "exact endgame"} score still favors ${other}, even with the highest-rated move.`] : [];
+  return [context, ...evaluation, ...moveConsequence(comparison, move, locale)];
 }
 
 function moveConsequence(comparison: TeachingComparison, move: TeachingMove, locale: Locale): string[] {
@@ -81,11 +85,11 @@ function moveConsequence(comparison: TeachingComparison, move: TeachingMove, loc
   const target = move.target;
   const capture = captureLineText(move.capture_lines, comparison.actor === "X" ? "O" : "X", locale);
   if (move.kind === "corner_forced") return [
-    zh ? `${move.coordinate} 把抢角的机会留给了${other}。它先补 ${move.opponent_reply}，下一手就能占${cornerName(target!, locale)}。${move.checked_defenses.length ? "这时再想防守，已经来不及了。" : `${own}此时没有地方能下，必须跳过。`}` : `${move.coordinate} gives ${other} a way to take the corner. They can first play ${move.opponent_reply}, then capture the ${cornerName(target!, locale)}. ${move.checked_defenses.length ? "By then, it is too late to defend it." : `${own} has no legal move and must pass.`}`,
+    zh ? `这条续着里，${other}先下 ${move.opponent_reply}，再占${cornerName(target!, locale)}。${move.checked_defenses.length ? `已核对${own}随后全部 ${move.checked_defenses.length} 个合法回应，仍会留下这个角。` : `${own}此时没有合法落点，必须跳过。`}` : `In this continuation, ${other} plays ${move.opponent_reply} and can then take the ${cornerName(target!, locale)}. ${move.checked_defenses.length ? `All ${move.checked_defenses.length} legal ${own} replies were checked and still leave that corner available.` : `${own} has no legal move and must pass.`}`,
     ...(capture ? [capture + (zh ? "角落棋子以后无法被翻转。" : " A corner disc cannot be flipped later.")] : []),
   ];
   if (move.kind === "corner_given") return [
-    zh ? `${move.coordinate} 让${other}可以直接占${cornerName(target!, locale)}。这颗棋子以后就翻不回来了。` : `${move.coordinate} lets ${other} take the ${cornerName(target!, locale)} straight away. That disc can never be flipped back.`,
+    zh ? `下完 ${move.coordinate}，${other}可以直接占${cornerName(target!, locale)}。角落棋子以后无法被翻转。` : `After ${move.coordinate}, ${other} can take the ${cornerName(target!, locale)} immediately. A corner disc cannot be flipped later.`,
     ...(capture ? [capture] : []),
   ];
   if (move.kind === "corner_taken") return [zh ? `${move.coordinate} 本身就是角落。下在这里，这颗棋子会一直保留到终局。点击演示，查看同时翻转了哪些棋子。` : `${move.coordinate} is a corner. Playing there keeps that disc safe through the end of the game. Step through to see which other discs it flips.`];
@@ -95,17 +99,23 @@ function moveConsequence(comparison: TeachingComparison, move: TeachingMove, loc
 
 export function comparisonTakeaway(comparison: TeachingComparison, locale: Locale): string | null {
   const zh = locale === "zh";
-  const selected = comparison.choices.find((item) => item.coordinate === comparison.selected_move)!;
-  const best = comparison.choices.find((item) => item.coordinate === comparison.recommended_move)!;
-  if (selected === best) return null;
-  if (selected.target && selected.target === best.target && ["corner_given", "corner_forced"].includes(selected.kind) && ["corner_given", "corner_forced"].includes(best.kind)) {
-    return zh ? `这两种走法都会让对手拿到 ${selected.target}，光看谁能占角还分不出优劣。还要比较占角后双方的选择。` : `Both moves let the opponent take ${selected.target}. Corner access alone does not tell us which move is better; we also need to compare the choices left afterward.`;
-  }
-  if (selected.kind === "corner_forced" && best.frames.length > 2 && !best.opponent_corner_moves_after_reply.includes(selected.target!)) {
+  const insight = comparison.insight;
+  if (insight.kind === "forced") return zh ? "想学习可以调整的选择，请回看更早有多个合法落点的回合。" : "To study a choice you could change, return to an earlier turn with more than one legal move.";
+  if (insight.kind === "equal") return zh
+    ? `这两种走法在${insight.score_kind === "exact" ? "精确终局分析" : "当前搜索"}中评分相同，不能仅凭推荐点选了其中一个，就把另一个判成失误。可以比较两条续着的回应。`
+    : `These moves are equally rated by ${insight.score_kind === "exact" ? "exact endgame analysis" : "the current search"}. The recommendation alone gives no score-based reason to reject the other move. Compare their replies.`;
+  if (insight.kind === "shared_corner") return zh
+    ? `这两种走法都会让对手拿到 ${insight.target}，光看谁能占角还分不出优劣。${insight.score_kind === "exact" ? "终局分析" : "当前搜索"}评分偏向 ${insight.better_move}，但这段抢角演示本身还解释不了评分差距。`
+    : `Both moves let the opponent take ${insight.target}. Corner access alone does not tell us which move is better. ${insight.score_kind === "exact" ? "Endgame analysis" : "The current search"} favors ${insight.better_move}, but this corner demonstration does not establish the reason for that score gap.`;
+  const best = comparison.choices.find((item) => item.coordinate === insight.better_move)!;
+  if (insight.kind === "corner_access") return zh
+    ? `下 ${insight.worse_move} 后，对手下一步就能下 ${insight.target}；下 ${insight.better_move} 后，${insight.target} 暂时不是它的合法落点。这是两种走法已核实的一处差别。`
+    : `After ${insight.worse_move}, the opponent can play ${insight.target} immediately. After ${insight.better_move}, ${insight.target} is not a legal reply on the next turn. This is one verified difference between the moves.`;
+  if (insight.kind === "illustrated_corner") {
     const reply = best.frames[2].coordinate;
-    const gap = selected.capture_lines[0]?.slice(1, -1).find((square) => best.frames[2].board[Number(square[1]) - 1][square.charCodeAt(0) - 97] === ".");
-    const difference = gap ? zh ? `${gap} 仍然空着，这条夹击线没有连起来。` : `${gap} stays empty, so the same capture line is broken.` : zh ? `对手还不能下 ${selected.target}。` : `the opponent cannot yet play ${selected.target}.`;
+    const difference = insight.gap ? zh ? `${insight.gap} 仍然空着，这条夹击线没有连起来。` : `${insight.gap} stays empty, so the same capture line is broken.` : zh ? `对手还不能下 ${insight.target}。` : `the opponent cannot yet play ${insight.target}.`;
     return zh ? `改走 ${best.coordinate}，在图中的 ${reply === "pass" ? "跳过回合" : reply} 回应后，${difference}下在空角旁边之前，先替对手想一步：它能在哪里补一颗棋子，接着抢角？` : `With ${best.coordinate}, after the illustrated ${reply} reply, ${difference} Before playing beside an empty corner, ask where the opponent could place a disc to set up a corner capture.`;
   }
-  return zh ? "看清对手这一手的变化后，再换一种落子，比较它会怎样回应。" : "Once you understand this reply, switch moves and compare what the opponent can do in the other line.";
+  return zh ? `当前评分偏向 ${insight.better_move}。这两条短续着展示了可能的回应，还不足以归纳出评分差距的单一原因。切换落点，比较对手下在哪里、翻转哪些棋子。`
+    : `The current scores favor ${insight.better_move}. These short lines show possible replies but do not establish a single reason for the score gap. Switch moves to compare the reply squares and flipped discs.`;
 }

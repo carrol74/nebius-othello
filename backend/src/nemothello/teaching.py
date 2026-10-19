@@ -2,6 +2,7 @@ from itertools import pairwise
 
 from nemothello.board_features import CORNERS
 from nemothello.coaching import variation_frames
+from nemothello.decision import assess_decision, reference_move
 from nemothello.errors import AppError
 from nemothello.rules import (
     DIRECTIONS,
@@ -53,6 +54,7 @@ def teach_move(item, move):
     if not pv or pv[0] != move:
         raise AppError("REVIEW_VARIATION", "Search variation does not start with its candidate", 502)
     lesson = {"coordinate": move, "score": candidate["score"], "score_kind": candidate["score_kind"],
+              "assessment": assess_decision(item, move),
               "kind": "line", "target": None, "opponent_reply": None,
               "checked_defenses": [], "defense_lines": [], "capture_lines": [], "line_source": "engine"}
     demonstration = pv[:3]
@@ -89,13 +91,40 @@ def teach_move(item, move):
     return lesson
 
 
+def comparison_insight(choices):
+    first = choices[0]
+    result = {"kind": "forced", "better_move": None, "worse_move": None, "target": None, "gap": None,
+              "score_kind": first["assessment"]["score_kind"]}
+    if first["assessment"]["status"] == "forced":
+        return result
+    other = choices[1]
+    if first["score"] == other["score"]:
+        return {**result, "kind": "equal"}
+    better, worse = sorted(choices, key=lambda choice: choice["score"], reverse=True)
+    result.update(kind="search", better_move=better["coordinate"], worse_move=worse["coordinate"])
+    corner_kinds = {"corner_given", "corner_forced"}
+    if worse["kind"] in corner_kinds:
+        target = worse["target"]
+        if better["kind"] in corner_kinds and better["target"] == target:
+            result.update(kind="shared_corner", target=target)
+        elif worse["kind"] == "corner_given" and target not in corner_access(
+                tuple(better["frames"][1]["board"]), opponent(better["frames"][0]["turn"])):
+            result.update(kind="corner_access", target=target)
+        elif (worse["kind"] == "corner_forced" and len(better["frames"]) > 2
+              and target not in better["opponent_corner_moves_after_reply"]):
+            result.update(kind="illustrated_corner", target=target)
+            result["gap"] = next((square for line in worse["capture_lines"] for square in line[1:-1]
+                                  if better["frames"][2]["board"][int(square[1]) - 1][ord(square[0]) - 97] == "."), None)
+    return result
+
+
 def compare_lesson(review, revision, move):
     item = next((entry for entry in review["evidence"] if entry["revision"] == revision), None)
     if item is None:
         raise AppError("REVIEW_POSITION", "Choose a position before a recorded move", 422)
-    if move not in legal_moves(tuple(item["analysis"]["board"]), item["actor"]):
-        raise AppError("ILLEGAL_MOVE", "Choose a legal comparison move", 422)
-    choices = list(dict.fromkeys([move, item["recommended_move"]]))
+    assessment = assess_decision(item, move)
+    reference = reference_move(item, move, assessment)
+    choices = [teach_move(item, coordinate) for coordinate in [move, reference] if coordinate is not None]
     return {"revision": revision, "actor": item["actor"], "selected_move": move,
-            "recommended_move": item["recommended_move"],
-            "choices": [teach_move(item, choice) for choice in choices]}
+            "recommended_move": assessment["best_moves"][0], "reference_move": reference,
+            "insight": comparison_insight(choices), "choices": choices}

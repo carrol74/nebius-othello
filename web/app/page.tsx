@@ -195,8 +195,7 @@ export default function Home() {
   const trackTask = useCallback((entry: TrackedTask) => {
     setTasks((current) => [entry, ...current.filter((item) => item.task.task_id !== entry.task.task_id)].slice(0, 50));
     if (entry.task.kind === "lesson" && entry.revision !== undefined) {
-      if (entry.task.result) setLessons((current) => ({...current, [lessonKey(entry.game_id, entry.revision!)]: entry.task.result as PositionLesson}));
-      else void loadLesson(entry.game_id, entry.revision).catch((failure) => setError(message(failure)));
+      void loadLesson(entry.game_id, entry.revision).catch((failure) => setError(message(failure)));
     }
   }, [loadLesson]);
 
@@ -259,9 +258,11 @@ export default function Home() {
   const canMove = mode === "play" && !!game && !busy && !playback && !game.auto_play && game.status === "active" && game.turn === game.human_color && (!tips || (!!visibleHint && hintConfirmed));
   const lastMove = mode === "play" ? game?.history.findLast((item) => item.kind === "move") : null;
   const currentLesson = canTeach && game ? lessons[lessonKey(game.game_id, historyRevision)] : null;
-  const variationLabel = variation && currentLesson ? variation.coordinate === currentLesson.evidence.actual_move && currentLesson.evidence.is_played !== false
-    ? t("Played move", "实际走法") : variation.coordinate === currentLesson.evidence.recommended_move
-      ? t("Recommended move", "推荐走法") : t("Comparison move", "对比走法") : t("Demonstration", "落子演示");
+  const variationLabel = variation ? variation.assessment.is_played ? t("Played move", "实际走法")
+    : variation.assessment.status === "forced" ? t("Only legal move", "唯一合法落点")
+    : variation.assessment.status === "best" ? t("Best-rated move", "评分最高的走法")
+    : variation.assessment.status === "tied_best" ? t("Tied best-rated move", "并列最高的走法")
+    : t("Comparison move", "对比走法") : t("Demonstration", "落子演示");
   const currentTasks = tasks.filter((entry) => entry.game_id === game?.game_id && entry.revision === historyRevision);
   const pendingLesson = currentTasks.some((entry) => entry.purpose === "lesson" && ["queued", "running"].includes(entry.task.status));
   const latestLessonTask = currentTasks.find((entry) => entry.purpose === "lesson");

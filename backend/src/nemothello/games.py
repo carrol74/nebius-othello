@@ -12,6 +12,7 @@ from nemothello.opponents import Difficulty, EdaxOpponent
 from nemothello.position_lessons import check_teachable, previous_decision_revision
 from nemothello.rules import Position, opponent
 from nemothello.schemas import GameState
+from nemothello.teaching import compare_lesson
 from nemothello.storage import Store
 
 
@@ -337,7 +338,12 @@ class Games:
             saved = next((item for item in self.store.list_records("lesson", owner, db)
                           if item["game_id"] == game_id and item["revision"] == revision), None)
             if saved:
-                return {**saved, "previous_decision_revision": previous_decision_revision(game, revision)}
+                comparison = compare_lesson({"evidence": [saved["evidence"]]}, revision,
+                                            saved["evidence"]["actual_move"])
+                return {**saved, "comparison": comparison,
+                        "evidence": {**saved["evidence"], "recommended_move": comparison["recommended_move"],
+                                     "score_loss": comparison["choices"][0]["assessment"]["score_loss"]},
+                        "previous_decision_revision": previous_decision_revision(game, revision)}
             tasks = [item for item in self.store.list_records("task", owner, db)
                      if item["game_id"] == game_id and item["kind"] == "lesson"
                      and item["inputs"]["revision"] == revision]

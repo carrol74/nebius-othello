@@ -1,5 +1,5 @@
 import type { Locale } from "./locale";
-import type { Review, ReviewEvidence, ReviewFact } from "./types";
+import type { Review, ReviewEvidence, ReviewFact, TeachingMove } from "./types";
 
 export function factText(fact: ReviewFact, review: Review, locale: Locale): string {
   if (locale === "en") return fact.text;
@@ -25,7 +25,7 @@ export function factText(fact: ReviewFact, review: Review, locale: Locale): stri
   return positionFactText(fact, entry, locale);
 }
 
-export function positionFactText(fact: ReviewFact, entry: ReviewEvidence, locale: Locale): string {
+export function positionFactText(fact: ReviewFact, entry: ReviewEvidence, locale: Locale, assessment?: TeachingMove["assessment"]): string {
   if (locale === "en") return fact.text;
   const color = (actor: string) => actor === "X" ? "黑方" : "白方";
   const actual = entry.analysis.candidates.find((item) => item.coordinate === entry.actual_move)!;
@@ -33,11 +33,11 @@ export function positionFactText(fact: ReviewFact, entry: ReviewEvidence, locale
   const a = entry.comparisons?.find((item) => item.coordinate === entry.actual_move);
   const b = entry.comparisons?.find((item) => item.coordinate === entry.recommended_move);
   const kind = fact.id.split(":")[1];
-  if (entry.analysis.candidates.length === 1) {
-    if (kind === "decision") return `局面 ${entry.revision}，${color(entry.actor)}${entry.is_played === false ? "必须下" : "实际落子"} ${entry.actual_move}，这是唯一合法落点。`;
-    if (kind === "forced_move") return `${entry.actual_move} 是${color(entry.actor)}唯一的合法落点，这一回合没有其他走法可选。${a?.opponent_corners.length ? `随后${color(entry.actor === "X" ? "O" : "X")}可以占 ${a.opponent_corners.join("、")}。` : ""}想学习可调整的选择，请回看更早有多个合法落点的回合。`;
+  if (kind === "forced_move") return `${entry.actual_move} 是${color(entry.actor)}唯一的合法落点，这一回合没有其他走法可选。${a?.opponent_corners.length ? `随后${color(entry.actor === "X" ? "O" : "X")}可以占 ${a.opponent_corners.join("、")}。` : ""}想学习可调整的选择，请回看更早有多个合法落点的回合。`;
+  if (kind === "decision") {
+    const judgment = assessment ? ({forced:"这是唯一合法落点。", best:"这是评分最高的合法落点。", tied_best:`它与 ${assessment.best_moves.join("、")} 并列最高评分。`, lower_rated:`当前评分低于 ${assessment.best_moves.join("、")}。`})[assessment.status] : "";
+    return `局面 ${entry.revision}，${color(entry.actor)}${entry.is_played === false ? "可以下" : "实际落子"} ${entry.actual_move}。${judgment}`;
   }
-  if (kind === "decision") return `局面 ${entry.revision}，${color(entry.actor)}${entry.is_played === false ? "可以下" : "选择了"} ${entry.actual_move}，引擎推荐 ${entry.recommended_move}。`;
   if (kind === "score" || kind === "endgame") return `从${color(entry.actor)}视角，${actual.coordinate} 评分 ${actual.score}，${best.coordinate} 评分 ${best.score}，相差 ${entry.score_loss}。${actual.score_kind === "exact" && best.score_kind === "exact" ? "这是双方最佳应对下的精确终局子差。" : "这是搜索估计。"}`;
   if (kind === "mobility" && a && b) return `${a.coordinate} 后对手有 ${a.opponent_moves} 个合法落点，${b.coordinate} 后有 ${b.opponent_moves} 个。数量不能单独解释搜索推荐。`;
   if (kind === "frontier" && a && b) return `${a.coordinate} 后双方前沿棋子的数量差为 ${a.frontier_difference}，${b.coordinate} 后为 ${b.frontier_difference}，均按${color(entry.actor)}减去对手计算。前沿棋子指邻接空位的棋子。`;

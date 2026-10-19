@@ -4,6 +4,7 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from nemothello.board_features import CORNERS, candidate_features
+from nemothello.decision import assess_decision
 from nemothello.errors import AppError
 from nemothello.rules import apply_move, legal_moves, opponent
 
@@ -145,13 +146,15 @@ def summary_facts(review: dict[str, Any]) -> list[dict[str, Any]]:
 
 def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None):
     revision, actor = item["revision"], item["actor"]
-    actual, recommended = item["actual_move"], item["recommended_move"]
+    actual = item["actual_move"]
+    assessment = assess_decision(item, actual)
+    recommended = assessment["best_moves"][0]
     candidates = {entry["coordinate"]: entry for entry in item["analysis"]["candidates"]}
     comparisons = {entry["coordinate"]: entry for entry in item["comparisons"]}
     played, best = candidates[actual], candidates[recommended]
     a, b = comparisons[actual], comparisons[recommended]
     prefix = f"p{revision}:"
-    if len(candidates) == 1:
+    if assessment["status"] == "forced":
         decision = (f"At position {revision}, {COLORS[actor]} played {actual}." if item.get("is_played", True)
                     else f"At position {revision}, {COLORS[actor]} must play {actual}; no move has been recorded yet.")
         consequence = (f" After {actual}, {COLORS[opponent(actor)]} can take "
@@ -161,12 +164,15 @@ def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None):
                      "There is no alternative to compare on this turn." + consequence
                      + " Revisit an earlier turn with more than one legal move to study a choice you could change.",
                      "forced_move", revision)], ["forced_move"]
-    score_kind = "exact endgame scores under best play" if played["score_kind"] == best["score_kind"] == "exact" else "search scores; non-exact values are estimates"
+    score_kind = "exact endgame scores under best play" if assessment["score_kind"] == "exact" else "search scores; non-exact values are estimates"
+    judgment = (f" This is one of the equally highest-rated moves: {', '.join(assessment['best_moves'])}."
+                if assessment["status"] == "tied_best" else " This is the highest-rated legal move."
+                if assessment["status"] == "best" else f" The search rates {recommended} higher.")
     facts = [
         fact(prefix + "decision", f"At position {revision}, {COLORS[actor]} "
              + (f"played {actual}." if item.get("is_played", True) else f"can play {actual}; no move has been recorded yet.")
-             + f" The analysis recommendation is {recommended}; this is separate from any hint shown during play.", "comparison", revision),
-        fact(prefix + "score", f"From {COLORS[actor]}'s perspective, {actual} scores {played['score']:g} and {recommended} scores {best['score']:g}. The difference is {item['score_loss']:g}; these are {score_kind}." + (" These alternatives are equally rated." if item["score_loss"] == 0 else " Higher scores favor this player."), "comparison", revision),
+             + judgment + f" There are {assessment['legal_move_count']} legal moves. This assessment is separate from any hint shown during play.", "comparison", revision),
+        fact(prefix + "score", f"From {COLORS[actor]}'s perspective, {actual} scores {played['score']:g} and {recommended} scores {best['score']:g}. The difference is {assessment['score_loss']:g}; these are {score_kind}." + (" These alternatives are equally rated." if assessment["score_loss"] == 0 else " Higher scores favor this player."), "comparison", revision),
         fact(prefix + "mobility", f"After {actual}, {COLORS[opponent(actor)]} has {a['opponent_moves']} legal replies; after {recommended}, {b['opponent_moves']}. Reply count alone does not explain the search preference.", "mobility", revision),
         fact(prefix + "frontier", f"After {actual}, the frontier-disc difference is {a['frontier_difference']}; after {recommended}, {b['frontier_difference']}, counting {COLORS[actor]}'s frontier discs minus the opponent's.", "frontier", revision),
     ]
@@ -190,7 +196,7 @@ def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None):
                 texts.append(f"After {move}, " + (f"{COLORS[opponent(actor)]} must pass and {COLORS[actor]} moves again." if entry["own_moves"] else "neither player can move, so the game ends."))
         facts.append(fact(prefix + "pass", " ".join(texts), "pass", revision))
         lessons.append("pass")
-    if played["score_kind"] == best["score_kind"] == "exact":
+    if assessment["score_kind"] == "exact":
         facts.append(fact(prefix + "endgame", f"These alternatives have exact endgame scores: {actual} {played['score']:g}, {recommended} {best['score']:g}, from {COLORS[actor]}'s perspective under best play.", "endgame", revision))
         lessons.append("endgame")
     for move in sorted((extra_moves or set()) & candidates.keys() - {actual, recommended}):
@@ -237,6 +243,7 @@ def review_context(review: dict[str, Any], question: str | None, revision: int |
         item = original if original.get("comparisons") else enrich_evidence(original)
         facts, lessons = position_facts(item, {move.lower() for move in extra})
         positions.append({"revision": item["revision"], "actor": COLORS[item["actor"]],
+                          "decision": assess_decision(item, item["actual_move"]),
                           "human": item["actor"] == review["human_color"], "facts": facts,
                           "allowed_lessons": lessons})
     for requested_revision in sorted(requested - {item["revision"] for item in positions}):

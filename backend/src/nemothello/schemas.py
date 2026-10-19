@@ -158,6 +158,16 @@ class TeachingDefense(BaseModel):
     frames: list[TeachingFrame]
 
 
+class DecisionAssessment(BaseModel):
+    status: Literal["forced", "best", "tied_best", "lower_rated"]
+    legal_move_count: int = Field(ge=1)
+    best_moves: list[Coordinate]
+    is_played: bool
+    score_loss: float = Field(ge=0)
+    score_kind: Literal["estimate", "exact"]
+    position: Literal["ahead", "behind", "level"]
+
+
 class TeachingMove(BaseModel):
     coordinate: Coordinate
     score: float
@@ -171,6 +181,16 @@ class TeachingMove(BaseModel):
     opponent_corner_moves_after_reply: list[Coordinate]
     line_source: Literal["engine", "rules"]
     frames: list[TeachingFrame]
+    assessment: DecisionAssessment
+
+
+class TeachingInsight(BaseModel):
+    kind: Literal["forced", "equal", "corner_access", "illustrated_corner", "shared_corner", "search"]
+    better_move: Coordinate | None
+    worse_move: Coordinate | None
+    target: Coordinate | None
+    gap: Coordinate | None
+    score_kind: Literal["estimate", "exact"]
 
 
 class TeachingComparison(BaseModel):
@@ -178,6 +198,8 @@ class TeachingComparison(BaseModel):
     actor: Color
     selected_move: Coordinate
     recommended_move: Coordinate
+    reference_move: Coordinate | None
+    insight: TeachingInsight
     choices: list[TeachingMove]
 
 

@@ -1479,6 +1479,70 @@
         ],
         "title": "CreateGame"
       },
+      "DecisionAssessment": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "forced",
+              "best",
+              "tied_best",
+              "lower_rated"
+            ],
+            "title": "Status"
+          },
+          "legal_move_count": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Legal Move Count"
+          },
+          "best_moves": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Best Moves"
+          },
+          "is_played": {
+            "type": "boolean",
+            "title": "Is Played"
+          },
+          "score_loss": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Score Loss"
+          },
+          "score_kind": {
+            "type": "string",
+            "enum": [
+              "estimate",
+              "exact"
+            ],
+            "title": "Score Kind"
+          },
+          "position": {
+            "type": "string",
+            "enum": [
+              "ahead",
+              "behind",
+              "level"
+            ],
+            "title": "Position"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "legal_move_count",
+          "best_moves",
+          "is_played",
+          "score_loss",
+          "score_kind",
+          "position"
+        ],
+        "title": "DecisionAssessment"
+      },
       "GameResult": {
         "properties": {
           "black_count": {
@@ -2830,6 +2894,21 @@
             "pattern": "^[a-h][1-8]$",
             "title": "Recommended Move"
           },
+          "reference_move": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference Move"
+          },
+          "insight": {
+            "$ref": "#/components/schemas/TeachingInsight"
+          },
           "choices": {
             "items": {
               "$ref": "#/components/schemas/TeachingMove"
@@ -2844,6 +2923,8 @@
           "actor",
           "selected_move",
           "recommended_move",
+          "reference_move",
+          "insight",
           "choices"
         ],
         "title": "TeachingComparison"
@@ -2941,6 +3022,88 @@
           "flipped"
         ],
         "title": "TeachingFrame"
+      },
+      "TeachingInsight": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "forced",
+              "equal",
+              "corner_access",
+              "illustrated_corner",
+              "shared_corner",
+              "search"
+            ],
+            "title": "Kind"
+          },
+          "better_move": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Better Move"
+          },
+          "worse_move": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Worse Move"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "gap": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gap"
+          },
+          "score_kind": {
+            "type": "string",
+            "enum": [
+              "estimate",
+              "exact"
+            ],
+            "title": "Score Kind"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "better_move",
+          "worse_move",
+          "target",
+          "gap",
+          "score_kind"
+        ],
+        "title": "TeachingInsight"
       },
       "TeachingMove": {
         "properties": {
@@ -3044,6 +3207,9 @@
             },
             "type": "array",
             "title": "Frames"
+          },
+          "assessment": {
+            "$ref": "#/components/schemas/DecisionAssessment"
           }
         },
         "type": "object",
@@ -3059,7 +3225,8 @@
           "capture_lines",
           "opponent_corner_moves_after_reply",
           "line_source",
-          "frames"
+          "frames",
+          "assessment"
         ],
         "title": "TeachingMove"
       },

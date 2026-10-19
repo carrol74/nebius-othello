@@ -418,6 +418,32 @@ export interface components {
              */
             difficulty: "easy" | "medium" | "hard";
         };
+        /** DecisionAssessment */
+        DecisionAssessment: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "forced" | "best" | "tied_best" | "lower_rated";
+            /** Legal Move Count */
+            legal_move_count: number;
+            /** Best Moves */
+            best_moves: string[];
+            /** Is Played */
+            is_played: boolean;
+            /** Score Loss */
+            score_loss: number;
+            /**
+             * Score Kind
+             * @enum {string}
+             */
+            score_kind: "estimate" | "exact";
+            /**
+             * Position
+             * @enum {string}
+             */
+            position: "ahead" | "behind" | "level";
+        };
         /** GameResult */
         GameResult: {
             /** Black Count */
@@ -840,6 +866,9 @@ export interface components {
             selected_move: string;
             /** Recommended Move */
             recommended_move: string;
+            /** Reference Move */
+            reference_move: string | null;
+            insight: components["schemas"]["TeachingInsight"];
             /** Choices */
             choices: components["schemas"]["TeachingMove"][];
         };
@@ -862,6 +891,27 @@ export interface components {
             actor: ("X" | "O") | null;
             /** Flipped */
             flipped: string[];
+        };
+        /** TeachingInsight */
+        TeachingInsight: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "forced" | "equal" | "corner_access" | "illustrated_corner" | "shared_corner" | "search";
+            /** Better Move */
+            better_move: string | null;
+            /** Worse Move */
+            worse_move: string | null;
+            /** Target */
+            target: string | null;
+            /** Gap */
+            gap: string | null;
+            /**
+             * Score Kind
+             * @enum {string}
+             */
+            score_kind: "estimate" | "exact";
         };
         /** TeachingMove */
         TeachingMove: {
@@ -898,6 +948,7 @@ export interface components {
             line_source: "engine" | "rules";
             /** Frames */
             frames: components["schemas"]["TeachingFrame"][];
+            assessment: components["schemas"]["DecisionAssessment"];
         };
         /** ValidationError */
         ValidationError: {

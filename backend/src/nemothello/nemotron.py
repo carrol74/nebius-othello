@@ -13,6 +13,7 @@ from nemothello.coaching import (
     validate_plan,
 )
 from nemothello.errors import AppError
+from nemothello.decision import assess_decision
 
 SYSTEM_PROMPT = (
     "You are an Othello coach selecting a personalized lesson plan from verified evidence. "
@@ -23,6 +24,9 @@ SYSTEM_PROMPT = (
     "that position, including a fact whose topic matches that lesson. "
     "For task=review, set topic=review and select every supplied position exactly once, "
     "in a useful learning order. Prefer a concrete corner or pass lesson when relevant; "
+    "Use each position's decision assessment: a forced move offers no choice; tied best moves "
+    "are equally rated; a best move can still leave its player behind. A corner capture or reply "
+    "count describes a consequence and must not be treated as the cause of a score difference. "
     "use mobility to compare reply counts and comparison when scores are the main evidence. "
     "For task=question, answer the user's intent with topic=comparison, hints, outcome, strategy, "
     "or unsupported. Choose only relevant positions. Never select a position more than once; "
@@ -51,7 +55,7 @@ class Nemotron:
     def explain(self, evidence: dict[str, Any], question: str | None = None,
                 *, revision: int | None = None) -> dict[str, Any]:
         forced = revision is not None and any(
-            item["revision"] == revision and len(item["analysis"]["candidates"]) == 1
+            item["revision"] == revision and assess_decision(item, item["actual_move"])["status"] == "forced"
             for item in evidence.get("evidence", [])
         )
         if question is None and not forced:

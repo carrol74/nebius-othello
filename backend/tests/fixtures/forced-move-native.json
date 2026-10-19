@@ -1431,11 +1431,31 @@
     "actor": "X",
     "selected_move": "d8",
     "recommended_move": "d8",
+    "reference_move": null,
+    "insight": {
+      "kind": "forced",
+      "better_move": null,
+      "worse_move": null,
+      "target": null,
+      "gap": null,
+      "score_kind": "exact"
+    },
     "choices": [
       {
         "coordinate": "d8",
         "score": -62,
         "score_kind": "exact",
+        "assessment": {
+          "status": "forced",
+          "legal_move_count": 1,
+          "best_moves": [
+            "d8"
+          ],
+          "is_played": true,
+          "score_loss": 0,
+          "score_kind": "exact",
+          "position": "behind"
+        },
         "kind": "corner_given",
         "target": "h8",
         "opponent_reply": "h8",

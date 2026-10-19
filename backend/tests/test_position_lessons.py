@@ -172,6 +172,18 @@ def test_real_forced_lesson_task_succeeds_without_model_and_returns_previous_cho
         assert result["result"]["model_id"] is None and result["result"]["usage"] is None
         assert result["result"]["previous_decision_revision"] == 42
         assert games.position_lesson("owner", game["game_id"], 58)["previous_decision_revision"] == 42
+        cached = store.get("lesson", f"{game['game_id']}:58", "owner")
+        cached["comparison"].pop("insight")
+        cached["comparison"].pop("reference_move")
+        for choice in cached["comparison"]["choices"]:
+            choice.pop("assessment")
+        with store.transaction() as db:
+            store.save(db, "lesson", f"{game['game_id']}:58", "owner", cached)
+        engine.close()
+        restored = games.position_lesson("owner", game["game_id"], 58)
+        assert restored["comparison"]["choices"][0]["assessment"]["status"] == "forced"
+        assert restored["comparison"]["insight"]["kind"] == "forced"
+        assert engine.process is None
     finally:
         engine.close()
         model.close()
