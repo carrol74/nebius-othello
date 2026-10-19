@@ -2,7 +2,7 @@ from itertools import pairwise
 
 from nemothello.board_features import CORNERS
 from nemothello.coaching import variation_frames
-from nemothello.decision import assess_decision, reference_move
+from nemothello.decision import assess_decision, lesson_moves, reference_move
 from nemothello.corner_proof import prove_corner
 from nemothello.errors import AppError
 from nemothello.rules import (
@@ -106,6 +106,8 @@ def comparison_insight(choices):
               "score_kind": first["assessment"]["score_kind"], "proof": None, "example": []}
     if first["assessment"]["status"] == "forced":
         return result
+    if len(choices) == 1:
+        return {**result, "kind": "best"}
     other = choices[1]
     if first["score"] == other["score"]:
         return {**result, "kind": "equal"}
@@ -147,9 +149,11 @@ def compare_lesson(review, revision, move):
     item = next((entry for entry in review["evidence"] if entry["revision"] == revision), None)
     if item is None:
         raise AppError("REVIEW_POSITION", "Choose a position before a recorded move", 422)
-    assessment = assess_decision(item, move)
-    reference = reference_move(item, move, assessment)
+    assess_decision(item, move)
+    if move not in lesson_moves(item):
+        raise AppError("REVIEW_MOVE", "Choose the recorded move or the recommendation", 422)
+    reference = reference_move(item, move)
     choices = [teach_move(item, coordinate) for coordinate in [move, reference] if coordinate is not None]
     return {"revision": revision, "actor": item["actor"], "selected_move": move,
-            "recommended_move": assessment["best_moves"][0], "reference_move": reference,
+            "recommended_move": max(choices, key=lambda choice: choice["score"])["coordinate"], "reference_move": reference,
             "insight": comparison_insight(choices), "choices": choices}

@@ -3,7 +3,7 @@ import type { TeachingComparison, TeachingFrame, TeachingMove } from "./types";
 
 export function teachingChoiceLabel(move: TeachingMove, locale: Locale): string {
   return move.assessment.is_played ? locale === "zh" ? "你当时下的" : "Your game move"
-    : locale === "zh" ? "假设改下" : "What if";
+    : locale === "zh" ? "推荐走法" : "Recommended move";
 }
 
 export function cornerName(square: string, locale: Locale): string {
@@ -23,7 +23,7 @@ export function lessonPrompt(comparison: TeachingComparison, move: TeachingMove,
 }
 
 export function defenseFeedback(rootMove: string, attempted: string, target: string, locale: Locale): string {
-  return locale === "zh" ? `你下 ${attempted} 后，对手仍能占${cornerName(target, locale)}。这说明这条续着里的防守没有挡住抢角；可以返回 ${rootMove} 前的局面，比较另一条走法。` : `After your ${attempted}, the opponent can still take the ${cornerName(target, locale)} in this continuation. Return to the position before ${rootMove} to compare the other line.`;
+  return locale === "zh" ? `在 ${rootMove} 的续着中，你下 ${attempted} 后，对手仍能占${cornerName(target, locale)}。这一步防守没有挡住抢角。` : `In the ${rootMove} continuation, after your ${attempted}, the opponent can still take the ${cornerName(target, locale)}. This defense does not stop the corner capture.`;
 }
 
 export function stepText(frame: TeachingFrame, locale: Locale): string {
@@ -63,8 +63,8 @@ export function lessonText(comparison: TeachingComparison, move: TeachingMove, l
     : assessment.status === "best" ? zh
       ? `这一步已是${basis}中评分最高的选择。`
       : `This move has the highest rating in ${basis.toLowerCase()}.`
-      : zh ? `${basis}对 ${assessment.best_moves.join("、")} 的评分高于 ${move.coordinate}。`
-        : `${basis} rates ${assessment.best_moves.join(", ")} above ${move.coordinate}.`;
+      : zh ? `${basis}对 ${comparison.recommended_move} 的评分高于 ${move.coordinate}。`
+        : `${basis} rates ${comparison.recommended_move} above ${move.coordinate}.`;
   const evaluation = assessment.position === "behind" ? zh ? `局面仍偏向${other}。`
     : `The position still favors ${other}.` : "";
   const comparedTactic = ["corner_defense", "corner_access", "shared_corner"].includes(comparison.insight.kind);
@@ -90,7 +90,7 @@ function moveConsequence(comparison: TeachingComparison, move: TeachingMove, loc
 export function comparisonTakeaway(comparison: TeachingComparison, locale: Locale): string | null {
   const zh = locale === "zh";
   const insight = comparison.insight;
-  if (insight.kind === "forced" || insight.kind === "search") return null;
+  if (insight.kind === "forced" || insight.kind === "best" || insight.kind === "search") return null;
   if (insight.kind === "equal") return comparison.choices[0].assessment.status === "tied_best" ? null
     : zh ? "这两种走法的评分相同。" : "These two moves have the same rating.";
   if (insight.kind === "shared_corner") return zh

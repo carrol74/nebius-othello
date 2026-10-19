@@ -18,8 +18,7 @@ def review():
 
 def test_every_displayed_line_prefix_resolves_to_its_native_board(review):
     for item in review["evidence"]:
-        for candidate in item["analysis"]["candidates"]:
-            choice = compare_lesson(review, item["revision"], candidate["coordinate"])["choices"][0]
+        for choice in compare_lesson(review, item["revision"], item["actual_move"])["choices"]:
             for frames in [choice["frames"], *(defense["frames"] for defense in choice["defense_lines"])]:
                 for index, frame in enumerate(frames):
                     view = {"selected_move": choice["coordinate"],
@@ -57,6 +56,15 @@ def test_unshown_or_mismatched_lines_fail_before_coaching(review):
         with pytest.raises(AppError) as error:
             resolve_lesson_view(item, view)
         assert error.value.code == "LESSON_VIEW"
+
+
+def test_an_undisplayed_legal_move_cannot_become_a_question_view(review):
+    item = next(item for item in review["evidence"] if item["revision"] == 0)
+    alternative = next(candidate["coordinate"] for candidate in item["analysis"]["candidates"]
+                       if candidate["coordinate"] != item["actual_move"])
+    with pytest.raises(AppError) as error:
+        resolve_lesson_view(item, {"selected_move": alternative, "line": [alternative]})
+    assert error.value.code == "REVIEW_MOVE"
 
 
 def test_defense_attempt_is_kept_in_the_question_context(review):

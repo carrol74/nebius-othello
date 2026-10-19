@@ -5,8 +5,8 @@ import pytest
 
 from nemothello.errors import AppError
 from nemothello.rules import apply_move, legal_moves, opponent
-from nemothello.schemas import TeachingComparison
-from nemothello.teaching import compare_lesson
+from nemothello.schemas import TeachingComparison, TeachingMove
+from nemothello.teaching import compare_lesson, teach_move
 
 
 @pytest.fixture
@@ -42,20 +42,19 @@ def test_concrete_corner_trap_checks_every_defense(review):
 def test_all_native_lessons_use_legal_steps_and_exact_flip_highlights(review):
     for item in review["evidence"]:
         for candidate in item["analysis"]["candidates"]:
-            lesson = TeachingComparison.model_validate(compare_lesson(review, item["revision"], candidate["coordinate"]))
-            for choice in lesson.choices:
-                for before, after in zip(choice.frames, choice.frames[1:]):
-                    assert after.actor == before.turn
-                    if after.coordinate == "pass":
-                        assert not legal_moves(tuple(before.board), before.turn)
-                        assert after.flipped == [] and before.board == after.board
-                    else:
-                        assert list(apply_move(tuple(before.board), before.turn, after.coordinate)) == after.board
-                        changed = [f"{chr(97+c)}{r+1}" for r in range(8) for c in range(8)
-                                   if before.board[r][c] != after.board[r][c] and before.board[r][c] != "."]
-                        assert sorted(changed) == sorted(after.flipped)
-                    if after.turn:
-                        assert after.turn == opponent(before.turn)
+            choice = TeachingMove.model_validate(teach_move(item, candidate["coordinate"]))
+            for before, after in zip(choice.frames, choice.frames[1:]):
+                assert after.actor == before.turn
+                if after.coordinate == "pass":
+                    assert not legal_moves(tuple(before.board), before.turn)
+                    assert after.flipped == [] and before.board == after.board
+                else:
+                    assert list(apply_move(tuple(before.board), before.turn, after.coordinate)) == after.board
+                    changed = [f"{chr(97+c)}{r+1}" for r in range(8) for c in range(8)
+                               if before.board[r][c] != after.board[r][c] and before.board[r][c] != "."]
+                    assert sorted(changed) == sorted(after.flipped)
+                if after.turn:
+                    assert after.turn == opponent(before.turn)
 
 
 @pytest.mark.parametrize("revision,move,code", [(999,"b1","REVIEW_POSITION"), (16,"a1","ILLEGAL_MOVE")])

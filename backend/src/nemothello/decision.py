@@ -27,13 +27,15 @@ def assess_decision(item, coordinate):
     }
 
 
-def reference_move(item, coordinate, assessment):
-    candidates = item["analysis"]["candidates"]
-    if assessment["status"] == "forced":
-        return None
-    if item.get("is_played", True) and item["actual_move"] != coordinate:
-        return item["actual_move"]
+def lesson_moves(item):
+    actual = item["actual_move"]
+    assessment = assess_decision(item, actual)
+    if not item.get("is_played", True):
+        return [assessment["best_moves"][0]]
     if assessment["status"] == "lower_rated":
-        return assessment["best_moves"][0]
-    others = [candidate for candidate in candidates if candidate["coordinate"] != coordinate]
-    return max(others, key=lambda candidate: candidate["score"])["coordinate"]
+        return [actual, assessment["best_moves"][0]]
+    return [actual]
+
+
+def reference_move(item, coordinate):
+    return next((move for move in lesson_moves(item) if move != coordinate), None)

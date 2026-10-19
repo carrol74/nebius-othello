@@ -214,7 +214,7 @@ class TeachingMove(BaseModel):
 
 
 class TeachingInsight(BaseModel):
-    kind: Literal["forced", "equal", "corner_access", "illustrated_corner", "shared_corner", "search", "corner_defense"]
+    kind: Literal["forced", "best", "equal", "corner_access", "illustrated_corner", "shared_corner", "search", "corner_defense"]
     better_move: Coordinate | None
     worse_move: Coordinate | None
     target: Coordinate | None

@@ -38,7 +38,7 @@ test("a forced move is labeled as played and compulsory with no recommendation o
   }
 });
 
-test("a highest-rated move retains an alternative and does not promise a favorable position", () => {
+test("the recommendation stays paired with the lower-rated history without promising a win", () => {
   const comparison = cases["16-best"], best = comparison.choices[0];
   assert.ok(best.assessment.legal_move_count > 1 && best.score < 0);
   assert.equal(comparison.choices.length, 2);
@@ -49,19 +49,33 @@ test("a highest-rated move retains an alternative and does not promise a favorab
   assert.doesNotMatch(text, /only legal/);
   const opening = cases["0"].choices[0];
   assert.equal(teachingChoiceLabel(opening, "en"), "Your game move");
-  assert.equal(teachingChoiceLabel(best, "zh"), "假设改下");
+  assert.equal(teachingChoiceLabel(best, "zh"), "推荐走法");
+  assert.equal(teachingChoiceLabel(best, "en"), "Recommended move");
 });
 
-test("equally rated alternatives have no score-based preference in either language", () => {
+test("a tied-best historical move is shown alone without an unnecessary alternative", () => {
   const opening = cases["0"];
-  assert.equal(opening.insight.kind, "equal");
-  assert.notEqual(opening.choices[0].coordinate, opening.choices[1].coordinate);
+  assert.equal(opening.insight.kind, "best");
+  assert.equal(opening.choices.length, 1);
+  assert.equal(opening.reference_move, null);
+  assert.equal(opening.recommended_move, opening.choices[0].coordinate);
   for (const locale of ["en", "zh"]) {
-    const text = lessonText(opening, opening.choices[1], locale).join(" ");
+    const text = lessonText(opening, opening.choices[0], locale).join(" ");
     assert.match(text, /tied for the highest|并列/);
     assert.doesNotMatch(text, /失误|mistake|only legal/);
   }
   assert.equal(comparisonTakeaway(opening, "en"), null);
+});
+
+test("a highest-rated historical endgame move is shown alone and remains distinct from forced", () => {
+  const comparison = cases["47"];
+  assert.equal(comparison.choices.length, 1);
+  assert.equal(comparison.insight.kind, "best");
+  assert.ok(comparison.choices[0].assessment.legal_move_count > 1);
+  for (const locale of ["en", "zh"]) {
+    assert.doesNotMatch(lessonText(comparison, comparison.choices[0], locale).join(" "), /only legal|唯一/);
+    assert.equal(comparisonTakeaway(comparison, locale), null);
+  }
 });
 
 test("exact outcomes and search estimates keep different labels", () => {
@@ -94,12 +108,13 @@ test("the opening question invites a defense without revealing the outcome", () 
   }
 });
 
-test("feedback names the attempted move and points back to the earlier decision", () => {
+test("defense feedback names the root and attempted move without requiring another alternative", () => {
   const branch = cases["16"].choices[0];
   assert.ok(branch.defense_lines.some((defense) => defense.coordinate === "g6"));
   for (const locale of ["en", "zh"]) {
     const text = defenseFeedback(branch.coordinate, "g6", branch.target, locale);
     for (const fact of ["g6", "a1", "b1"]) assert.ok(text.includes(fact));
+    assert.doesNotMatch(text, /other line|另一条/);
   }
   assert.match(comparisonTakeaway(cases["16"], "zh"), /全部合法回应/);
   assert.match(comparisonTakeaway(cases["16"], "zh"), /e1.*b1 防守/);

@@ -148,7 +148,9 @@ def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None, co
     revision, actor = item["revision"], item["actor"]
     actual = item["actual_move"]
     assessment = assess_decision(item, actual)
-    recommended = comparison_move or reference_move(item, actual, assessment) or actual
+    recommended = comparison_move or reference_move(item, actual)
+    has_comparison = recommended is not None
+    recommended = recommended or actual
     candidates = {entry["coordinate"]: entry for entry in item["analysis"]["candidates"]}
     comparisons = {entry["coordinate"]: entry for entry in item["comparisons"]}
     played, best = candidates[actual], candidates[recommended]
@@ -165,7 +167,7 @@ def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None, co
                      + " Revisit an earlier turn with more than one legal move to study a choice you could change.",
                      "forced_move", revision)], ["forced_move"]
     score_kind = "exact endgame scores under best play" if assessment["score_kind"] == "exact" else "search scores; non-exact values are estimates"
-    judgment = (f" This is one of the equally highest-rated moves: {', '.join(assessment['best_moves'])}."
+    judgment = (" This is one of the equally highest-rated moves."
                 if assessment["status"] == "tied_best" else " This is the highest-rated legal move."
                 if assessment["status"] == "best" else f" The search rates {assessment['best_moves'][0]} higher.")
     difference = abs(played["score"] - best["score"])
@@ -175,9 +177,13 @@ def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None, co
                 f"is comparing {actual}; the recorded move was {item['recorded_move']}." if item.get("recorded_move") else
                 f"can play {actual}; no move has been recorded yet.")
              + judgment + f" There are {assessment['legal_move_count']} legal moves. This assessment is separate from any hint shown during play.", "comparison", revision),
-        fact(prefix + "score", f"From {COLORS[actor]}'s perspective, {actual} scores {played['score']:g} and {recommended} scores {best['score']:g}. The difference is {difference:g}; these are {score_kind}." + (" These alternatives are equally rated." if difference == 0 else " Higher scores favor this player."), "comparison", revision),
-        fact(prefix + "mobility", f"After {actual}, {COLORS[opponent(actor)]} has {a['opponent_moves']} legal replies; after {recommended}, {b['opponent_moves']}. Reply count alone does not explain the search preference.", "mobility", revision),
-        fact(prefix + "frontier", f"After {actual}, the frontier-disc difference is {a['frontier_difference']}; after {recommended}, {b['frontier_difference']}, counting {COLORS[actor]}'s frontier discs minus the opponent's.", "frontier", revision),
+        fact(prefix + "score", (f"From {COLORS[actor]}'s perspective, {actual} scores {played['score']:g} and {recommended} scores {best['score']:g}. The difference is {difference:g}; these are {score_kind}. Higher scores favor this player."
+             if has_comparison else f"From {COLORS[actor]}'s perspective, {actual} scores {played['score']:g} ({score_kind}). No legal move has a higher score."), "comparison", revision),
+        fact(prefix + "mobility", f"After {actual}, {COLORS[opponent(actor)]} has {a['opponent_moves']} legal replies"
+             + (f"; after {recommended}, {b['opponent_moves']}. Reply count alone does not explain the search preference." if has_comparison else ". Reply count alone does not explain the move's rating."), "mobility", revision),
+        fact(prefix + "frontier", f"After {actual}, the frontier-disc difference is {a['frontier_difference']}"
+             + (f"; after {recommended}, {b['frontier_difference']}" if has_comparison else "")
+             + f", counting {COLORS[actor]}'s frontier discs minus the opponent's.", "frontier", revision),
     ]
     lessons = ["comparison", "mobility", "frontier"]
     for move in dict.fromkeys((actual, recommended)):
@@ -185,7 +191,9 @@ def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None, co
         facts.append(fact(prefix + f"line_{move}", f"One searched continuation at position {revision}: {line}. This line is illustrative; it does not include every legal reply.", "comparison", revision))
     if a["corner"] or b["corner"] or a["opponent_corners"] or b["opponent_corners"]:
         corners = lambda value: ", ".join(value) or "none"
-        facts.append(fact(prefix + "corners", f"Immediate corner replies for {COLORS[opponent(actor)]}: after {actual}, {corners(a['opponent_corners'])}; after {recommended}, {corners(b['opponent_corners'])}." + (f" {recommended} itself occupies a corner." if b["corner"] else ""), "corners", revision))
+        facts.append(fact(prefix + "corners", f"Immediate corner replies for {COLORS[opponent(actor)]}: after {actual}, {corners(a['opponent_corners'])}"
+                          + (f"; after {recommended}, {corners(b['opponent_corners'])}" if has_comparison else "")
+                          + "." + (f" {recommended} itself occupies a corner." if b["corner"] else ""), "corners", revision))
         lessons.append("corners")
     if a["empty_corner_neighbor"] or b["empty_corner_neighbor"]:
         affected = [move for move in {actual, recommended} if comparisons[move]["empty_corner_neighbor"]]
@@ -200,7 +208,9 @@ def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None, co
         facts.append(fact(prefix + "pass", " ".join(texts), "pass", revision))
         lessons.append("pass")
     if assessment["score_kind"] == "exact":
-        facts.append(fact(prefix + "endgame", f"These alternatives have exact endgame scores: {actual} {played['score']:g}, {recommended} {best['score']:g}, from {COLORS[actor]}'s perspective under best play.", "endgame", revision))
+        facts.append(fact(prefix + "endgame", f"Exact endgame score under best play: {actual} {played['score']:g}"
+                          + (f", {recommended} {best['score']:g}" if has_comparison else "")
+                          + f", from {COLORS[actor]}'s perspective.", "endgame", revision))
         lessons.append("endgame")
     for move in sorted((extra_moves or set()) & candidates.keys() - {actual, recommended}):
         candidate = candidates[move]

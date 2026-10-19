@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { api } from "@/lib/api";
 import { useLocale } from "@/lib/locale";
 import { comparisonTakeaway, lessonText, stepText, teachingChoiceLabel, teachingFactText } from "@/lib/teaching-text";
 import { sameTeachingView, teachingView } from "@/lib/lesson-view";
 import { positionFactText } from "@/lib/review-text";
-import type { GameState, LessonView, PositionLesson, QuestionResult, TeachingComparison, TeachingDefense, TeachingFrame, TeachingMove } from "@/lib/types";
+import type { GameState, LessonView, PositionLesson, QuestionResult, TeachingDefense, TeachingFrame, TeachingMove } from "@/lib/types";
 
 export type Variation = {
   revision: number; coordinate: string; frame: number; lesson_frames: TeachingFrame[];
@@ -28,12 +27,9 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
   revisit: (revision: number) => void;
 }) {
   const {locale, t} = useLocale();
-  const [comparison, setComparison] = useState<TeachingComparison>(lesson.comparison);
+  const comparison = lesson.comparison;
   const initialComparison = useRef(lesson.comparison);
   const [question, setQuestion] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const comparisonRequest = useRef<AbortController | null>(null);
   const item = lesson.evidence;
   const forcedMove = comparison.insight.kind === "forced";
   const activeMove = comparison.choices.find((choice) => choice.coordinate === variation?.coordinate)
@@ -56,29 +52,11 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
       assessment: first.assessment,
       lesson_frames: first.frames, focus_square: first.target, capture_lines: first.capture_lines});
   }, [showVariation]);
-  useEffect(() => () => comparisonRequest.current?.abort(), []);
-
-  async function compare(coordinate: string) {
-    comparisonRequest.current?.abort();
-    const controller = new AbortController();
-    comparisonRequest.current = controller;
-    setLoading(true); setError(null);
-    try {
-      const next = await api<TeachingComparison>(`/games/${game.game_id}/lessons/compare?revision=${lesson.revision}&move=${coordinate}`, undefined, controller.signal);
-      if (controller.signal.aborted) return;
-      setComparison(next);
-      const first = next.choices.find((choice) => choice.coordinate === coordinate)!;
-      showVariation({revision: next.revision, coordinate, frame: 1,
-        assessment: first.assessment,
-        lesson_frames: first.frames, focus_square: first.target, capture_lines: first.capture_lines});
-    } catch (failure) { if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : t("Could not compare this move", "无法对比这个落点")); }
-    finally { if (!controller.signal.aborted) setLoading(false); }
-  }
 
   return <div className="position-coach">
     {item.is_played === false && <p>{t("You have not played this turn yet.", "你在这一回合还没有落子。")}</p>}
     <div className="teaching-choices" role="group" aria-label={t("Choose a line to explore", "选择要演示的走法")}>
-      {[...comparison.choices].sort((a, b) => Number(b.assessment.is_played) - Number(a.assessment.is_played)).map((choice) => <button key={choice.coordinate} disabled={loading} aria-pressed={choice.coordinate === activeMove.coordinate} onClick={() => showVariation({revision: lesson.revision, coordinate: choice.coordinate, frame: 1, assessment: choice.assessment, lesson_frames: choice.frames, focus_square: choice.target, capture_lines: choice.capture_lines})}>
+      {[...comparison.choices].sort((a, b) => Number(b.assessment.is_played) - Number(a.assessment.is_played)).map((choice) => <button key={choice.coordinate} aria-pressed={choice.coordinate === activeMove.coordinate} onClick={() => showVariation({revision: lesson.revision, coordinate: choice.coordinate, frame: 1, assessment: choice.assessment, lesson_frames: choice.frames, focus_square: choice.target, capture_lines: choice.capture_lines})}>
         {choice.coordinate}<span>{teachingChoiceLabel(choice, locale)}</span>
       </button>)}
     </div>
@@ -92,9 +70,7 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
       exercise: {defenses: activeMove.defense_lines, target: activeMove.target!, attempt: null},
     })}>{t("Try defending", "试着防守")}</button>}
     {pending && <p className="muted" role="status">{t("The coach is choosing what to focus on…", "正在为这个局面选择讲解重点…")}</p>}
-    {!forcedMove && <details className="lesson-tools"><summary>{t("Other moves and scores", "其他走法与评分")}</summary>
-      <label>{t("What if", "假设改下")} <select aria-label={t("Move to compare", "要对比的落点")} disabled={loading} value={activeMove.coordinate} onChange={(event) => void compare(event.target.value)}>{item.analysis.candidates.map((candidate) => <option key={candidate.coordinate}>{candidate.coordinate}</option>)}</select></label>
-      {error && <p role="alert">{error}</p>}
+    {comparison.choices.length > 1 && <details className="lesson-tools"><summary>{t("Scores", "评分")}</summary>
       <table><thead><tr><th>{t("Move", "落点")}</th><th>{t("Search score", "搜索评分")}</th></tr></thead><tbody>{comparison.choices.map((choice) => <tr key={choice.coordinate}><td>{choice.coordinate}</td><td>{choice.score}</td></tr>)}</tbody></table>
       <p className="muted">{t("Scores favor the player to move. Estimates are not win probabilities.", "评分从当前行动方的视角计算，估计值不代表胜率。")}</p>
     </details>}

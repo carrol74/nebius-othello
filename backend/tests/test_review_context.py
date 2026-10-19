@@ -32,7 +32,7 @@ def test_key_decisions_only_belong_to_human_and_tied_moves_are_not_losses(native
     initial = next(item for item in native_review["evidence"] if item["revision"] == 0)
     assert initial["score_loss"] == 0
     tied_context = review_context({**native_review, "evidence": [initial]}, None)
-    assert "equally rated" in tied_context["positions"][0]["facts"][1]["text"]
+    assert "equally highest-rated" in tied_context["positions"][0]["facts"][0]["text"]
 
 
 @pytest.mark.parametrize("index", range(22))

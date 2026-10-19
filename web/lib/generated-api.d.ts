@@ -939,7 +939,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "forced" | "equal" | "corner_access" | "illustrated_corner" | "shared_corner" | "search" | "corner_defense";
+            kind: "forced" | "best" | "equal" | "corner_access" | "illustrated_corner" | "shared_corner" | "search" | "corner_defense";
             /** Better Move */
             better_move: string | null;
             /** Worse Move */

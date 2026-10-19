@@ -4,9 +4,9 @@
     "actor": "X",
     "selected_move": "d3",
     "recommended_move": "d3",
-    "reference_move": "c4",
+    "reference_move": null,
     "insight": {
-      "kind": "equal",
+      "kind": "best",
       "better_move": null,
       "worse_move": null,
       "target": null,
@@ -112,107 +112,6 @@
             "flipped": [
               "e3",
               "e4"
-            ]
-          }
-        ],
-        "opponent_corner_moves_after_reply": []
-      },
-      {
-        "coordinate": "c4",
-        "score": -3,
-        "score_kind": "estimate",
-        "assessment": {
-          "status": "tied_best",
-          "legal_move_count": 4,
-          "best_moves": [
-            "d3",
-            "c4",
-            "f5",
-            "e6"
-          ],
-          "is_played": false,
-          "score_loss": 0,
-          "score_kind": "estimate",
-          "position": "behind"
-        },
-        "kind": "line",
-        "target": null,
-        "opponent_reply": null,
-        "checked_defenses": [],
-        "defense_lines": [],
-        "capture_lines": [],
-        "line_source": "engine",
-        "corner_proof": null,
-        "frames": [
-          {
-            "board": [
-              "........",
-              "........",
-              "........",
-              "...OX...",
-              "...XO...",
-              "........",
-              "........",
-              "........"
-            ],
-            "turn": "X",
-            "coordinate": null,
-            "actor": null,
-            "flipped": []
-          },
-          {
-            "board": [
-              "........",
-              "........",
-              "........",
-              "..XXX...",
-              "...XO...",
-              "........",
-              "........",
-              "........"
-            ],
-            "turn": "O",
-            "coordinate": "c4",
-            "actor": "X",
-            "flipped": [
-              "d4"
-            ]
-          },
-          {
-            "board": [
-              "........",
-              "........",
-              "........",
-              "..XXX...",
-              "..OOO...",
-              "........",
-              "........",
-              "........"
-            ],
-            "turn": "X",
-            "coordinate": "c5",
-            "actor": "O",
-            "flipped": [
-              "d5"
-            ]
-          },
-          {
-            "board": [
-              "........",
-              "........",
-              "........",
-              "..XXX...",
-              "..XXO...",
-              "..X.....",
-              "........",
-              "........"
-            ],
-            "turn": "O",
-            "coordinate": "c6",
-            "actor": "X",
-            "flipped": [
-              "c5",
-              "d5"
             ]
           }
         ],
@@ -3045,9 +2944,9 @@
     "actor": "O",
     "selected_move": "c6",
     "recommended_move": "c6",
-    "reference_move": "b8",
+    "reference_move": null,
     "insight": {
-      "kind": "equal",
+      "kind": "best",
       "better_move": null,
       "worse_move": null,
       "target": null,
@@ -3160,85 +3059,6 @@
               "d4",
               "d3"
             ]
-          }
-        ],
-        "opponent_corner_moves_after_reply": []
-      },
-      {
-        "coordinate": "b8",
-        "score": 58,
-        "score_kind": "exact",
-        "assessment": {
-          "status": "tied_best",
-          "legal_move_count": 9,
-          "best_moves": [
-            "c6",
-            "b8",
-            "c8"
-          ],
-          "is_played": false,
-          "score_loss": 0,
-          "score_kind": "exact",
-          "position": "ahead"
-        },
-        "kind": "pass",
-        "target": null,
-        "opponent_reply": null,
-        "checked_defenses": [],
-        "defense_lines": [],
-        "capture_lines": [],
-        "line_source": "engine",
-        "corner_proof": null,
-        "frames": [
-          {
-            "board": [
-              "OOOOOOOX",
-              "OOOOOOOX",
-              "OOOXOOOX",
-              "OOOOOOO.",
-              "OOXXXXXX",
-              "OO.....X",
-              "OXXX...X",
-              "O......."
-            ],
-            "turn": "O",
-            "coordinate": null,
-            "actor": null,
-            "flipped": []
-          },
-          {
-            "board": [
-              "OOOOOOOX",
-              "OOOOOOOX",
-              "OOOXOOOX",
-              "OOOOOOO.",
-              "OOXXXXXX",
-              "OO.....X",
-              "OOXX...X",
-              "OO......"
-            ],
-            "turn": "X",
-            "coordinate": "b8",
-            "actor": "O",
-            "flipped": [
-              "b7"
-            ]
-          },
-          {
-            "board": [
-              "OOOOOOOX",
-              "OOOOOOOX",
-              "OOOXOOOX",
-              "OOOOOOO.",
-              "OOXXXXXX",
-              "OO.....X",
-              "OOXX...X",
-              "OO......"
-            ],
-            "turn": "O",
-            "coordinate": "pass",
-            "actor": "X",
-            "flipped": []
           }
         ],
         "opponent_corner_moves_after_reply": []

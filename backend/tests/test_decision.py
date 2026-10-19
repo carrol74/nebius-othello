@@ -46,26 +46,35 @@ def test_every_native_candidate_has_one_consistent_decision_assessment(evidence)
     assert positions == {"ahead", "behind", "level"}
 
 
-def test_every_nonforced_choice_gets_a_distinct_reference_and_grounded_insight(evidence):
+def test_lessons_only_compare_a_lower_rated_game_move_with_the_recommendation(evidence):
     insight_kinds = set()
     for item in evidence:
+        assessment = assess_decision(item, item["actual_move"])
+        expected = {item["actual_move"]}
+        if assessment["status"] == "lower_rated":
+            expected.add(assessment["best_moves"][0])
         for candidate in item["analysis"]["candidates"]:
+            if candidate["coordinate"] not in expected:
+                with pytest.raises(AppError) as error:
+                    compare_lesson({"evidence": [item]}, item["revision"], candidate["coordinate"])
+                assert error.value.code == "REVIEW_MOVE"
+                continue
             result = compare_lesson({"evidence": [item]}, item["revision"], candidate["coordinate"])
             lesson = TeachingComparison.model_validate(result)
             first = lesson.choices[0]
+            assert {choice.coordinate for choice in lesson.choices} == expected
             assert first.coordinate == candidate["coordinate"]
             assert first.assessment.model_dump() == assess_decision(item, first.coordinate)
-            if first.assessment.status == "forced":
+            assert lesson.recommended_move in assessment["best_moves"]
+            if len(expected) == 1:
                 assert lesson.reference_move is None and len(lesson.choices) == 1
+                assert lesson.insight.kind == ("forced" if assessment["status"] == "forced" else "best")
             else:
                 assert len(lesson.choices) == 2
                 assert first.coordinate != lesson.reference_move == lesson.choices[1].coordinate
-                if item.get("is_played", True):
-                    assert item["actual_move"] in {choice.coordinate for choice in lesson.choices}
-                equal = first.score == lesson.choices[1].score
-                assert (lesson.insight.kind == "equal") == equal
+                assert first.score != lesson.choices[1].score
             insight_kinds.add(lesson.insight.kind)
-    assert {"forced", "equal", "shared_corner", "corner_defense", "search"} <= insight_kinds
+    assert {"forced", "best", "shared_corner", "corner_defense", "search"} <= insight_kinds
 
 
 def test_ties_and_unfavorable_best_moves_are_never_turned_into_mistakes(evidence):
@@ -82,22 +91,28 @@ def test_ties_and_unfavorable_best_moves_are_never_turned_into_mistakes(evidence
 
 def test_an_unplayed_position_does_not_label_any_option_as_played(evidence):
     item = {**evidence[0], "is_played": False}
-    for candidate in item["analysis"]["candidates"]:
-        result = compare_lesson({"evidence": [item]}, item["revision"], candidate["coordinate"])
-        assert all(not choice["assessment"]["is_played"] for choice in result["choices"])
+    best = assess_decision(item, item["actual_move"])["best_moves"][0]
+    result = compare_lesson({"evidence": [item]}, item["revision"], best)
+    assert len(result["choices"]) == 1
+    assert result["recommended_move"] == best
+    assert not result["choices"][0]["assessment"]["is_played"]
 
 
-def test_a_best_game_move_is_compared_with_a_different_move_in_coaching_facts(evidence):
+def test_a_best_game_move_has_single_move_facts_without_self_comparisons(evidence):
     checked = 0
     for item in evidence:
         assessment = assess_decision(item, item["actual_move"])
         if assessment["status"] not in ("best", "tied_best"):
             continue
         facts, _ = position_facts(enrich_evidence(item))
-        mobility = next(fact["text"] for fact in facts if fact["id"].endswith(":mobility"))
-        assert mobility.lower().count(f"after {item['actual_move']}") == 1
         comparison = compare_lesson({"evidence": [item]}, item["revision"], item["actual_move"])
-        assert f"after {comparison['reference_move']}" in mobility
+        assert comparison["reference_move"] is None
+        assert comparison["recommended_move"] == item["actual_move"]
+        assert len(comparison["choices"]) == 1
+        for fact in facts:
+            if fact["id"].split(":")[1] in {"score", "mobility", "frontier", "endgame"}:
+                assert fact["text"].lower().count(item["actual_move"]) == 1
+                assert "alternatives" not in fact["text"]
         checked += 1
     assert checked > 1
 

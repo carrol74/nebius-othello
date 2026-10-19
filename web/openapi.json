@@ -3208,6 +3208,7 @@
             "type": "string",
             "enum": [
               "forced",
+              "best",
               "equal",
               "corner_access",
               "illustrated_corner",

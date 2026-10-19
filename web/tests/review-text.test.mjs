@@ -25,3 +25,16 @@ test("Chinese answers use the backend decision status for tied moves", () => {
   assert.match(text, /并列最高评分/);
   assert.doesNotMatch(text, /引擎推荐/);
 });
+
+test("single-move Chinese score facts never repeat the move as its own comparison", () => {
+  const cases = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/teaching-native-cases.json", import.meta.url), "utf8"));
+  for (const revision of [0, 47]) {
+    const item = review.evidence.find((item) => item.revision === revision);
+    const entry = {...item, recommended_move:item.actual_move, score_loss:0};
+    for (const kind of ["score", "endgame"]) {
+      const text = positionFactText({id:`p${revision}:${kind}`,revision,text:"",topic:"comparison"}, entry, "zh", cases[String(revision)].choices[0].assessment);
+      assert.equal(text.split(item.actual_move).length - 1, 1);
+      assert.doesNotMatch(text, /相差/);
+    }
+  }
+});
