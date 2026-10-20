@@ -175,6 +175,7 @@ class Candidate(BaseModel):
 
 
 class Analysis(BaseModel):
+    terminal_score_rule: Literal["winner_takes_empties"] = "winner_takes_empties"
     board: BoardRows
     turn: Color
     candidates: list[Candidate]

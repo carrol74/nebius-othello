@@ -1364,6 +1364,12 @@
     "schemas": {
       "Analysis": {
         "properties": {
+          "terminal_score_rule": {
+            "type": "string",
+            "const": "winner_takes_empties",
+            "title": "Terminal Score Rule",
+            "default": "winner_takes_empties"
+          },
           "board": {
             "items": {
               "type": "string",

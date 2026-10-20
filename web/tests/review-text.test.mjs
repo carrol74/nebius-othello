@@ -9,7 +9,10 @@ const {factText, positionFactText} = await import(`data:text/javascript;base64,$
 const {review} = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/review-native-positions.json", import.meta.url), "utf8"));
 
 test("saved exact scores use the correct player perspective", () => {
-  assert.match(factText({id:"p47:score",revision:47,text:"",topic:"comparison"}, review, "zh"), /白方视角/);
+  const text = factText({id:"p47:score",revision:47,text:"",topic:"comparison"}, review, "zh");
+  assert.match(text, /白方视角/);
+  assert.match(text, /剩余空格计入胜方/);
+  assert.match(text, /实际棋子数量/);
 });
 
 test("saved pass facts translate without inventing a score", () => {

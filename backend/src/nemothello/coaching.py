@@ -48,7 +48,7 @@ LESSONS = {
     },
     "endgame": {
         "title": "Read exact endgame scores",
-        "text": "An exact endgame score resolves the final disc difference under best play, from the stated player's perspective. A positive value favors that player, zero is a draw, and a negative value favors the opponent. Later mistakes can still change a played game's result.",
+        "text": "An exact Edax endgame score assumes best play and awards any unfilled squares to the winner; a draw scores zero. A positive value favors the stated player and a negative value favors the opponent. The game's displayed counts are the actual discs on the board. Later mistakes can still change a played game's result.",
         "question": "Which move has the best exact outcome for the player to move?",
     },
 }
@@ -165,7 +165,8 @@ def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None, co
                 fact(prefix + "forced_move", f"{actual} is the only legal move for {COLORS[actor]}. "
                      "There is no alternative to compare on this turn." + consequence,
                      "forced_move", revision)], ["forced_move"]
-    score_kind = "exact endgame scores under best play" if assessment["score_kind"] == "exact" else "search scores; non-exact values are estimates"
+    score_kind = ("exact Edax endgame scores under best play, with unfilled squares awarded to the winner"
+                  if assessment["score_kind"] == "exact" else "search scores; non-exact values are estimates")
     judgment = (" This is one of the equally highest-rated moves."
                 if assessment["status"] == "tied_best" else " This is the highest-rated legal move."
                 if assessment["status"] == "best" else f" The search rates {assessment['best_moves'][0]} higher.")
@@ -209,7 +210,8 @@ def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None, co
     if assessment["score_kind"] == "exact":
         facts.append(fact(prefix + "endgame", f"Exact endgame score under best play: {actual} {played['score']:g}"
                           + (f", {recommended} {best['score']:g}" if has_comparison else "")
-                          + f", from {COLORS[actor]}'s perspective.", "endgame", revision))
+                          + f", from {COLORS[actor]}'s perspective. Edax awards unfilled squares to the winner; "
+                          "displayed game counts retain actual discs.", "endgame", revision))
         lessons.append("endgame")
     for move in sorted((extra_moves or set()) & candidates.keys() - {actual, recommended}):
         candidate = candidates[move]

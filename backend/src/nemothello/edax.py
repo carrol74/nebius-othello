@@ -131,6 +131,7 @@ class Edax:
                 "board": list(board), "turn": turn, "candidates": candidates,
                 "recommended_move": best["coordinate"], "score_perspective": turn,
                 "score_kind": best["score_kind"], "engine_version": self.version,
+                "terminal_score_rule": "winner_takes_empties",
                 "eval_file": str(self.eval_file),
                 "depth": min(c["depth"] for c in candidates),
                 "settings": {"level": self.level, "minimum_depth": required_depth,

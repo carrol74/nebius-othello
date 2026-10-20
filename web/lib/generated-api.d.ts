@@ -318,6 +318,12 @@ export interface components {
     schemas: {
         /** Analysis */
         Analysis: {
+            /**
+             * Terminal Score Rule
+             * @default winner_takes_empties
+             * @constant
+             */
+            terminal_score_rule: "winner_takes_empties";
             /** Board */
             board: string[];
             /**

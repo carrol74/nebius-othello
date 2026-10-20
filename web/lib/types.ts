@@ -64,6 +64,7 @@ export interface Candidate {
 }
 
 export interface Analysis {
+  terminal_score_rule?: "winner_takes_empties";
   board: string[];
   turn: Color;
   candidates: Candidate[];

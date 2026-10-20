@@ -39,7 +39,7 @@ export function positionFactText(fact: ReviewFact, entry: ReviewEvidence, locale
     const judgment = assessment ? ({forced:"这是唯一合法落点。", best:"这是评分最高的合法落点。", tied_best:"这是并列最高评分的落点。", lower_rated:`当前评分低于 ${entry.recommended_move}。`})[assessment.status] : "";
     return `局面 ${entry.revision}，${color(entry.actor)}${entry.is_played === false ? "可以下" : "实际落子"} ${entry.actual_move}。${judgment}`;
   }
-  if (kind === "score" || kind === "endgame") return `从${color(entry.actor)}视角，${actual.coordinate} 评分 ${actual.score}` + (hasComparison ? `，${best.coordinate} 评分 ${best.score}，相差 ${entry.score_loss}` : "") + `。${actual.score_kind === "exact" && best.score_kind === "exact" ? "这是双方最佳应对下的精确终局子差。" : "这是搜索估计。"}`;
+  if (kind === "score" || kind === "endgame") return `从${color(entry.actor)}视角，${actual.coordinate} 评分 ${actual.score}` + (hasComparison ? `，${best.coordinate} 评分 ${best.score}，相差 ${entry.score_loss}` : "") + `。${actual.score_kind === "exact" && best.score_kind === "exact" ? "这是双方最佳应对下的 Edax 精确终局评分，剩余空格计入胜方；对局显示实际棋子数量。" : "这是搜索估计。"}`;
   if (kind === "mobility" && a && b) return `${a.coordinate} 后对手有 ${a.opponent_moves} 个合法落点` + (hasComparison ? `，${b.coordinate} 后有 ${b.opponent_moves} 个` : "") + "。数量不能单独解释搜索评分。";
   if (kind === "frontier" && a && b) return `${a.coordinate} 后双方前沿棋子的数量差为 ${a.frontier_difference}` + (hasComparison ? `，${b.coordinate} 后为 ${b.frontier_difference}` : "") + `，按${color(entry.actor)}减去对手计算。前沿棋子指邻接空位的棋子。`;
   if (kind === "corners" && a && b) return `${a.coordinate} 后对手可立即占据的角落：${a.opponent_corners.join("、") || "没有"}` + (hasComparison ? `；${b.coordinate} 后：${b.opponent_corners.join("、") || "没有"}` : "") + `。${b.corner ? `${b.coordinate} 本身占据角落。` : ""}`;
