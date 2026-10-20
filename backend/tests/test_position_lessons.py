@@ -1,4 +1,6 @@
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -7,9 +9,14 @@ from nemothello.coaching import review_context
 from nemothello.edax import Edax
 from nemothello.errors import AppError
 from nemothello.games import Games, advance
-from nemothello.opponents import EdaxOpponent
 from nemothello.nemotron import Nemotron
-from nemothello.position_lessons import check_teachable, lesson_context, position_at, previous_decision_revision
+from nemothello.opponents import EdaxOpponent
+from nemothello.position_lessons import (
+    check_teachable,
+    lesson_context,
+    position_at,
+    previous_decision_revision,
+)
 from nemothello.storage import Store
 from nemothello.tasks import Tasks
 
@@ -165,7 +172,21 @@ def test_real_forced_lesson_task_succeeds_without_model_and_returns_previous_cho
                 advance(game, event["coordinate"])
         with store.transaction() as db:
             store.save(db, "game", game["game_id"], "owner", game)
-        task = games.create_position_lesson_task("owner", game["game_id"], "forced-lesson", 58)
+        reflection = "I wanted to stop White from reaching h8."
+        task = games.create_position_lesson_task("owner", game["game_id"], "forced-lesson", 58,
+                                                 reflection=reflection)
+        first = store.get("task", task["task_id"], "owner")
+        recollection = first["inputs"]["reflection"]
+        assert recollection["text"] == reflection
+        assert recollection["source"] == "review_recollection" and recollection["recorded_move"] == "d8"
+        assert not recollection["prior_analysis_available"]
+        assert games.create_position_lesson_task("owner", game["game_id"], "forced-lesson", 58,
+                                                reflection=reflection) == task
+        assert games.create_position_lesson_task("owner", game["game_id"], "same-lesson", 58) == task
+        with pytest.raises(AppError) as error:
+            games.create_position_lesson_task("owner", game["game_id"], "changed-reason", 58,
+                                             reflection="A new explanation after seeing the result")
+        assert error.value.code == "LESSON_REFLECTION"
         tasks.process("owner", store.get("task", task["task_id"], "owner"))
         result = store.get("task", task["task_id"], "owner")
         assert result["status"] == "succeeded", result["error"]
@@ -173,6 +194,12 @@ def test_real_forced_lesson_task_succeeds_without_model_and_returns_previous_cho
         assert result["result"]["previous_decision_revision"] == 42
         assert games.position_lesson("owner", game["game_id"], 58)["previous_decision_revision"] == 42
         cached = store.get("lesson", f"{game['game_id']}:58", "owner")
+        assert cached["reflection"] == recollection
+        context = lesson_context(game, cached["evidence"], [])
+        context["player_reflection"] = cached["reflection"]
+        player = review_context(context, None, revision=58)["positions"][0]
+        assert player["player_reflection"] == recollection
+        assert not any(reflection in fact["text"] for fact in player["facts"])
         cached["comparison"].pop("insight")
         cached["comparison"].pop("reference_move")
         for choice in cached["comparison"]["choices"]:
@@ -189,12 +216,28 @@ def test_real_forced_lesson_task_succeeds_without_model_and_returns_previous_cho
                                                      58, "Does this guarantee a win?", view)
         queued = store.get("task", question["task_id"], "owner")
         assert queued["inputs"]["view"] == view
+        assert queued["inputs"]["reflection"] == recollection
         tasks.process("owner", queued)
         answered = store.get("task", question["task_id"], "owner")
         assert answered["status"] == "succeeded", answered["error"]
         assert answered["result"]["view"] == view
         assert answered["result"]["model_id"] is None
         assert engine.process is None
+        independent, evidence = tmp_path / "independent.json", tmp_path / "evidence.json"
+        subprocess.run([sys.executable, str(root / "scripts/export_teaching_cases.py"),
+                        "--database", str(store.path), "--output", str(independent),
+                        "--evidence-output", str(evidence)], check=True)
+        blind = json.loads(independent.read_text())["cases"][0]
+        packet = json.loads(evidence.read_text())["cases"][0]
+        assert blind["board"] == list(position_at(game, 58).board)
+        assert blind["legal_moves"] == ["d8"]
+        assert "engine_evidence" not in blind and "player_reflection" not in blind
+        assert blind["independent_review"]["preferred_moves"] is None
+        assert packet["player_reflection"] == recollection
+        assert packet["questions"][0]["view"] == view
+        assert packet["expert_review"]["explains_choice"] is None
+        assert all(game["game_id"] not in path.read_text() for path in (independent, evidence))
+        assert store.get("game", game["game_id"], "owner") == game
     finally:
         engine.close()
         model.close()

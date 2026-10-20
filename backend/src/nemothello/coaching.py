@@ -328,6 +328,7 @@ def review_context(review: dict[str, Any], question: str | None, revision: int |
                               "comparison", item["revision"]))
         positions.append({"revision": item["revision"], "actor": COLORS[item["actor"]],
                           "decision": assess_decision(item, item["actual_move"]),
+                          "player_reflection": review.get("player_reflection") if revision == item["revision"] else None,
                           **({"view": view} if view else {}),
                           "human": item["actor"] == review["human_color"], "facts": facts,
                           "allowed_lessons": lessons})

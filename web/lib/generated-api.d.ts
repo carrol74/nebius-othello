@@ -722,6 +722,22 @@ export interface components {
             /** Coordinate */
             coordinate: string;
         };
+        /** PlayerReflection */
+        PlayerReflection: {
+            /** Text */
+            text: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "review_recollection" | "review_plan";
+            /** Recorded Move */
+            recorded_move: string | null;
+            /** Collected At */
+            collected_at: string;
+            /** Prior Analysis Available */
+            prior_analysis_available: boolean;
+        };
         /** PositionLesson */
         PositionLesson: {
             /** Game Id */
@@ -750,6 +766,7 @@ export interface components {
             usage?: {
                 [key: string]: unknown;
             } | null;
+            reflection?: components["schemas"]["PlayerReflection"] | null;
         };
         /** PositionLessonRequest */
         PositionLessonRequest: {
@@ -760,6 +777,8 @@ export interface components {
             /** Question */
             question?: string | null;
             view?: components["schemas"]["LessonView"] | null;
+            /** Reflection */
+            reflection?: string | null;
         };
         /** PracticeAnswer */
         PracticeAnswer: {

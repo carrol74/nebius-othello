@@ -53,11 +53,16 @@ class PositionLessonRequest(WriteRequest):
     revision: int = Field(ge=0)
     question: str | None = Field(default=None, min_length=1, max_length=2000)
     view: LessonView | None = None
+    reflection: str | None = Field(default=None, min_length=1, max_length=1000)
 
     @model_validator(mode="after")
     def view_requires_question(self):
         if self.view is not None and self.question is None:
             raise ValueError("A teaching view is only used with a question")
+        if self.reflection is not None:
+            self.reflection = self.reflection.strip()
+            if not self.reflection or self.question is not None:
+                raise ValueError("A nonempty recollection can only accompany a lesson request")
         return self
 
 
@@ -417,6 +422,14 @@ class QuestionResult(BaseModel):
     view: LessonView | None = None
 
 
+class PlayerReflection(BaseModel):
+    text: str
+    source: Literal["review_recollection", "review_plan"]
+    recorded_move: Coordinate | None
+    collected_at: str
+    prior_analysis_available: bool
+
+
 class PositionLesson(BaseModel):
     game_id: str
     revision: int
@@ -430,6 +443,7 @@ class PositionLesson(BaseModel):
     coaching_error: str | None = None
     model_id: str | None = None
     usage: dict[str, Any] | None = None
+    reflection: PlayerReflection | None = None
 
 
 class Task(BaseModel):

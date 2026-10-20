@@ -8,14 +8,14 @@ from uuid import uuid4
 from nemothello.coaching import REVIEW_VERSION, summary_facts
 from nemothello.edax import Edax
 from nemothello.errors import AppError
+from nemothello.lesson_view import resolve_lesson_view
 from nemothello.opponents import Difficulty, EdaxOpponent
 from nemothello.position_lessons import check_teachable, previous_decision_revision
+from nemothello.practice import grade_practice, select_practice
 from nemothello.rules import Position, opponent
 from nemothello.schemas import GameState
-from nemothello.teaching import compare_lesson
-from nemothello.lesson_view import resolve_lesson_view
 from nemothello.storage import Store
-from nemothello.practice import grade_practice, select_practice
+from nemothello.teaching import compare_lesson
 
 
 def public_game(game: dict[str, Any]) -> dict[str, Any]:
@@ -392,9 +392,14 @@ class Games:
         self, owner: str, game_id: str, request_id: str, revision: int,
         question: str | None = None,
         view: dict[str, Any] | None = None,
+        reflection: str | None = None,
     ) -> dict[str, Any]:
+        if reflection is not None:
+            reflection = reflection.strip()
+            if not reflection or len(reflection) > 1000 or question is not None:
+                raise AppError("LESSON_REFLECTION", "Include a short recollection with the initial lesson request", 422)
         payload = {"operation": "position_lesson", "game_id": game_id,
-                   "revision": revision, "question": question, "view": view}
+                   "revision": revision, "question": question, "view": view, "reflection": reflection}
 
         def operation(db: Connection) -> dict[str, Any]:
             game = self.store.get("game", game_id, owner, db)
@@ -407,17 +412,35 @@ class Games:
                 resolved = resolve_lesson_view(saved["evidence"], view)
                 question_view = {key: resolved[key] for key in ("selected_move", "line")}
             else:
-                existing = [item for item in self.store.list_records("task", owner, db)
+                previous = [item for item in self.store.list_records("task", owner, db)
                             if item["game_id"] == game_id and item["kind"] == "lesson"
-                            and item["inputs"]["revision"] == revision
-                            and (item["status"] in ("queued", "running")
+                            and item["inputs"]["revision"] == revision]
+                recollection = saved.get("reflection") if saved else None
+                if previous:
+                    recollection = previous[0]["inputs"].get("reflection")
+                if previous and reflection is not None and reflection != (recollection or {}).get("text"):
+                    raise AppError("LESSON_REFLECTION", "The first recollection is saved. Add new thoughts in a follow-up question", 409)
+                if not previous and reflection is not None:
+                    recorded = next((event["coordinate"] for event in game["history"]
+                                     if event["revision"] == revision + 1 and event["kind"] == "move"), None)
+                    reviews = self.store.list_records("review", owner, db)
+                    prior_review = any(item["game_id"] == game_id and any(entry["revision"] == revision
+                                       for entry in item.get("evidence", [])) for item in reviews)
+                    prior_hint = any(item["game_id"] == game_id and item["revision"] == revision
+                                     for item in self.store.list_records("hint", owner, db))
+                    recollection = {"text": reflection, "source": "review_recollection" if recorded else "review_plan",
+                                    "recorded_move": recorded, "collected_at": datetime.now(UTC).isoformat(),
+                                    "prior_analysis_available": bool(saved or prior_review or prior_hint)}
+                existing = [item for item in previous
+                            if (item["status"] in ("queued", "running")
                                  or (item["status"] == "succeeded" and saved
                                      and saved["coaching_status"] == "ready"))]
                 if existing:
                     return self.public_task(existing[-1])
             task = self.make_task(db, owner, game_id, "question" if question else "lesson",
                                   {"revision": revision, "question": question,
-                                   "view": question_view if question else None})
+                                   "view": question_view if question else None,
+                                   "reflection": saved.get("reflection") if question else recollection})
             return self.public_task(task)
 
         return self.store.mutate(owner, request_id, payload, operation)

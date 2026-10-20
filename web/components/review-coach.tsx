@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocale } from "@/lib/locale";
 import { comparisonTakeaway, lessonText, stepText, teachingChoiceLabel, teachingFactText } from "@/lib/teaching-text";
-import { sameTeachingView, teachingView } from "@/lib/lesson-view";
+import { coachFocus, sameTeachingView, teachingView } from "@/lib/lesson-view";
 import { positionFactText } from "@/lib/review-text";
 import type { GameState, LessonView, PositionLesson, QuestionResult, TeachingDefense, TeachingFrame, TeachingMove } from "@/lib/types";
 
@@ -30,6 +30,8 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
   const {locale, t} = useLocale();
   const comparison = lesson.comparison;
   const initialComparison = useRef(lesson.comparison);
+  const automaticView = useRef<Variation | null>(null);
+  const focusApplied = useRef(false);
   const [question, setQuestion] = useState("");
   const item = lesson.evidence;
   const forcedMove = comparison.insight.kind === "forced";
@@ -49,12 +51,26 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
   useEffect(() => {
     const initial = initialComparison.current;
     const first = initial.choices.find((choice) => choice.coordinate === initial.selected_move)!;
-    showVariation({revision: initial.revision, coordinate: first.coordinate, frame: 1,
+    const initialView = {revision: initial.revision, coordinate: first.coordinate, frame: 1,
       assessment: first.assessment,
       lesson_frames: first.frames, focus_square: first.target,
       capture_lines: first.continuation_lesson ? [first.continuation_lesson.capture_line] : first.capture_lines,
-      capture_frame: first.continuation_lesson ? first.continuation_lesson.frame_index - 1 : undefined});
+      capture_frame: first.continuation_lesson ? first.continuation_lesson.frame_index - 1 : undefined};
+    automaticView.current = initialView;
+    showVariation(initialView);
   }, [showVariation]);
+
+  useEffect(() => {
+    if (focusApplied.current || lesson.coaching_status !== "ready" || variation !== automaticView.current) return;
+    focusApplied.current = true;
+    const focus = coachFocus(lesson);
+    if (!focus) return;
+    const {choice, frame} = focus;
+    showVariation({revision: lesson.revision, coordinate: choice.coordinate, frame,
+      assessment: choice.assessment, lesson_frames: choice.frames, focus_square: choice.target,
+      capture_lines: choice.continuation_lesson ? [choice.continuation_lesson.capture_line] : choice.capture_lines,
+      capture_frame: choice.continuation_lesson ? choice.continuation_lesson.frame_index - 1 : undefined});
+  }, [lesson, variation, showVariation]);
 
   return <div className="position-coach">
     {item.is_played === false && <p>{t("You have not played this turn yet.", "你在这一回合还没有落子。")}</p>}

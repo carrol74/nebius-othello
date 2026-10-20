@@ -2529,6 +2529,51 @@
         ],
         "title": "MoveRequest"
       },
+      "PlayerReflection": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "review_recollection",
+              "review_plan"
+            ],
+            "title": "Source"
+          },
+          "recorded_move": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded Move"
+          },
+          "collected_at": {
+            "type": "string",
+            "title": "Collected At"
+          },
+          "prior_analysis_available": {
+            "type": "boolean",
+            "title": "Prior Analysis Available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text",
+          "source",
+          "recorded_move",
+          "collected_at",
+          "prior_analysis_available"
+        ],
+        "title": "PlayerReflection"
+      },
       "PositionLesson": {
         "properties": {
           "game_id": {
@@ -2619,6 +2664,16 @@
               }
             ],
             "title": "Usage"
+          },
+          "reflection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlayerReflection"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -2667,6 +2722,19 @@
                 "type": "null"
               }
             ]
+          },
+          "reflection": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reflection"
           }
         },
         "additionalProperties": false,

@@ -1,0 +1,38 @@
+{
+  "version": "decision-teaching-v1",
+  "study_status": "not_run",
+  "claims": {
+    "board_facts": "Displayed coordinates, capture rays, actors and passes agree with legal replay.",
+    "analysis": "A choice explanation is supported by the stated search settings or by complete rule checks within an explicit horizon.",
+    "learning": "A beginner can make and explain the relevant choice in an unseen position. Correctly recalling a recommendation is insufficient."
+  },
+  "player_account": {
+    "sources": ["review_recollection", "review_plan"],
+    "handling": "Save the first statement with the recorded move, collection time and whether this position already had application analysis. Keep it separate from verified facts. Do not infer original intent or a misconception from a move alone.",
+    "exposure_limit": "Application availability does not establish what the learner actually saw; external analysis and prior knowledge are unknown."
+  },
+  "independent_review": {
+    "procedure": [
+      "Freeze the complete case list and criteria before reviewing results. Include forced, tied, highest-rated, lower-rated, pass and corner positions from independent complete games.",
+      "Give a qualified Othello reviewer only the independent board and history packet first. Record preferred moves, concrete reasons and search settings before opening the application evidence packet.",
+      "Check all displayed facts and every claim in the second packet, including what the player actually asked. Record counterexamples and corrections; missing review fields are unreviewed.",
+      "Reproduce relevant branches with a separately implemented engine where available. Solve tractable endings completely. Midgame engine agreement is corroboration, not proof.",
+      "An earlier revision is relevant only when a verified alternative changes the opportunity under discussion. Nearest prior choice and later outcome alone do not establish causation."
+    ],
+    "criteria": ["board_facts_correct", "scope_of_claims_correct", "addresses_player_question", "explains_choice"],
+    "failure_policy": "Any false board fact or overstated forced claim fails that case. Report each criterion separately; an unexplained score gap cannot pass as a causal explanation."
+  },
+  "learning_evaluation": {
+    "conditions": ["recommendation_only", "recommendation_with_verified_explanation"],
+    "design": "Assign target beginners to conditions before exposure. Record baseline choices and reasons, then assess matched unseen positions with identical prompts and no recommendations or immediate feedback. Reviewers grade reasons without seeing condition assignment.",
+    "separation": "Use different complete source games for teaching, practice, baseline and post-assessment. Exclude color swaps, rotations and reflections across sets. Freeze the assessment before data collection and keep answers unavailable to participants.",
+    "capture_mechanism": "Use capture-lines-v1 for move and friendly-anchor accuracy. This measures a local mechanism only.",
+    "decision_reason_rubric": {
+      "0": "The reason contradicts board facts or has no relevant mechanism.",
+      "1": "Identifies a relevant opportunity but does not compare what changes between choices.",
+      "2": "Explains a verified difference between choices using squares, captures and an opponent reply, within the evidence's scope."
+    },
+    "report": ["all_assigned_cases", "participant_count_and_baseline", "condition_assignment", "first_attempt_accuracy", "blinded_reason_scores", "missing_answers", "counterexamples", "uncertainty_and_sample_limits"],
+    "completion": "An export, automated test, model agreement or successful replay cannot establish learning. No expert review or controlled learner study is reported as completed."
+  }
+}

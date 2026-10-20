@@ -5,12 +5,12 @@ from typing import Any
 from nemothello.coaching import REVIEW_VERSION, enrich_evidence, select_key_moves, summary_facts
 from nemothello.errors import AppError
 from nemothello.games import Games
+from nemothello.lesson_view import resolve_lesson_view
 from nemothello.nemotron import Nemotron
 from nemothello.position_lessons import analyze_position, lesson_context, previous_decision_revision
 from nemothello.rules import Position
 from nemothello.storage import Store
 from nemothello.teaching import compare_lesson
-from nemothello.lesson_view import resolve_lesson_view
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,8 @@ class Tasks:
             elif task["kind"] == "review":
                 result = self.review(owner, task["game_id"])
             elif task["kind"] == "lesson":
-                result = self.lesson(owner, task["game_id"], task["inputs"]["revision"], task["task_id"])
+                result = self.lesson(owner, task["game_id"], task["inputs"]["revision"], task["task_id"],
+                                     task["inputs"].get("reflection"))
             else:
                 revision = task["inputs"].get("revision")
                 if revision is None:
@@ -60,6 +61,7 @@ class Tasks:
                     lesson = self.games.position_lesson(owner, task["game_id"], revision)
                     game = self.store.get("game", task["game_id"], owner)
                     review = lesson_context(game, lesson["evidence"], self.store.list_records("hint", owner))
+                    review["player_reflection"] = lesson.get("reflection")
                     review["teaching_view"] = resolve_lesson_view(lesson["evidence"], task["inputs"].get("view"))
                 response = self.nemotron.explain(review, task["inputs"]["question"], **({"revision": revision} if revision is not None else {}))
                 result = {"answer": response["text"], "model_id": response["model_id"],
@@ -82,7 +84,8 @@ class Tasks:
                     self.store.save(db, "game", game["game_id"], owner, game)
                 self.store.save(db, "task", task["task_id"], owner, task)
 
-    def lesson(self, owner: str, game_id: str, revision: int, task_id: str) -> dict[str, Any]:
+    def lesson(self, owner: str, game_id: str, revision: int, task_id: str,
+               reflection: dict[str, Any] | None = None) -> dict[str, Any]:
         game = self.store.get("game", game_id, owner)
         saved = self.games.position_lesson(owner, game_id, revision)
         evidence = saved.get("evidence")
@@ -94,12 +97,13 @@ class Tasks:
         if evidence is None:
             evidence = analyze_position(game, revision, self.games.review_engine_of(game))
         context = lesson_context(game, evidence, self.store.list_records("hint", owner))
+        context["player_reflection"] = reflection
         lesson = {"game_id": game_id, "revision": revision, "task_id": task_id, "evidence": evidence,
                   "previous_decision_revision": previous_decision_revision(game, revision),
                   "comparison": compare_lesson(context, revision, evidence["actual_move"]),
                   "hint_adoption": context["hint_adoption"],
                   "coaching": [], "coaching_status": "pending", "coaching_error": None,
-                  "model_id": None, "usage": None}
+                  "model_id": None, "usage": None, "reflection": reflection}
         key = f"{game_id}:{revision}"
         context["teaching_comparison"] = {"insight": lesson["comparison"]["insight"],
                                          "decision_contrast": lesson["comparison"]["decision_contrast"], "choices": [
