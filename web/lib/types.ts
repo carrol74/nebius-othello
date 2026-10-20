@@ -7,6 +7,8 @@ export type TeachingDefense = components["schemas"]["TeachingDefense"];
 export type PositionLesson = components["schemas"]["PositionLesson"];
 export type QuestionResult = components["schemas"]["QuestionResult"];
 export type LessonView = components["schemas"]["LessonView"];
+export type PracticeQuestion = components["schemas"]["PracticeQuestion"];
+export type PracticeFeedback = components["schemas"]["PracticeFeedback"];
 
 export type Color = "X" | "O";
 export type Difficulty = "easy" | "medium" | "hard";

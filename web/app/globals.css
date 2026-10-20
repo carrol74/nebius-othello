@@ -59,6 +59,9 @@ p { line-height: 1.7; }
 .lesson-tools { margin-top: 16px; padding: 12px 0; border: 0; border-top: 1px solid var(--border); border-radius: 0; }
 .lesson-tools[open] summary { margin-bottom: 14px; }
 .position-coach .question-form { margin-top: 20px; }
+.practice-panel { font-size: 14px; }
+.practice-panel textarea { width: 100%; padding: 12px; margin-bottom: 12px; color: inherit; background: var(--background); border: 1px solid var(--border); border-radius: 8px; resize: vertical; }
+.practice-panel > button { margin-top: 18px; }
 .position-coach .question-form > div { gap: 8px; }
 .question-form input { min-width: 0; flex: 1; color: inherit; background: var(--background); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font: inherit; font-size: 13px; }
 .question-form input:focus-visible { outline: 2px solid var(--accent); }

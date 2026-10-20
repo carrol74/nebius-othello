@@ -15,6 +15,7 @@ from nemothello.schemas import GameState
 from nemothello.teaching import compare_lesson
 from nemothello.lesson_view import resolve_lesson_view
 from nemothello.storage import Store
+from nemothello.practice import grade_practice, select_practice
 
 
 def public_game(game: dict[str, Any]) -> dict[str, Any]:
@@ -349,6 +350,43 @@ class Games:
                      if item["game_id"] == game_id and item["kind"] == "lesson"
                      and item["inputs"]["revision"] == revision]
             return {"task": self.public_task(tasks[-1]) if tasks else None}
+
+    def _practice_question(self, owner, game_id, revision, lesson_move, db):
+        game = self.store.get("game", game_id, owner, db)
+        check_teachable(game, revision)
+        saved = next((item for item in self.store.list_records("lesson", owner, db)
+                      if item["game_id"] == game_id and item["revision"] == revision), None)
+        if not saved:
+            raise AppError("LESSON_NOT_FOUND", "Teach this position before practicing", 409)
+        comparison = compare_lesson({"evidence": [saved["evidence"]]}, revision, lesson_move)
+        continuation = comparison["choices"][0]["continuation_lesson"]
+        if continuation is None:
+            return None
+        used = {item["question"]["question_id"] for item in self.store.list_records("practice_attempt", owner, db)}
+        return select_practice(continuation["kind"], game, used)
+
+    def practice_question(self, owner, game_id, revision, lesson_move):
+        with self.store.transaction() as db:
+            return self._practice_question(owner, game_id, revision, lesson_move, db)
+
+    def answer_practice(self, owner, game_id, request_id, revision, lesson_move, question_id, move, anchor, reason):
+        if not reason.strip():
+            raise AppError("PRACTICE_REASON", "Explain your choice before checking it", 422)
+        payload = {"operation": "practice_answer", "game_id": game_id, "revision": revision, "lesson_move": lesson_move,
+                   "question_id": question_id, "move": move, "anchor": anchor, "reason": reason}
+
+        def operation(db):
+            question = self._practice_question(owner, game_id, revision, lesson_move, db)
+            if question is None or question["question_id"] != question_id:
+                raise AppError("PRACTICE_CHANGED", "Load a fresh exercise before answering", 409)
+            feedback = grade_practice(question, move, anchor)
+            self.store.save(db, "practice_attempt", request_id, owner, {
+                "game_id": game_id, "revision": revision, "lesson_move": lesson_move, "question": question,
+                "answer": {"move": move, "anchor": anchor, "reason": reason}, "feedback": feedback,
+            })
+            return feedback
+
+        return self.store.mutate(owner, request_id, payload, operation)
 
     def create_position_lesson_task(
         self, owner: str, game_id: str, request_id: str, revision: int,

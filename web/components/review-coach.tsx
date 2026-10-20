@@ -13,7 +13,7 @@ export type Variation = {
   exercise?: {defenses: TeachingDefense[]; target: string; attempt: string | null};
 };
 
-export function ReviewCoach({game, lesson, variation, pending, busy, showVariation, ask, answer, questionPending, continueGame, replay, revisit}: {
+export function ReviewCoach({game, lesson, variation, pending, busy, showVariation, ask, answer, questionPending, continueGame, replay, practice}: {
   game: GameState;
   lesson: PositionLesson;
   variation: Variation | null;
@@ -25,7 +25,7 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
   questionPending: boolean;
   continueGame: (revision: number) => void;
   replay: (revision: number) => void;
-  revisit: (revision: number) => void;
+  practice: (move: string) => void;
 }) {
   const {locale, t} = useLocale();
   const comparison = lesson.comparison;
@@ -73,7 +73,7 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
       lesson_frames: activeMove.frames, capture_lines: [activeMove.continuation_lesson!.capture_line],
       capture_frame: activeMove.continuation_lesson!.frame_index - 1,
     })}>{t(`See the ${activeMove.continuation_lesson.capture_line[0]} capture`, `查看 ${activeMove.continuation_lesson.capture_line[0]} 的夹击`)}</button>}
-    {forcedMove && lesson.previous_decision_revision != null && <button disabled={busy} onClick={() => revisit(lesson.previous_decision_revision!)}>{t("Review the last turn with a choice", "回看上一次有选择的回合")}</button>}
+    {!takeaway && activeMove.continuation_lesson && <button disabled={busy} onClick={() => practice(activeMove.coordinate)}>{t("Try this idea in another position", "换个局面试试")}</button>}
     {!forcedMove && activeMove.kind === "corner_forced" && activeMove.defense_lines.length > 0 && <button disabled={busy} onClick={() => showVariation({
       revision: lesson.revision, coordinate: activeMove.coordinate, frame: 2, lesson_frames: activeMove.frames,
       assessment: activeMove.assessment,

@@ -71,6 +71,39 @@ class AnalyzeRequest(RequestModel):
     turn: Color
 
 
+class PracticeContext(BaseModel):
+    actor: Color
+    coordinate: Coordinate
+    flipped: list[Coordinate]
+
+
+class PracticeQuestion(BaseModel):
+    question_id: str
+    objective: Literal["anchor", "recapture", "reply"]
+    board: BoardRows
+    turn: Color
+    context: list[PracticeContext]
+    rubric_version: str
+
+
+class PracticeAnswer(WriteRequest):
+    revision: int = Field(ge=0)
+    lesson_move: Coordinate
+    question_id: str = Field(min_length=1, max_length=100)
+    move: Coordinate
+    anchor: Coordinate
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+class PracticeFeedback(BaseModel):
+    legal: bool
+    move_matches_goal: bool
+    anchor_matches: bool
+    capture_line: list[Coordinate]
+    reason_reviewed: Literal[False]
+    rubric_version: str
+
+
 class HistoryEvent(BaseModel):
     event_index: int
     actor: Color

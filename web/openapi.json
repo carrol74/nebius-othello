@@ -989,6 +989,160 @@
         }
       }
     },
+    "/games/{game_id}/lessons/practice": {
+      "get": {
+        "summary": "Get Practice",
+        "operationId": "get_practice_games__game_id__lessons_practice_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "revision",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "title": "Revision"
+            }
+          },
+          {
+            "name": "move",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$",
+              "title": "Move"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PracticeQuestion"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get Practice Games  Game Id  Lessons Practice Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Answer Practice",
+        "operationId": "answer_practice_games__game_id__lessons_practice_post",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeAnswer"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeFeedback"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/games/{game_id}/branches": {
       "post": {
         "summary": "Branch",
@@ -2428,6 +2582,191 @@
           "revision"
         ],
         "title": "PositionLessonRequest"
+      },
+      "PracticeAnswer": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 8,
+            "title": "Request Id"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Revision"
+          },
+          "lesson_move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Lesson Move"
+          },
+          "question_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Question Id"
+          },
+          "move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Move"
+          },
+          "anchor": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Anchor"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "revision",
+          "lesson_move",
+          "question_id",
+          "move",
+          "anchor",
+          "reason"
+        ],
+        "title": "PracticeAnswer"
+      },
+      "PracticeContext": {
+        "properties": {
+          "actor": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Actor"
+          },
+          "coordinate": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Coordinate"
+          },
+          "flipped": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Flipped"
+          }
+        },
+        "type": "object",
+        "required": [
+          "actor",
+          "coordinate",
+          "flipped"
+        ],
+        "title": "PracticeContext"
+      },
+      "PracticeFeedback": {
+        "properties": {
+          "legal": {
+            "type": "boolean",
+            "title": "Legal"
+          },
+          "move_matches_goal": {
+            "type": "boolean",
+            "title": "Move Matches Goal"
+          },
+          "anchor_matches": {
+            "type": "boolean",
+            "title": "Anchor Matches"
+          },
+          "capture_line": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Capture Line"
+          },
+          "reason_reviewed": {
+            "type": "boolean",
+            "const": false,
+            "title": "Reason Reviewed"
+          },
+          "rubric_version": {
+            "type": "string",
+            "title": "Rubric Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "legal",
+          "move_matches_goal",
+          "anchor_matches",
+          "capture_line",
+          "reason_reviewed",
+          "rubric_version"
+        ],
+        "title": "PracticeFeedback"
+      },
+      "PracticeQuestion": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "title": "Question Id"
+          },
+          "objective": {
+            "type": "string",
+            "enum": [
+              "anchor",
+              "recapture",
+              "reply"
+            ],
+            "title": "Objective"
+          },
+          "board": {
+            "items": {
+              "type": "string",
+              "pattern": "^[.XO]{8}$"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 8,
+            "title": "Board"
+          },
+          "turn": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Turn"
+          },
+          "context": {
+            "items": {
+              "$ref": "#/components/schemas/PracticeContext"
+            },
+            "type": "array",
+            "title": "Context"
+          },
+          "rubric_version": {
+            "type": "string",
+            "title": "Rubric Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "objective",
+          "board",
+          "turn",
+          "context",
+          "rubric_version"
+        ],
+        "title": "PracticeQuestion"
       },
       "QuestionRequest": {
         "properties": {

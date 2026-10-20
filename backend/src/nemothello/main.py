@@ -29,6 +29,9 @@ from nemothello.schemas import (
     MoveRequest,
     PositionLesson,
     PositionLessonRequest,
+    PracticeAnswer,
+    PracticeFeedback,
+    PracticeQuestion,
     QuestionRequest,
     Review,
     ReviewLookup,
@@ -229,6 +232,19 @@ def compare_position_lesson(game_id: str, owner: Owner, request: Request,
     if "evidence" not in saved:
         raise AppError("LESSON_NOT_FOUND", "Teach this position before comparing moves", 409)
     return compare_lesson({"evidence": [saved["evidence"]]}, revision, move)
+
+
+@app.get("/games/{game_id}/lessons/practice", response_model=PracticeQuestion | None)
+def get_practice(game_id: str, owner: Owner, request: Request,
+                 revision: Annotated[int, Query(ge=0)],
+                 move: Annotated[str, Query(pattern=r"^[a-h][1-8]$")]):
+    return request.app.state.games.practice_question(owner, game_id, revision, move)
+
+
+@app.post("/games/{game_id}/lessons/practice", response_model=PracticeFeedback)
+def answer_practice(game_id: str, body: PracticeAnswer, owner: Owner, request: Request):
+    return request.app.state.games.answer_practice(owner, game_id, body.request_id, body.revision,
+                                                  body.lesson_move, body.question_id, body.move, body.anchor, body.reason)
 
 
 @app.post("/games/{game_id}/branches", response_model=GameState | Task)
