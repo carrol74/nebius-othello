@@ -79,5 +79,12 @@
     "allocation": "With --participants, freeze randomized blocks of four balancing both teaching condition and form order. Preserve the assigned schedule prefix if enrolling additional participants.",
     "grading": "Use the grade command for one participant at a time. Retain every assigned question in the denominator and all missing answers. Grade only the first recorded attempt. Export shuffled reason packets without form, condition, source-game or automatic-score fields; the evaluator retains their separate mapping.",
     "status": "Preparation is automatic. Expert review, empirical form equivalence and learner benefit remain unverified. Development contract tests do not count as participant results."
+  },
+  "search_verification": {
+    "command": "backend/.venv/bin/python scripts/audit_teaching_search.py --input <application-evidence-packet> --output <new-report> --levels 8 10",
+    "selection": "Freeze cases before searching. Audit every selected case and every legal candidate at each level, from the same board and player perspective. Retain original scores, complete native output, settings, timings and partial results after failures.",
+    "criteria": "Report changes in highest-score sets, the evaluated move assessment, advantage sign, original comparison margin and complete exact score vectors. A change from one highest move to a tie is a set change even if one shared best move remains.",
+    "limits": "Finite-depth agreement supports only consistency within the tested searches. It does not prove optimal midgame play, explain an entire score gap, or establish learning benefit. Distinguish an unplayed evaluated move from a recorded game move.",
+    "runtime": "New review analysis uses the strongest configured analysis engine. Gameplay, displayed-hint levels and historical evidence are preserved. Existing saved scores remain attributable to their original search settings."
   }
 }
