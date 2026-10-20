@@ -21,6 +21,7 @@ from nemothello.schemas import (
     AnalyzeRequest,
     BranchRequest,
     CreateGame,
+    EarlierDecisionResult,
     GameState,
     Hint,
     HintDisplay,
@@ -242,6 +243,12 @@ def get_practice(game_id: str, owner: Owner, request: Request,
                  revision: Annotated[int, Query(ge=0)],
                  move: Annotated[str, Query(pattern=r"^[a-h][1-8]$")]):
     return request.app.state.games.practice_question(owner, game_id, revision, move)
+
+
+@app.get('/games/{game_id}/lessons/earlier', response_model=EarlierDecisionResult)
+def earlier_decision(game_id: str, owner: Owner, request: Request,
+                     revision: Annotated[int, Query(ge=0)]):
+    return request.app.state.games.earlier_decision(owner, game_id, revision)
 
 
 @app.post("/games/{game_id}/lessons/practice", response_model=PracticeFeedback | ReplyPracticeFeedback)

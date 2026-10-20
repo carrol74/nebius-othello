@@ -44,6 +44,7 @@ def export_cases(database):
             "case_number": case_number, "engine_evidence": lesson["evidence"],
             "comparison": comparison, "player_reflection": lesson.get("reflection"),
             "coach_selection": lesson.get("coaching", []), "coaching_status": lesson.get("coaching_status"),
+            "earlier_decision": lesson.get('earlier_decision'),
             "questions": questions,
             "expert_review": {"board_facts_correct": None, "scope_of_claims_correct": None,
                               "addresses_player_question": None, "explains_choice": None,

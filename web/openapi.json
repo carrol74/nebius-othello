@@ -1154,6 +1154,75 @@
         }
       }
     },
+    "/games/{game_id}/lessons/earlier": {
+      "get": {
+        "summary": "Earlier Decision",
+        "operationId": "earlier_decision_games__game_id__lessons_earlier_get",
+        "parameters": [
+          {
+            "name": "game_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Game Id"
+            }
+          },
+          {
+            "name": "revision",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "title": "Revision"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "x-session-id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 100,
+              "title": "X-Session-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EarlierDecisionResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/games/{game_id}/branches": {
       "post": {
         "summary": "Branch",
@@ -1689,6 +1758,36 @@
         ],
         "title": "ContrastSquare"
       },
+      "CornerComparisonWitness": {
+        "properties": {
+          "prefix": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-h][1-8]$"
+                },
+                {
+                  "type": "string",
+                  "const": "pass"
+                }
+              ]
+            },
+            "type": "array",
+            "maxItems": 2,
+            "title": "Prefix"
+          },
+          "opportunity": {
+            "$ref": "#/components/schemas/ReplyOpportunity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prefix",
+          "opportunity"
+        ],
+        "title": "CornerComparisonWitness"
+      },
       "CornerProof": {
         "properties": {
           "target": {
@@ -1962,6 +2061,101 @@
           "added_reply"
         ],
         "title": "DecisionContrast"
+      },
+      "EarlierDecisionLink": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "actor": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Actor"
+          },
+          "target": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Target"
+          },
+          "recorded_move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Recorded Move"
+          },
+          "recommended_move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Recommended Move"
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/ReviewEvidence"
+          },
+          "recorded_proof": {
+            "$ref": "#/components/schemas/CornerProof"
+          },
+          "recommended_proof": {
+            "$ref": "#/components/schemas/CornerProof"
+          },
+          "continuity": {
+            "items": {
+              "$ref": "#/components/schemas/ThreatObservation"
+            },
+            "type": "array",
+            "title": "Continuity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revision",
+          "actor",
+          "target",
+          "recorded_move",
+          "recommended_move",
+          "evidence",
+          "recorded_proof",
+          "recommended_proof",
+          "continuity"
+        ],
+        "title": "EarlierDecisionLink"
+      },
+      "EarlierDecisionResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "verified",
+              "not_found",
+              "not_applicable"
+            ],
+            "title": "Status"
+          },
+          "scope": {
+            "type": "string",
+            "const": "continuous_bounded_corner_threat",
+            "title": "Scope"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EarlierDecisionLink"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "scope",
+          "link"
+        ],
+        "title": "EarlierDecisionResult"
       },
       "GameResult": {
         "properties": {
@@ -2606,16 +2800,20 @@
             ],
             "title": "Task Id"
           },
-          "previous_decision_revision": {
+          "earlier_eligible": {
+            "type": "boolean",
+            "title": "Earlier Eligible",
+            "default": false
+          },
+          "earlier_decision": {
             "anyOf": [
               {
-                "type": "integer"
+                "$ref": "#/components/schemas/EarlierDecisionResult"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Previous Decision Revision"
+            ]
           },
           "evidence": {
             "$ref": "#/components/schemas/ReviewEvidence"
@@ -2636,6 +2834,7 @@
           "coaching_status": {
             "type": "string",
             "enum": [
+              "not_requested",
               "pending",
               "ready",
               "failed"
@@ -3051,6 +3250,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/LessonView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "earlier_decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EarlierDecisionResult"
               },
               {
                 "type": "null"
@@ -4081,6 +4290,23 @@
             },
             "type": "array",
             "title": "Example"
+          },
+          "other_threats": {
+            "items": {
+              "$ref": "#/components/schemas/CornerProof"
+            },
+            "type": "array",
+            "title": "Other Threats"
+          },
+          "witness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CornerComparisonWitness"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -4120,6 +4346,7 @@
               "corner_taken",
               "corner_given",
               "corner_forced",
+              "corner_defense",
               "pass"
             ],
             "title": "Kind"
@@ -4238,6 +4465,37 @@
           "assessment"
         ],
         "title": "TeachingMove"
+      },
+      "ThreatObservation": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "turn": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Turn"
+          },
+          "max_plies": {
+            "type": "integer",
+            "enum": [
+              3,
+              4
+            ],
+            "title": "Max Plies"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revision",
+          "turn",
+          "max_plies"
+        ],
+        "title": "ThreatObservation"
       },
       "ValidationError": {
         "properties": {

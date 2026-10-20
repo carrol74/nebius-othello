@@ -2,15 +2,20 @@ import asyncio
 import logging
 from typing import Any
 
-from nemothello.coaching import REVIEW_VERSION, enrich_evidence, select_key_moves, summary_facts
+from nemothello.coaching import (
+    REVIEW_VERSION,
+    enrich_evidence,
+    factual_question_plan,
+    select_key_moves,
+    summary_facts,
+)
 from nemothello.errors import AppError
 from nemothello.games import Games
 from nemothello.lesson_view import resolve_lesson_view
 from nemothello.nemotron import Nemotron
-from nemothello.position_lessons import analyze_position, lesson_context, previous_decision_revision
+from nemothello.position_lessons import analyze_position, lesson_context, lesson_document
 from nemothello.rules import Position
 from nemothello.storage import Store
-from nemothello.teaching import compare_lesson
 
 logger = logging.getLogger(__name__)
 
@@ -59,15 +64,20 @@ class Tasks:
                     review = self.games.review(owner, task["game_id"])
                 else:
                     lesson = self.games.position_lesson(owner, task["game_id"], revision)
+                    if (lesson.get('earlier_eligible') and lesson.get('earlier_decision') is None
+                            and factual_question_plan(task['inputs']['question']) is None):
+                        lesson['earlier_decision'] = self.games.earlier_decision(owner, task['game_id'], revision)
                     game = self.store.get("game", task["game_id"], owner)
                     review = lesson_context(game, lesson["evidence"], self.store.list_records("hint", owner))
                     review["player_reflection"] = lesson.get("reflection")
+                    review['earlier_decision'] = lesson.get('earlier_decision')
                     review["teaching_view"] = resolve_lesson_view(lesson["evidence"], task["inputs"].get("view"))
                 response = self.nemotron.explain(review, task["inputs"]["question"], **({"revision": revision} if revision is not None else {}))
                 result = {"answer": response["text"], "model_id": response["model_id"],
                           "usage": response["usage"], "coaching": response["coaching"],
                           "format_version": REVIEW_VERSION, "answer_facts": response["answer_facts"],
-                          "topic": response["topic"], "view": task["inputs"].get("view")}
+                          "topic": response["topic"], "view": task["inputs"].get("view"),
+                          'earlier_decision': review.get('earlier_decision')}
             task.update(status="succeeded", result=result, error=None, usage=result.get("usage"))
         except Exception as exc:
             logger.exception("Task failed task_id=%s", task["task_id"])
@@ -98,12 +108,8 @@ class Tasks:
             evidence = analyze_position(game, revision, self.games.review_engine_of(game))
         context = lesson_context(game, evidence, self.store.list_records("hint", owner))
         context["player_reflection"] = reflection
-        lesson = {"game_id": game_id, "revision": revision, "task_id": task_id, "evidence": evidence,
-                  "previous_decision_revision": previous_decision_revision(game, revision),
-                  "comparison": compare_lesson(context, revision, evidence["actual_move"]),
-                  "hint_adoption": context["hint_adoption"],
-                  "coaching": [], "coaching_status": "pending", "coaching_error": None,
-                  "model_id": None, "usage": None, "reflection": reflection}
+        lesson = lesson_document(context, evidence)
+        lesson.update(task_id=task_id, coaching_status='pending', reflection=reflection)
         key = f"{game_id}:{revision}"
         context["teaching_comparison"] = {"insight": lesson["comparison"]["insight"],
                                          "decision_contrast": lesson["comparison"]["decision_contrast"], "choices": [

@@ -1,8 +1,10 @@
 from typing import Any
 
 from nemothello.coaching import enrich_evidence
+from nemothello.decision import assess_decision
 from nemothello.errors import AppError
 from nemothello.rules import Position
+from nemothello.teaching import compare_lesson
 
 
 def position_at(game: dict[str, Any], revision: int) -> Position:
@@ -25,15 +27,6 @@ def check_teachable(game: dict[str, Any], revision: int) -> Position:
     return position
 
 
-def previous_decision_revision(game: dict[str, Any], revision: int) -> int | None:
-    for event in reversed(game["history"]):
-        before = event["revision"] - 1
-        if before < revision and event["kind"] == "move" and event["actor"] == game["human_color"]:
-            if len(position_at(game, before).moves) > 1:
-                return before
-    return None
-
-
 def analyze_position(game: dict[str, Any], revision: int, engine) -> dict[str, Any]:
     position = check_teachable(game, revision)
     analysis = {key: value for key, value in engine.analyze(position.board, position.turn).items()
@@ -51,6 +44,18 @@ def analyze_position(game: dict[str, Any], revision: int, engine) -> dict[str, A
     })
 
 
+def bind_recorded_move(game, evidence):
+    if evidence.get('is_played', True):
+        return evidence
+    event = next((event for event in game['history']
+                  if event['revision'] == evidence['revision'] + 1 and event['kind'] == 'move'), None)
+    if event is None:
+        return evidence
+    updated = {**evidence, 'actual_move': event['coordinate'], 'is_played': True}
+    assessment = assess_decision(updated, event['coordinate'])
+    return {**updated, 'recommended_move': assessment['best_moves'][0], 'score_loss': assessment['score_loss']}
+
+
 def lesson_context(game: dict[str, Any], evidence: dict[str, Any], hints: list[dict[str, Any]]):
     shown = [hint for hint in hints if hint["game_id"] == game["game_id"] and hint["displayed"]]
     adopted = 0
@@ -62,3 +67,11 @@ def lesson_context(game: dict[str, Any], evidence: dict[str, Any], hints: list[d
     return {**game, "evidence": [evidence], "key_moves": [evidence], "hints": shown,
             "hint_adoption": {"shown_turns": len({hint["revision"] for hint in shown}),
                               "adopted_turns": adopted}}
+
+
+def lesson_document(context, evidence):
+    return {"game_id": context["game_id"], "revision": evidence["revision"], "task_id": None,
+            "evidence": evidence,
+            "comparison": compare_lesson(context, evidence["revision"], evidence["actual_move"]),
+            "hint_adoption": context["hint_adoption"], "coaching": [], "coaching_status": "not_requested",
+            "coaching_error": None, "model_id": None, "usage": None, "reflection": None}

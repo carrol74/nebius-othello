@@ -33,6 +33,8 @@ SYSTEM_PROMPT = (
     "Use each position's decision assessment: a forced move offers no choice; tied best moves "
     "are equally rated; a best move can still leave its player behind. A corner capture or reply "
     "count describes a consequence and must not be treated as the cause of a score difference. "
+    "An earlier_decision fact links a continuous corner threat only within its stated horizon. "
+    "It does not prove permanent safety or that an earlier move caused the final result. "
     "When a position includes view, the question refers to that selected line and its visible board. "
     "Use the view fact. Pronouns such as this move refer to the last displayed move, or the selected "
     "root move when the line is empty. Root search scores do not evaluate the displayed later board. "

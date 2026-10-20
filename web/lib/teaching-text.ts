@@ -15,6 +15,7 @@ export function cornerName(square: string, locale: Locale): string {
 export function lessonPrompt(comparison: TeachingComparison, move: TeachingMove, locale: Locale): string {
   const zh = locale === "zh";
   const other = comparison.actor === "X" ? zh ? "白方" : "White" : zh ? "黑方" : "Black";
+  if (move.kind === 'corner_defense') return zh ? `下 ${move.coordinate} 后，怎样应对对手的准备，才能守住 ${move.target}？` : `After ${move.coordinate}, how can you answer the opponent's setup to defend ${move.target}?`;
   if (move.kind === "corner_forced") return zh ? `${other}准备先走 ${move.opponent_reply}，再抢${cornerName(move.target!, locale)}。现在换你防守，能挡住它吗？` : `${other} plans to play ${move.opponent_reply}, then take the ${cornerName(move.target!, locale)}. Your turn: can you stop that corner capture?`;
   if (move.kind === "corner_given") return zh ? `下 ${move.coordinate} 后，看看${cornerName(move.target!, locale)}。${other}能直接占住它吗？` : `After ${move.coordinate}, look at the ${cornerName(move.target!, locale)}. Can ${other} take it immediately?`;
   if (move.kind === "corner_taken") return zh ? `下 ${move.coordinate} 后，哪颗棋子能一直保留到终局？` : `After ${move.coordinate}, which disc will stay yours for the rest of the game?`;
@@ -155,12 +156,23 @@ export function comparisonTakeaway(comparison: TeachingComparison, locale: Local
   const best = comparison.choices.find((item) => item.coordinate === insight.better_move)!;
   if (insight.kind === "corner_defense") {
     const line = insight.example ?? [];
-    const example = line.length === 3 ? zh
-      ? `图中对手下 ${line[1]}，你可以用 ${line[2]} 防守，挡住随后占 ${insight.target}。`
-      : `In the example, answer ${line[1]} with ${line[2]} to stop the following ${insight.target} capture.` : "";
+    const setup = line[1] === 'pass' ? zh ? '对手跳过回合后' : 'after the opponent passes'
+      : zh ? `对手下 ${line[1]} 后` : `after ${line[1]}`;
+    const alreadyUnavailable = !best.opponent_corner_moves_after_reply.includes(insight.target!);
+    const effect = alreadyUnavailable
+      ? zh ? `使 ${insight.target} 继续保持不可落子` : `keep ${insight.target} unavailable`
+      : zh ? `挡住随后占 ${insight.target}` : `stop the following ${insight.target} capture`;
+    const example = line.length !== 3 ? '' : line[2] === 'pass'
+      ? zh ? `图中${setup}，你必须跳过回合；对手随后仍不能占 ${insight.target}。`
+        : `In the example, ${setup}, you must pass; the opponent still cannot take ${insight.target} on the following turn.`
+      : zh ? `图中${setup}，你可以用 ${line[2]} 防守，${effect}。`
+        : `In the example, ${setup}, play ${line[2]} to ${effect}.`;
+    const response = insight.proof?.refutations.some((entry) => entry.defense === null)
+      ? zh ? '每种回应后，要么对局已经结束，要么存在防守，能阻止它再下一手占这个角。' : 'each either ends the game or permits a defense against the corner capture on the following turn.'
+      : zh ? '每种回应下都有防守，能阻止它再下一手占这个角。' : 'each has a defense that prevents the corner capture on the following turn.';
     return zh
-      ? `下 ${insight.worse_move}，对手有办法抢到 ${insight.target}。改走 ${insight.better_move}，已检查对手下一步的全部合法回应，每种回应下都有防守，能阻止它再下一手占这个角。${example}结论只覆盖这段变化，不代表这个角以后一直安全。`
-      : `After ${insight.worse_move}, the opponent has a way to take ${insight.target}. After ${insight.better_move}, every legal next reply was checked: each has a defense that prevents the corner capture on the following turn. ${example} This covers that short sequence, not the rest of the game.`;
+      ? `下 ${insight.worse_move}，对手有办法抢到 ${insight.target}。改走 ${insight.better_move}，已检查对手下一步的全部合法回应，${response}${cornerWitnessText(comparison, locale) ?? ''}${example}${otherCornerText(comparison, locale) ?? ''}结论只覆盖这段变化，不代表这个角以后一直安全。`
+      : `After ${insight.worse_move}, the opponent has a way to take ${insight.target}. After ${insight.better_move}, every legal next reply was checked: ${response} ${cornerWitnessText(comparison, locale) ?? ''} ${example} ${otherCornerText(comparison, locale) ?? ''} This covers that short sequence, not the rest of the game.`;
   }
   if (insight.kind === "corner_access") return zh
     ? `下 ${insight.worse_move} 后，对手下一步就能下 ${insight.target}；下 ${insight.better_move} 后，${insight.target} 暂时不是它的合法落点。这是两种走法已核实的一处差别。`
@@ -173,8 +185,37 @@ export function comparisonTakeaway(comparison: TeachingComparison, locale: Local
   return null;
 }
 
+export function cornerWitnessText(comparison: TeachingComparison, locale: Locale): string | null {
+  const witness = comparison.insight.witness;
+  if (!witness) return null;
+  if (!witness.prefix.length) return replyOpportunityText(witness.opportunity, locale);
+  const zh = locale === 'zh';
+  const opportunity = witness.opportunity;
+  const actor = opportunity.actor === 'X' ? zh ? '黑方' : 'Black' : zh ? '白方' : 'White';
+  const cell = (value: string) => value === '.' ? zh ? '空格' : 'empty' : value === 'X' ? zh ? '黑子' : 'a black disc' : zh ? '白子' : 'a white disc';
+  const sequence = witness.prefix.map((move) => move === 'pass' ? zh ? '跳过回合' : 'pass' : move).join(' → ');
+  const changes = opportunity.changes.map((change) => zh
+    ? `${opportunity.available_after} 走法的 ${change.coordinate} 是${cell(change.available)}；${opportunity.blocked_after} 走法中是${cell(change.blocked)}`
+    : `${change.coordinate} has ${cell(change.available)} after ${opportunity.available_after}, versus ${cell(change.blocked)} after ${opportunity.blocked_after}`).join(zh ? '；' : '; ');
+  const turnNote = witness.prefix.length === 1
+    ? zh ? '落子仍须等待各自回合。' : 'Each player must still wait for their turn.' : '';
+  return zh
+    ? `同样经过 ${sequence} 后，${changes}。因此${actor}的夹击线 ${opportunity.capture_line.join(' → ')} 只在 ${opportunity.available_after} 变化中成立。${turnNote}`
+    : `After the same ${sequence} sequence, ${changes}. Thus ${actor}'s capture line ${opportunity.capture_line.join(' → ')} exists only in the ${opportunity.available_after} variation. ${turnNote}`;
+}
+
+export function otherCornerText(comparison: TeachingComparison, locale: Locale): string | null {
+  const threats = comparison.insight.other_threats ?? [];
+  if (!threats.length) return null;
+  const targets = threats.map((proof) => proof.target).join(locale === 'zh' ? '、' : ', ');
+  return locale === 'zh' ? `不过，${comparison.insight.better_move} 后，${targets} 仍有对手两次行动内可以强行拿角的威胁。`
+    : `After ${comparison.insight.better_move}, the opponent can still force ${targets} within its next two turns.`;
+}
+
 export function teachingFactText(comparison: TeachingComparison, id: string, locale: Locale): string | null {
   const kind = id.split(":")[1];
+  if (kind === 'corner_contrast') return cornerWitnessText(comparison, locale);
+  if (kind === 'other_corners') return otherCornerText(comparison, locale);
   if (kind === "decision_contrast") return comparisonTakeaway(comparison, locale);
   if (kind?.startsWith("continuation_")) {
     const choice = comparison.choices.find((choice) => choice.coordinate === kind.slice(13));
@@ -184,7 +225,7 @@ export function teachingFactText(comparison: TeachingComparison, id: string, loc
   if (!kind?.startsWith("proof_")) return null;
   const coordinate = kind.slice(6);
   const proof = comparison.choices.find((choice) => choice.coordinate === coordinate)?.corner_proof;
-  if (!proof) return null;
+  if (!proof || !proof.forced) return null;
   const zh = locale === "zh";
   const actor = proof.attacker === "X" ? zh ? "黑方" : "Black" : zh ? "白方" : "White";
   const action = proof.attack === proof.target ? zh ? `可以直接占 ${proof.target}` : `can take ${proof.target} immediately`

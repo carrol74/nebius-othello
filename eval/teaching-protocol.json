@@ -7,7 +7,10 @@
     "learning": "A beginner can make and explain the relevant choice in an unseen position. Correctly recalling a recommendation is insufficient."
   },
   "player_account": {
-    "sources": ["review_recollection", "review_plan"],
+    "sources": [
+      "review_recollection",
+      "review_plan"
+    ],
     "handling": "Save the first statement with the recorded move, collection time and whether this position already had application analysis. Keep it separate from verified facts. Do not infer original intent or a misconception from a move alone.",
     "exposure_limit": "Application availability does not establish what the learner actually saw; external analysis and prior knowledge are unknown."
   },
@@ -19,11 +22,19 @@
       "Reproduce relevant branches with a separately implemented engine where available. Solve tractable endings completely. Midgame engine agreement is corroboration, not proof.",
       "An earlier revision is relevant only when a verified alternative changes the opportunity under discussion. Nearest prior choice and later outcome alone do not establish causation."
     ],
-    "criteria": ["board_facts_correct", "scope_of_claims_correct", "addresses_player_question", "explains_choice"],
+    "criteria": [
+      "board_facts_correct",
+      "scope_of_claims_correct",
+      "addresses_player_question",
+      "explains_choice"
+    ],
     "failure_policy": "Any false board fact or overstated forced claim fails that case. Report each criterion separately; an unexplained score gap cannot pass as a causal explanation."
   },
   "learning_evaluation": {
-    "conditions": ["recommendation_only", "recommendation_with_verified_explanation"],
+    "conditions": [
+      "recommendation_only",
+      "recommendation_with_verified_explanation"
+    ],
     "design": "Assign target beginners to conditions before exposure. Record baseline choices and reasons, then assess matched unseen positions with identical prompts and no recommendations or immediate feedback. Reviewers grade reasons without seeing condition assignment.",
     "separation": "Use different complete source games for teaching, practice, baseline and post-assessment. Exclude color swaps, rotations and reflections across sets. Freeze the assessment before data collection and keep answers unavailable to participants.",
     "capture_mechanism": "Use capture-lines-v1 for move and friendly-anchor accuracy. This measures a local mechanism only.",
@@ -32,7 +43,31 @@
       "1": "Identifies a relevant opportunity but does not compare what changes between choices.",
       "2": "Explains a verified difference between choices using squares, captures and an opponent reply, within the evidence's scope."
     },
-    "report": ["all_assigned_cases", "participant_count_and_baseline", "condition_assignment", "first_attempt_accuracy", "blinded_reason_scores", "missing_answers", "counterexamples", "uncertainty_and_sample_limits"],
+    "report": [
+      "all_assigned_cases",
+      "participant_count_and_baseline",
+      "condition_assignment",
+      "first_attempt_accuracy",
+      "blinded_reason_scores",
+      "missing_answers",
+      "counterexamples",
+      "uncertainty_and_sample_limits"
+    ],
     "completion": "An export, automated test, model agreement or successful replay cannot establish learning. No expert review or controlled learner study is reported as completed."
+  },
+  "earlier_connection": {
+    "scope": "continuous_bounded_corner_threat",
+    "eligibility": "The recorded own-turn decision has a corner threat that the opponent can force within its next two turns under every current defense.",
+    "search": "Trace every actual state backwards while the same bounded corner threat remains. At the earlier human choice that permits a defense, compare the recorded move only with the canonical highest-rated recommendation. Require a strict score advantage and a rule-verified defense under that recommendation; do not invent a preference among tied recorded best moves.",
+    "evidence": "Retain native candidate scores and settings, the forcing certificate for the recorded move, refutations for all opponent first replies under the recommendation, and every intervening revision and actor. The bound is three plies from an opponent turn and at most four from a defender turn, with legal passes included.",
+    "interface": "Offer navigation only for a verified connection. A negative result establishes no related pair within this scope; it does not establish that the corner or final loss was unavoidable throughout the game.",
+    "limits": "A bounded defense does not establish permanent corner safety, explain the full search-score difference, or predict a different result. An unrelated earlier turn, shared target alone, and nearest previous choice are insufficient.",
+    "navigation": "Prepare the linked native lesson without calling a language model. Report its coaching status as not_requested until the learner explicitly requests coaching or asks a question. Reuse a prior saved analysis when it already exists.",
+    "snapshot_binding": "When a previously unplayed turn becomes recorded history, bind the same native scores to the actual move and reset outdated coaching. Preserve the original player account and its source."
+  },
+  "comparison_focus": {
+    "requirement": "The recommended line must demonstrate a defense against the same corner discussed in the comparison, even when the recommendation also has a different corner threat.",
+    "other_risks": "Retain certificates for other forced corners in the recommendation, state those risks separately, and never present a defensive refutation as a positive attack certificate.",
+    "passes_and_terminal_lines": "Represent mandatory passes and game termination explicitly; neither is a freely chosen defensive move."
   }
 }

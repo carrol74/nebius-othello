@@ -178,3 +178,34 @@ test("verified proof facts keep their scope and coordinates in both languages", 
   assert.doesNotMatch(teachingFactText(cases["16"], "p16:proof_b1", "zh"), /Black|White|After|verified/);
   assert.equal(teachingFactText(cases["16"], "p16:score", "zh"), null);
 });
+
+test("a corner defense stays focused on h8 while disclosing the independent a8 threat", () => {
+  for (const comparison of [cases['earlier-h8'], cases['earlier-h8-best']]) {
+    const better = comparison.choices.find((choice) => choice.coordinate === 'd7');
+    assert.equal(better.kind, 'corner_defense');
+    assert.equal(better.target, 'h8');
+    assert.equal(better.frames.length, 4);
+    assert.deepEqual(better.frames.slice(1).map((frame) => frame.coordinate), comparison.insight.example);
+    for (const locale of ['en', 'zh']) {
+      const text = comparisonTakeaway(comparison, locale);
+      for (const coordinate of ['g7', 'd7', 'h8', 'a8', ...comparison.insight.example]) assert.ok(text.includes(coordinate));
+      assert.match(text, /within its next two turns|两次行动内/);
+      assert.equal(teachingFactText(comparison, 'p12:proof_d7', locale), null);
+      assert.ok(teachingFactText(comparison, 'p12:other_corners', locale).includes('a8'));
+    }
+  }
+});
+
+test('corner geometry comparisons name the common sequence without allowing an out-of-turn capture', () => {
+  for (const comparison of Object.values(cases)) {
+    const witness = comparison.insight.witness;
+    if (!witness) continue;
+    for (const locale of ['en', 'zh']) {
+      const text = teachingFactText(comparison, `p${comparison.revision}:corner_contrast`, locale);
+      for (const square of witness.opportunity.capture_line) assert.ok(text.includes(square));
+      for (const move of witness.prefix.filter((move) => move !== 'pass')) assert.ok(text.includes(move));
+      if (witness.prefix.length === 1) assert.match(text, /wait for their turn|等待各自回合/);
+      assert.ok(comparisonTakeaway(comparison, locale).includes(text));
+    }
+  }
+});

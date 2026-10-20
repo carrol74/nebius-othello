@@ -13,7 +13,9 @@
       "gap": null,
       "score_kind": "estimate",
       "proof": null,
-      "example": []
+      "example": [],
+      "other_threats": [],
+      "witness": null
     },
     "decision_contrast": null,
     "choices": [
@@ -197,7 +199,43 @@
         "b3",
         "e1",
         "b1"
-      ]
+      ],
+      "other_threats": [],
+      "witness": {
+        "prefix": [
+          "e1"
+        ],
+        "opportunity": {
+          "actor": "O",
+          "coordinate": "a1",
+          "available_after": "b1",
+          "blocked_after": "b3",
+          "capture_line": [
+            "a1",
+            "b1",
+            "c1",
+            "d1",
+            "e1"
+          ],
+          "changes": [
+            {
+              "coordinate": "b1",
+              "available": "X",
+              "blocked": "."
+            },
+            {
+              "coordinate": "c1",
+              "available": "X",
+              "blocked": "O"
+            },
+            {
+              "coordinate": "d1",
+              "available": "X",
+              "blocked": "O"
+            }
+          ]
+        }
+      }
     },
     "decision_contrast": null,
     "choices": [
@@ -1344,24 +1382,64 @@
           "score_kind": "estimate",
           "position": "behind"
         },
-        "kind": "line",
-        "target": null,
-        "opponent_reply": null,
+        "kind": "corner_defense",
+        "target": "a1",
+        "opponent_reply": "e1",
         "checked_defenses": [],
         "defense_lines": [],
         "capture_lines": [],
         "line_source": "rules",
-        "corner_proof": null,
-        "continuation_lesson": {
-          "kind": "reply",
-          "frame_index": 2,
-          "capture_line": [
-            "e1",
-            "d1",
-            "c1"
-          ],
-          "recaptured": []
+        "corner_proof": {
+          "target": "a1",
+          "attacker": "O",
+          "max_plies": 3,
+          "forced": false,
+          "attack": null,
+          "defenses": [],
+          "refutations": [
+            {
+              "attack": "b1",
+              "defense": "a1"
+            },
+            {
+              "attack": "e1",
+              "defense": "b1"
+            },
+            {
+              "attack": "g1",
+              "defense": "b1"
+            },
+            {
+              "attack": "a2",
+              "defense": "b1"
+            },
+            {
+              "attack": "b2",
+              "defense": "g3"
+            },
+            {
+              "attack": "a3",
+              "defense": "b1"
+            },
+            {
+              "attack": "b4",
+              "defense": "b1"
+            },
+            {
+              "attack": "b5",
+              "defense": "b1"
+            },
+            {
+              "attack": "c6",
+              "defense": "b1"
+            },
+            {
+              "attack": "a7",
+              "defense": "b1"
+            }
+          ]
         },
+        "continuation_lesson": null,
         "frames": [
           {
             "board": [
@@ -1508,7 +1586,43 @@
         "b3",
         "e1",
         "b1"
-      ]
+      ],
+      "other_threats": [],
+      "witness": {
+        "prefix": [
+          "e1"
+        ],
+        "opportunity": {
+          "actor": "O",
+          "coordinate": "a1",
+          "available_after": "b1",
+          "blocked_after": "b3",
+          "capture_line": [
+            "a1",
+            "b1",
+            "c1",
+            "d1",
+            "e1"
+          ],
+          "changes": [
+            {
+              "coordinate": "b1",
+              "available": "X",
+              "blocked": "."
+            },
+            {
+              "coordinate": "c1",
+              "available": "X",
+              "blocked": "O"
+            },
+            {
+              "coordinate": "d1",
+              "available": "X",
+              "blocked": "O"
+            }
+          ]
+        }
+      }
     },
     "decision_contrast": null,
     "choices": [
@@ -1527,24 +1641,64 @@
           "score_kind": "estimate",
           "position": "behind"
         },
-        "kind": "line",
-        "target": null,
-        "opponent_reply": null,
+        "kind": "corner_defense",
+        "target": "a1",
+        "opponent_reply": "e1",
         "checked_defenses": [],
         "defense_lines": [],
         "capture_lines": [],
         "line_source": "rules",
-        "corner_proof": null,
-        "continuation_lesson": {
-          "kind": "reply",
-          "frame_index": 2,
-          "capture_line": [
-            "e1",
-            "d1",
-            "c1"
-          ],
-          "recaptured": []
+        "corner_proof": {
+          "target": "a1",
+          "attacker": "O",
+          "max_plies": 3,
+          "forced": false,
+          "attack": null,
+          "defenses": [],
+          "refutations": [
+            {
+              "attack": "b1",
+              "defense": "a1"
+            },
+            {
+              "attack": "e1",
+              "defense": "b1"
+            },
+            {
+              "attack": "g1",
+              "defense": "b1"
+            },
+            {
+              "attack": "a2",
+              "defense": "b1"
+            },
+            {
+              "attack": "b2",
+              "defense": "g3"
+            },
+            {
+              "attack": "a3",
+              "defense": "b1"
+            },
+            {
+              "attack": "b4",
+              "defense": "b1"
+            },
+            {
+              "attack": "b5",
+              "defense": "b1"
+            },
+            {
+              "attack": "c6",
+              "defense": "b1"
+            },
+            {
+              "attack": "a7",
+              "defense": "b1"
+            }
+          ]
         },
+        "continuation_lesson": null,
         "frames": [
           {
             "board": [
@@ -2766,7 +2920,9 @@
       "gap": null,
       "score_kind": "estimate",
       "proof": null,
-      "example": []
+      "example": [],
+      "other_threats": [],
+      "witness": null
     },
     "decision_contrast": null,
     "choices": [
@@ -2991,7 +3147,9 @@
       "gap": null,
       "score_kind": "exact",
       "proof": null,
-      "example": []
+      "example": [],
+      "other_threats": [],
+      "witness": null
     },
     "decision_contrast": null,
     "choices": [
@@ -3131,7 +3289,9 @@
       "gap": null,
       "score_kind": "estimate",
       "proof": null,
-      "example": []
+      "example": [],
+      "other_threats": [],
+      "witness": null
     },
     "decision_contrast": {
       "actual_move": "b6",
@@ -3400,7 +3560,9 @@
       "gap": null,
       "score_kind": "estimate",
       "proof": null,
-      "example": []
+      "example": [],
+      "other_threats": [],
+      "witness": null
     },
     "decision_contrast": {
       "actual_move": "b6",
@@ -3652,6 +3814,2580 @@
           }
         ],
         "opponent_corner_moves_after_reply": []
+      }
+    ]
+  },
+  "earlier-h8": {
+    "revision": 12,
+    "actor": "X",
+    "selected_move": "g7",
+    "recommended_move": "d7",
+    "reference_move": "d7",
+    "insight": {
+      "kind": "corner_defense",
+      "better_move": "d7",
+      "worse_move": "g7",
+      "target": "h8",
+      "gap": null,
+      "score_kind": "estimate",
+      "proof": {
+        "target": "h8",
+        "attacker": "O",
+        "max_plies": 3,
+        "forced": false,
+        "attack": null,
+        "defenses": [],
+        "refutations": [
+          {
+            "attack": "d2",
+            "defense": "e2"
+          },
+          {
+            "attack": "e2",
+            "defense": "d2"
+          },
+          {
+            "attack": "b3",
+            "defense": "a2"
+          },
+          {
+            "attack": "c3",
+            "defense": "c2"
+          },
+          {
+            "attack": "d3",
+            "defense": "d2"
+          },
+          {
+            "attack": "b4",
+            "defense": "b3"
+          },
+          {
+            "attack": "c5",
+            "defense": "f3"
+          },
+          {
+            "attack": "b6",
+            "defense": "f3"
+          },
+          {
+            "attack": "c7",
+            "defense": "f3"
+          },
+          {
+            "attack": "c8",
+            "defense": "f3"
+          },
+          {
+            "attack": "f8",
+            "defense": "e8"
+          }
+        ]
+      },
+      "example": [
+        "d7",
+        "f8",
+        "e8"
+      ],
+      "other_threats": [
+        {
+          "target": "a8",
+          "attacker": "O",
+          "max_plies": 3,
+          "forced": true,
+          "attack": "c5",
+          "defenses": [
+            "f3",
+            "g3",
+            "b4",
+            "g4",
+            "g5",
+            "b6",
+            "g6",
+            "e7",
+            "g7"
+          ],
+          "refutations": []
+        }
+      ],
+      "witness": {
+        "prefix": [
+          "f8",
+          "e8"
+        ],
+        "opportunity": {
+          "actor": "O",
+          "coordinate": "h8",
+          "available_after": "g7",
+          "blocked_after": "d7",
+          "capture_line": [
+            "h8",
+            "g7",
+            "f6"
+          ],
+          "changes": [
+            {
+              "coordinate": "g7",
+              "available": "X",
+              "blocked": "."
+            }
+          ]
+        }
+      }
+    },
+    "decision_contrast": null,
+    "choices": [
+      {
+        "coordinate": "g7",
+        "score": -53,
+        "score_kind": "estimate",
+        "assessment": {
+          "status": "lower_rated",
+          "legal_move_count": 7,
+          "best_moves": [
+            "d7",
+            "e7"
+          ],
+          "is_played": true,
+          "score_loss": 5,
+          "score_kind": "estimate",
+          "position": "behind"
+        },
+        "kind": "corner_forced",
+        "target": "h8",
+        "opponent_reply": "f8",
+        "checked_defenses": [
+          "g3",
+          "g4",
+          "g5",
+          "g6",
+          "c7",
+          "d7",
+          "e7",
+          "e8"
+        ],
+        "defense_lines": [
+          {
+            "coordinate": "g3",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X.X.",
+                  "..XXXX..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "O",
+                "coordinate": "g3",
+                "actor": "X",
+                "flipped": [
+                  "f4"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X.X.",
+                  "..XXXX..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OO.",
+                  ".....OOO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g7",
+                  "g8"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g7",
+                "f6"
+              ],
+              [
+                "h8",
+                "g8",
+                "f8"
+              ]
+            ]
+          },
+          {
+            "coordinate": "g4",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXXX.",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "O",
+                "coordinate": "g4",
+                "actor": "X",
+                "flipped": [
+                  "f4"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXXX.",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OO.",
+                  ".....OOO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g7",
+                  "g8"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g7",
+                "f6"
+              ],
+              [
+                "h8",
+                "g8",
+                "f8"
+              ]
+            ]
+          },
+          {
+            "coordinate": "g5",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXX..",
+                  "...XXXX.",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "O",
+                "coordinate": "g5",
+                "actor": "X",
+                "flipped": [
+                  "f4",
+                  "f5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXX..",
+                  "...XXXX.",
+                  "..XOOO..",
+                  ".X...OO.",
+                  ".....OOO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g7",
+                  "g8"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g7",
+                "f6"
+              ],
+              [
+                "h8",
+                "g8",
+                "f8"
+              ]
+            ]
+          },
+          {
+            "coordinate": "g6",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXX..",
+                  "..XXXXX.",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "O",
+                "coordinate": "g6",
+                "actor": "X",
+                "flipped": [
+                  "f5",
+                  "f6",
+                  "e6",
+                  "d6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXX..",
+                  "..XXXXX.",
+                  ".X...OX.",
+                  ".....OOO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g8"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g8",
+                "f8"
+              ]
+            ]
+          },
+          {
+            "coordinate": "c7",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XXOO..",
+                  ".XX..OX.",
+                  ".....OX."
+                ],
+                "turn": "O",
+                "coordinate": "c7",
+                "actor": "X",
+                "flipped": [
+                  "d6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XXOO..",
+                  ".XX..OO.",
+                  ".....OOO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g7",
+                  "g8"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g7",
+                "f6"
+              ],
+              [
+                "h8",
+                "g8",
+                "f8"
+              ]
+            ]
+          },
+          {
+            "coordinate": "d7",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XXOO..",
+                  ".X.X.OX.",
+                  ".....OX."
+                ],
+                "turn": "O",
+                "coordinate": "d7",
+                "actor": "X",
+                "flipped": [
+                  "d6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XXOO..",
+                  ".X.X.OO.",
+                  ".....OOO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g7",
+                  "g8"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g7",
+                "f6"
+              ],
+              [
+                "h8",
+                "g8",
+                "f8"
+              ]
+            ]
+          },
+          {
+            "coordinate": "e7",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOXO..",
+                  ".X..XXX.",
+                  ".....OX."
+                ],
+                "turn": "O",
+                "coordinate": "e7",
+                "actor": "X",
+                "flipped": [
+                  "e6",
+                  "f7"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOXO..",
+                  ".X..XXO.",
+                  ".....OOO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g7",
+                  "g8"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g7",
+                "f6"
+              ],
+              [
+                "h8",
+                "g8",
+                "f8"
+              ]
+            ]
+          },
+          {
+            "coordinate": "e8",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  "....XXX."
+                ],
+                "turn": "O",
+                "coordinate": "e8",
+                "actor": "X",
+                "flipped": [
+                  "f8"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OO.",
+                  "....XXXO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g7"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g7",
+                "f6"
+              ]
+            ]
+          }
+        ],
+        "capture_lines": [
+          [
+            "h8",
+            "g7",
+            "f6"
+          ]
+        ],
+        "line_source": "rules",
+        "corner_proof": {
+          "target": "h8",
+          "attacker": "O",
+          "max_plies": 3,
+          "forced": true,
+          "attack": "f8",
+          "defenses": [
+            "g3",
+            "g4",
+            "g5",
+            "g6",
+            "c7",
+            "d7",
+            "e7",
+            "e8"
+          ],
+          "refutations": []
+        },
+        "continuation_lesson": null,
+        "frames": [
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XOO..",
+              "..XOOO..",
+              ".X...X..",
+              "......X."
+            ],
+            "turn": "X",
+            "coordinate": null,
+            "actor": null,
+            "flipped": []
+          },
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XXO..",
+              "..XOOX..",
+              ".X...XX.",
+              "......X."
+            ],
+            "turn": "O",
+            "coordinate": "g7",
+            "actor": "X",
+            "flipped": [
+              "f6",
+              "e5"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XXO..",
+              "..XOOO..",
+              ".X...OX.",
+              ".....OX."
+            ],
+            "turn": "X",
+            "coordinate": "f8",
+            "actor": "O",
+            "flipped": [
+              "f7",
+              "f6"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XXO..",
+              "..XOOO..",
+              ".X...OX.",
+              "....XXX."
+            ],
+            "turn": "O",
+            "coordinate": "e8",
+            "actor": "X",
+            "flipped": [
+              "f8"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XXO..",
+              "..XOOO..",
+              ".X...OO.",
+              "....XXXO"
+            ],
+            "turn": "X",
+            "coordinate": "h8",
+            "actor": "O",
+            "flipped": [
+              "g7"
+            ]
+          }
+        ],
+        "opponent_corner_moves_after_reply": [
+          "h8"
+        ]
+      },
+      {
+        "coordinate": "d7",
+        "score": -48,
+        "score_kind": "estimate",
+        "assessment": {
+          "status": "tied_best",
+          "legal_move_count": 7,
+          "best_moves": [
+            "d7",
+            "e7"
+          ],
+          "is_played": false,
+          "score_loss": 0,
+          "score_kind": "estimate",
+          "position": "behind"
+        },
+        "kind": "corner_defense",
+        "target": "h8",
+        "opponent_reply": "f8",
+        "checked_defenses": [],
+        "defense_lines": [],
+        "capture_lines": [],
+        "line_source": "rules",
+        "corner_proof": {
+          "target": "h8",
+          "attacker": "O",
+          "max_plies": 3,
+          "forced": false,
+          "attack": null,
+          "defenses": [],
+          "refutations": [
+            {
+              "attack": "d2",
+              "defense": "e2"
+            },
+            {
+              "attack": "e2",
+              "defense": "d2"
+            },
+            {
+              "attack": "b3",
+              "defense": "a2"
+            },
+            {
+              "attack": "c3",
+              "defense": "c2"
+            },
+            {
+              "attack": "d3",
+              "defense": "d2"
+            },
+            {
+              "attack": "b4",
+              "defense": "b3"
+            },
+            {
+              "attack": "c5",
+              "defense": "f3"
+            },
+            {
+              "attack": "b6",
+              "defense": "f3"
+            },
+            {
+              "attack": "c7",
+              "defense": "f3"
+            },
+            {
+              "attack": "c8",
+              "defense": "f3"
+            },
+            {
+              "attack": "f8",
+              "defense": "e8"
+            }
+          ]
+        },
+        "continuation_lesson": null,
+        "frames": [
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XOO..",
+              "..XOOO..",
+              ".X...X..",
+              "......X."
+            ],
+            "turn": "X",
+            "coordinate": null,
+            "actor": null,
+            "flipped": []
+          },
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XOO..",
+              "..XXOO..",
+              ".X.X.X..",
+              "......X."
+            ],
+            "turn": "O",
+            "coordinate": "d7",
+            "actor": "X",
+            "flipped": [
+              "d6"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XOO..",
+              "..XXOO..",
+              ".X.X.O..",
+              ".....OX."
+            ],
+            "turn": "X",
+            "coordinate": "f8",
+            "actor": "O",
+            "flipped": [
+              "f7"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XOO..",
+              "..XXOO..",
+              ".X.X.O..",
+              "....XXX."
+            ],
+            "turn": "O",
+            "coordinate": "e8",
+            "actor": "X",
+            "flipped": [
+              "f8"
+            ]
+          }
+        ],
+        "opponent_corner_moves_after_reply": [
+          "h8"
+        ]
+      }
+    ]
+  },
+  "earlier-h8-best": {
+    "revision": 12,
+    "actor": "X",
+    "selected_move": "d7",
+    "recommended_move": "d7",
+    "reference_move": "g7",
+    "insight": {
+      "kind": "corner_defense",
+      "better_move": "d7",
+      "worse_move": "g7",
+      "target": "h8",
+      "gap": null,
+      "score_kind": "estimate",
+      "proof": {
+        "target": "h8",
+        "attacker": "O",
+        "max_plies": 3,
+        "forced": false,
+        "attack": null,
+        "defenses": [],
+        "refutations": [
+          {
+            "attack": "d2",
+            "defense": "e2"
+          },
+          {
+            "attack": "e2",
+            "defense": "d2"
+          },
+          {
+            "attack": "b3",
+            "defense": "a2"
+          },
+          {
+            "attack": "c3",
+            "defense": "c2"
+          },
+          {
+            "attack": "d3",
+            "defense": "d2"
+          },
+          {
+            "attack": "b4",
+            "defense": "b3"
+          },
+          {
+            "attack": "c5",
+            "defense": "f3"
+          },
+          {
+            "attack": "b6",
+            "defense": "f3"
+          },
+          {
+            "attack": "c7",
+            "defense": "f3"
+          },
+          {
+            "attack": "c8",
+            "defense": "f3"
+          },
+          {
+            "attack": "f8",
+            "defense": "e8"
+          }
+        ]
+      },
+      "example": [
+        "d7",
+        "f8",
+        "e8"
+      ],
+      "other_threats": [
+        {
+          "target": "a8",
+          "attacker": "O",
+          "max_plies": 3,
+          "forced": true,
+          "attack": "c5",
+          "defenses": [
+            "f3",
+            "g3",
+            "b4",
+            "g4",
+            "g5",
+            "b6",
+            "g6",
+            "e7",
+            "g7"
+          ],
+          "refutations": []
+        }
+      ],
+      "witness": {
+        "prefix": [
+          "f8",
+          "e8"
+        ],
+        "opportunity": {
+          "actor": "O",
+          "coordinate": "h8",
+          "available_after": "g7",
+          "blocked_after": "d7",
+          "capture_line": [
+            "h8",
+            "g7",
+            "f6"
+          ],
+          "changes": [
+            {
+              "coordinate": "g7",
+              "available": "X",
+              "blocked": "."
+            }
+          ]
+        }
+      }
+    },
+    "decision_contrast": null,
+    "choices": [
+      {
+        "coordinate": "d7",
+        "score": -48,
+        "score_kind": "estimate",
+        "assessment": {
+          "status": "tied_best",
+          "legal_move_count": 7,
+          "best_moves": [
+            "d7",
+            "e7"
+          ],
+          "is_played": false,
+          "score_loss": 0,
+          "score_kind": "estimate",
+          "position": "behind"
+        },
+        "kind": "corner_defense",
+        "target": "h8",
+        "opponent_reply": "f8",
+        "checked_defenses": [],
+        "defense_lines": [],
+        "capture_lines": [],
+        "line_source": "rules",
+        "corner_proof": {
+          "target": "h8",
+          "attacker": "O",
+          "max_plies": 3,
+          "forced": false,
+          "attack": null,
+          "defenses": [],
+          "refutations": [
+            {
+              "attack": "d2",
+              "defense": "e2"
+            },
+            {
+              "attack": "e2",
+              "defense": "d2"
+            },
+            {
+              "attack": "b3",
+              "defense": "a2"
+            },
+            {
+              "attack": "c3",
+              "defense": "c2"
+            },
+            {
+              "attack": "d3",
+              "defense": "d2"
+            },
+            {
+              "attack": "b4",
+              "defense": "b3"
+            },
+            {
+              "attack": "c5",
+              "defense": "f3"
+            },
+            {
+              "attack": "b6",
+              "defense": "f3"
+            },
+            {
+              "attack": "c7",
+              "defense": "f3"
+            },
+            {
+              "attack": "c8",
+              "defense": "f3"
+            },
+            {
+              "attack": "f8",
+              "defense": "e8"
+            }
+          ]
+        },
+        "continuation_lesson": null,
+        "frames": [
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XOO..",
+              "..XOOO..",
+              ".X...X..",
+              "......X."
+            ],
+            "turn": "X",
+            "coordinate": null,
+            "actor": null,
+            "flipped": []
+          },
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XOO..",
+              "..XXOO..",
+              ".X.X.X..",
+              "......X."
+            ],
+            "turn": "O",
+            "coordinate": "d7",
+            "actor": "X",
+            "flipped": [
+              "d6"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XOO..",
+              "..XXOO..",
+              ".X.X.O..",
+              ".....OX."
+            ],
+            "turn": "X",
+            "coordinate": "f8",
+            "actor": "O",
+            "flipped": [
+              "f7"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XOO..",
+              "..XXOO..",
+              ".X.X.O..",
+              "....XXX."
+            ],
+            "turn": "O",
+            "coordinate": "e8",
+            "actor": "X",
+            "flipped": [
+              "f8"
+            ]
+          }
+        ],
+        "opponent_corner_moves_after_reply": [
+          "h8"
+        ]
+      },
+      {
+        "coordinate": "g7",
+        "score": -53,
+        "score_kind": "estimate",
+        "assessment": {
+          "status": "lower_rated",
+          "legal_move_count": 7,
+          "best_moves": [
+            "d7",
+            "e7"
+          ],
+          "is_played": true,
+          "score_loss": 5,
+          "score_kind": "estimate",
+          "position": "behind"
+        },
+        "kind": "corner_forced",
+        "target": "h8",
+        "opponent_reply": "f8",
+        "checked_defenses": [
+          "g3",
+          "g4",
+          "g5",
+          "g6",
+          "c7",
+          "d7",
+          "e7",
+          "e8"
+        ],
+        "defense_lines": [
+          {
+            "coordinate": "g3",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X.X.",
+                  "..XXXX..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "O",
+                "coordinate": "g3",
+                "actor": "X",
+                "flipped": [
+                  "f4"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X.X.",
+                  "..XXXX..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OO.",
+                  ".....OOO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g7",
+                  "g8"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g7",
+                "f6"
+              ],
+              [
+                "h8",
+                "g8",
+                "f8"
+              ]
+            ]
+          },
+          {
+            "coordinate": "g4",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXXX.",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "O",
+                "coordinate": "g4",
+                "actor": "X",
+                "flipped": [
+                  "f4"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXXX.",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OO.",
+                  ".....OOO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g7",
+                  "g8"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g7",
+                "f6"
+              ],
+              [
+                "h8",
+                "g8",
+                "f8"
+              ]
+            ]
+          },
+          {
+            "coordinate": "g5",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXX..",
+                  "...XXXX.",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "O",
+                "coordinate": "g5",
+                "actor": "X",
+                "flipped": [
+                  "f4",
+                  "f5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXX..",
+                  "...XXXX.",
+                  "..XOOO..",
+                  ".X...OO.",
+                  ".....OOO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g7",
+                  "g8"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g7",
+                "f6"
+              ],
+              [
+                "h8",
+                "g8",
+                "f8"
+              ]
+            ]
+          },
+          {
+            "coordinate": "g6",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXX..",
+                  "..XXXXX.",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "O",
+                "coordinate": "g6",
+                "actor": "X",
+                "flipped": [
+                  "f5",
+                  "f6",
+                  "e6",
+                  "d6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXX..",
+                  "..XXXXX.",
+                  ".X...OX.",
+                  ".....OOO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g8"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g8",
+                "f8"
+              ]
+            ]
+          },
+          {
+            "coordinate": "c7",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XXOO..",
+                  ".XX..OX.",
+                  ".....OX."
+                ],
+                "turn": "O",
+                "coordinate": "c7",
+                "actor": "X",
+                "flipped": [
+                  "d6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XXOO..",
+                  ".XX..OO.",
+                  ".....OOO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g7",
+                  "g8"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g7",
+                "f6"
+              ],
+              [
+                "h8",
+                "g8",
+                "f8"
+              ]
+            ]
+          },
+          {
+            "coordinate": "d7",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XXOO..",
+                  ".X.X.OX.",
+                  ".....OX."
+                ],
+                "turn": "O",
+                "coordinate": "d7",
+                "actor": "X",
+                "flipped": [
+                  "d6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XXOO..",
+                  ".X.X.OO.",
+                  ".....OOO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g7",
+                  "g8"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g7",
+                "f6"
+              ],
+              [
+                "h8",
+                "g8",
+                "f8"
+              ]
+            ]
+          },
+          {
+            "coordinate": "e7",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOXO..",
+                  ".X..XXX.",
+                  ".....OX."
+                ],
+                "turn": "O",
+                "coordinate": "e7",
+                "actor": "X",
+                "flipped": [
+                  "e6",
+                  "f7"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOXO..",
+                  ".X..XXO.",
+                  ".....OOO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g7",
+                  "g8"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g7",
+                "f6"
+              ],
+              [
+                "h8",
+                "g8",
+                "f8"
+              ]
+            ]
+          },
+          {
+            "coordinate": "e8",
+            "frames": [
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XOO..",
+                  "..XOOO..",
+                  ".X...X..",
+                  "......X."
+                ],
+                "turn": "X",
+                "coordinate": null,
+                "actor": null,
+                "flipped": []
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOX..",
+                  ".X...XX.",
+                  "......X."
+                ],
+                "turn": "O",
+                "coordinate": "g7",
+                "actor": "X",
+                "flipped": [
+                  "f6",
+                  "e5"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  ".....OX."
+                ],
+                "turn": "X",
+                "coordinate": "f8",
+                "actor": "O",
+                "flipped": [
+                  "f7",
+                  "f6"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OX.",
+                  "....XXX."
+                ],
+                "turn": "O",
+                "coordinate": "e8",
+                "actor": "X",
+                "flipped": [
+                  "f8"
+                ]
+              },
+              {
+                "board": [
+                  "........",
+                  ".....X..",
+                  "....X...",
+                  "..XXXO..",
+                  "...XXO..",
+                  "..XOOO..",
+                  ".X...OO.",
+                  "....XXXO"
+                ],
+                "turn": "X",
+                "coordinate": "h8",
+                "actor": "O",
+                "flipped": [
+                  "g7"
+                ]
+              }
+            ],
+            "capture_lines": [
+              [
+                "h8",
+                "g7",
+                "f6"
+              ]
+            ]
+          }
+        ],
+        "capture_lines": [
+          [
+            "h8",
+            "g7",
+            "f6"
+          ]
+        ],
+        "line_source": "rules",
+        "corner_proof": {
+          "target": "h8",
+          "attacker": "O",
+          "max_plies": 3,
+          "forced": true,
+          "attack": "f8",
+          "defenses": [
+            "g3",
+            "g4",
+            "g5",
+            "g6",
+            "c7",
+            "d7",
+            "e7",
+            "e8"
+          ],
+          "refutations": []
+        },
+        "continuation_lesson": null,
+        "frames": [
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XOO..",
+              "..XOOO..",
+              ".X...X..",
+              "......X."
+            ],
+            "turn": "X",
+            "coordinate": null,
+            "actor": null,
+            "flipped": []
+          },
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XXO..",
+              "..XOOX..",
+              ".X...XX.",
+              "......X."
+            ],
+            "turn": "O",
+            "coordinate": "g7",
+            "actor": "X",
+            "flipped": [
+              "f6",
+              "e5"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XXO..",
+              "..XOOO..",
+              ".X...OX.",
+              ".....OX."
+            ],
+            "turn": "X",
+            "coordinate": "f8",
+            "actor": "O",
+            "flipped": [
+              "f7",
+              "f6"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XXO..",
+              "..XOOO..",
+              ".X...OX.",
+              "....XXX."
+            ],
+            "turn": "O",
+            "coordinate": "e8",
+            "actor": "X",
+            "flipped": [
+              "f8"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              ".....X..",
+              "....X...",
+              "..XXXO..",
+              "...XXO..",
+              "..XOOO..",
+              ".X...OO.",
+              "....XXXO"
+            ],
+            "turn": "X",
+            "coordinate": "h8",
+            "actor": "O",
+            "flipped": [
+              "g7"
+            ]
+          }
+        ],
+        "opponent_corner_moves_after_reply": [
+          "h8"
+        ]
       }
     ]
   }

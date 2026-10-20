@@ -1,0 +1,957 @@
+{
+  "source": "Original completed game histories and live native Edax 4.6 level-8 analysis; bounded corner connections verified against the actual path. No model or learner responses.",
+  "cases": [
+    {
+      "source_file": "review-native-positions.json",
+      "revision": 18,
+      "evidence": {
+        "revision": 18,
+        "actor": "X",
+        "actual_move": "b2",
+        "is_played": true,
+        "recommended_move": "b2",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            ".XXXOX..",
+            "..OXOX..",
+            "..XOOO..",
+            "..XOOO..",
+            "..XOOO..",
+            ".X......",
+            "........",
+            "........"
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "b2",
+              "score": -30,
+              "principal_variation": [
+                "b2",
+                "g3",
+                "g4",
+                "b4",
+                "h3",
+                "b3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "b3",
+              "score": -47,
+              "principal_variation": [
+                "b3",
+                "a1",
+                "g4",
+                "b2",
+                "c6",
+                "a4"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g3",
+              "score": -41,
+              "principal_variation": [
+                "g3",
+                "a1",
+                "g4",
+                "b2",
+                "c6",
+                "d6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g4",
+              "score": -44,
+              "principal_variation": [
+                "g4",
+                "a1",
+                "g6",
+                "b2",
+                "c6",
+                "d6"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g5",
+              "score": -63,
+              "principal_variation": [
+                "g5",
+                "a1",
+                "g2",
+                "g1",
+                "b2",
+                "a2"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "d6",
+              "score": -43,
+              "principal_variation": [
+                "d6",
+                "a1",
+                "g6",
+                "f6",
+                "g4",
+                "g5"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "e6",
+              "score": -45,
+              "principal_variation": [
+                "e6",
+                "b3",
+                "g4",
+                "a1",
+                "f6",
+                "g3"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "f6",
+              "score": -59,
+              "principal_variation": [
+                "f6",
+                "a1",
+                "e6",
+                "g3",
+                "g2",
+                "g4"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            },
+            {
+              "coordinate": "g6",
+              "score": -47,
+              "principal_variation": [
+                "g6",
+                "f6",
+                "d6",
+                "c6",
+                "c7",
+                "a1"
+              ],
+              "depth": 8,
+              "score_kind": "estimate"
+            }
+          ],
+          "recommended_move": "b2",
+          "score_perspective": "X",
+          "score_kind": "estimate",
+          "engine_version": "4.6",
+          "eval_file": "deploy/edax/eval.dat",
+          "depth": 8,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 8,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 165.49
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false,
+        "stage": "midgame"
+      },
+      "move_number": 17,
+      "result": {
+        "status": "verified",
+        "scope": "continuous_bounded_corner_threat",
+        "link": {
+          "revision": 16,
+          "actor": "X",
+          "target": "a1",
+          "recorded_move": "b1",
+          "recommended_move": "b3",
+          "evidence": {
+            "revision": 16,
+            "actor": "X",
+            "actual_move": "b1",
+            "is_played": true,
+            "recommended_move": "b3",
+            "score_loss": 20,
+            "analysis": {
+              "board": [
+                "..OX.X..",
+                "..OXXX..",
+                "..XOOO..",
+                "..XOOO..",
+                "..XOOO..",
+                ".X......",
+                "........",
+                "........"
+              ],
+              "turn": "X",
+              "candidates": [
+                {
+                  "coordinate": "b1",
+                  "score": -30,
+                  "principal_variation": [
+                    "b1",
+                    "e1",
+                    "b2",
+                    "b4",
+                    "a3",
+                    "b5"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                },
+                {
+                  "coordinate": "b2",
+                  "score": -34,
+                  "principal_variation": [
+                    "b2",
+                    "a1",
+                    "b1",
+                    "e1",
+                    "g4",
+                    "g5"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                },
+                {
+                  "coordinate": "b3",
+                  "score": -10,
+                  "principal_variation": [
+                    "b3",
+                    "b4",
+                    "a3",
+                    "b5",
+                    "g3",
+                    "a4"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                },
+                {
+                  "coordinate": "g3",
+                  "score": -14,
+                  "principal_variation": [
+                    "g3",
+                    "e1",
+                    "g4",
+                    "g1",
+                    "g6",
+                    "f6"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                },
+                {
+                  "coordinate": "g4",
+                  "score": -18,
+                  "principal_variation": [
+                    "g4",
+                    "g5",
+                    "d6",
+                    "b4",
+                    "e6",
+                    "b3"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                },
+                {
+                  "coordinate": "g5",
+                  "score": -34,
+                  "principal_variation": [
+                    "g5",
+                    "b5",
+                    "g4",
+                    "b3",
+                    "a5",
+                    "d6"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                },
+                {
+                  "coordinate": "d6",
+                  "score": -13,
+                  "principal_variation": [
+                    "d6",
+                    "e1",
+                    "b1",
+                    "c6",
+                    "e6",
+                    "b5"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                },
+                {
+                  "coordinate": "e6",
+                  "score": -20,
+                  "principal_variation": [
+                    "e6",
+                    "e1",
+                    "b1",
+                    "d7",
+                    "g5",
+                    "c6"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                },
+                {
+                  "coordinate": "f6",
+                  "score": -28,
+                  "principal_variation": [
+                    "f6",
+                    "e6",
+                    "e7",
+                    "e1",
+                    "b1",
+                    "g2"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                }
+              ],
+              "recommended_move": "b3",
+              "score_perspective": "X",
+              "score_kind": "estimate",
+              "engine_version": "4.6",
+              "eval_file": "deploy/edax/eval.dat",
+              "depth": 8,
+              "settings": {
+                "level": 8,
+                "minimum_depth": 8,
+                "threads": 1,
+                "book": false,
+                "selectivity": 5
+              },
+              "elapsed_ms": 18.4
+            },
+            "shown_hint_ids": [],
+            "adopted_hint": false,
+            "stage": "opening"
+          },
+          "recorded_proof": {
+            "target": "a1",
+            "attacker": "O",
+            "max_plies": 3,
+            "forced": true,
+            "attack": "e1",
+            "defenses": [
+              "b2",
+              "b3",
+              "g3",
+              "g4",
+              "g5",
+              "d6",
+              "e6",
+              "f6",
+              "g6"
+            ],
+            "refutations": []
+          },
+          "recommended_proof": {
+            "target": "a1",
+            "attacker": "O",
+            "max_plies": 3,
+            "forced": false,
+            "attack": null,
+            "defenses": [],
+            "refutations": [
+              {
+                "attack": "b1",
+                "defense": "a1"
+              },
+              {
+                "attack": "e1",
+                "defense": "b1"
+              },
+              {
+                "attack": "g1",
+                "defense": "b1"
+              },
+              {
+                "attack": "a2",
+                "defense": "b1"
+              },
+              {
+                "attack": "b2",
+                "defense": "g3"
+              },
+              {
+                "attack": "a3",
+                "defense": "b1"
+              },
+              {
+                "attack": "b4",
+                "defense": "b1"
+              },
+              {
+                "attack": "b5",
+                "defense": "b1"
+              },
+              {
+                "attack": "c6",
+                "defense": "b1"
+              },
+              {
+                "attack": "a7",
+                "defense": "b1"
+              }
+            ]
+          },
+          "continuity": [
+            {
+              "revision": 17,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 18,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 19,
+              "turn": "O",
+              "max_plies": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "source_file": "forced-move-native.json",
+      "revision": 58,
+      "evidence": {
+        "revision": 58,
+        "actor": "X",
+        "actual_move": "d8",
+        "recommended_move": "d8",
+        "score_loss": 0,
+        "analysis": {
+          "board": [
+            "OOOOOOOO",
+            "OOOOOOOO",
+            "OOOOXOOO",
+            "OOOOOOOO",
+            "OOOOXOX.",
+            "OOOOOXX.",
+            "OOOOXXXX",
+            "OXO...X."
+          ],
+          "turn": "X",
+          "candidates": [
+            {
+              "coordinate": "d8",
+              "score": -62,
+              "principal_variation": [
+                "d8",
+                "e8",
+                "pass",
+                "h8",
+                "pass",
+                "f8",
+                "pass",
+                "h6"
+              ],
+              "depth": 6,
+              "score_kind": "exact"
+            }
+          ],
+          "recommended_move": "d8",
+          "score_perspective": "X",
+          "score_kind": "exact",
+          "engine_version": "4.6",
+          "eval_file": "deploy/edax/eval.dat",
+          "depth": 6,
+          "settings": {
+            "level": 8,
+            "minimum_depth": 6,
+            "threads": 1,
+            "book": false,
+            "selectivity": 5
+          },
+          "elapsed_ms": 3.52
+        },
+        "shown_hint_ids": [],
+        "adopted_hint": false,
+        "stage": "endgame"
+      },
+      "move_number": 13,
+      "result": {
+        "status": "verified",
+        "scope": "continuous_bounded_corner_threat",
+        "link": {
+          "revision": 12,
+          "actor": "X",
+          "target": "h8",
+          "recorded_move": "g7",
+          "recommended_move": "d7",
+          "evidence": {
+            "revision": 12,
+            "actor": "X",
+            "actual_move": "g7",
+            "is_played": true,
+            "recommended_move": "d7",
+            "score_loss": 5,
+            "analysis": {
+              "board": [
+                "........",
+                ".....X..",
+                "....X...",
+                "..XXXO..",
+                "...XOO..",
+                "..XOOO..",
+                ".X...X..",
+                "......X."
+              ],
+              "turn": "X",
+              "candidates": [
+                {
+                  "coordinate": "f3",
+                  "score": -52,
+                  "principal_variation": [
+                    "f3",
+                    "c5",
+                    "b5",
+                    "b4",
+                    "b6",
+                    "d3"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                },
+                {
+                  "coordinate": "g4",
+                  "score": -54,
+                  "principal_variation": [
+                    "g4",
+                    "c5",
+                    "e7",
+                    "c7",
+                    "g5",
+                    "c3"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                },
+                {
+                  "coordinate": "g5",
+                  "score": -52,
+                  "principal_variation": [
+                    "g5",
+                    "g4",
+                    "e7",
+                    "d7",
+                    "c5",
+                    "f8"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                },
+                {
+                  "coordinate": "g6",
+                  "score": -61,
+                  "principal_variation": [
+                    "g6",
+                    "c7",
+                    "c8",
+                    "g5",
+                    "f3",
+                    "e7"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                },
+                {
+                  "coordinate": "d7",
+                  "score": -48,
+                  "principal_variation": [
+                    "d7",
+                    "b6",
+                    "g6",
+                    "e8",
+                    "g7",
+                    "f8"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                },
+                {
+                  "coordinate": "e7",
+                  "score": -48,
+                  "principal_variation": [
+                    "e7",
+                    "c5",
+                    "d7",
+                    "c7",
+                    "b4",
+                    "b5"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                },
+                {
+                  "coordinate": "g7",
+                  "score": -53,
+                  "principal_variation": [
+                    "g7",
+                    "c5",
+                    "g6",
+                    "f8",
+                    "e8",
+                    "h8"
+                  ],
+                  "depth": 8,
+                  "score_kind": "estimate"
+                }
+              ],
+              "recommended_move": "d7",
+              "score_perspective": "X",
+              "score_kind": "estimate",
+              "engine_version": "4.6",
+              "eval_file": "deploy/edax/eval.dat",
+              "depth": 8,
+              "settings": {
+                "level": 8,
+                "minimum_depth": 8,
+                "threads": 1,
+                "book": false,
+                "selectivity": 5
+              },
+              "elapsed_ms": 15.64
+            },
+            "shown_hint_ids": [],
+            "adopted_hint": false,
+            "stage": "opening"
+          },
+          "recorded_proof": {
+            "target": "h8",
+            "attacker": "O",
+            "max_plies": 3,
+            "forced": true,
+            "attack": "f8",
+            "defenses": [
+              "g3",
+              "g4",
+              "g5",
+              "g6",
+              "c7",
+              "d7",
+              "e7",
+              "e8"
+            ],
+            "refutations": []
+          },
+          "recommended_proof": {
+            "target": "h8",
+            "attacker": "O",
+            "max_plies": 3,
+            "forced": false,
+            "attack": null,
+            "defenses": [],
+            "refutations": [
+              {
+                "attack": "d2",
+                "defense": "e2"
+              },
+              {
+                "attack": "e2",
+                "defense": "d2"
+              },
+              {
+                "attack": "b3",
+                "defense": "a2"
+              },
+              {
+                "attack": "c3",
+                "defense": "c2"
+              },
+              {
+                "attack": "d3",
+                "defense": "d2"
+              },
+              {
+                "attack": "b4",
+                "defense": "b3"
+              },
+              {
+                "attack": "c5",
+                "defense": "f3"
+              },
+              {
+                "attack": "b6",
+                "defense": "f3"
+              },
+              {
+                "attack": "c7",
+                "defense": "f3"
+              },
+              {
+                "attack": "c8",
+                "defense": "f3"
+              },
+              {
+                "attack": "f8",
+                "defense": "e8"
+              }
+            ]
+          },
+          "continuity": [
+            {
+              "revision": 13,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 14,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 15,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 16,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 17,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 18,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 19,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 20,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 21,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 22,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 23,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 24,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 25,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 26,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 27,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 28,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 29,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 30,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 31,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 32,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 33,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 34,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 35,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 36,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 37,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 38,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 39,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 40,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 41,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 42,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 43,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 44,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 45,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 46,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 47,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 48,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 49,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 50,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 51,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 52,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 53,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 54,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 55,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 56,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 57,
+              "turn": "O",
+              "max_plies": 3
+            },
+            {
+              "revision": 58,
+              "turn": "X",
+              "max_plies": 4
+            },
+            {
+              "revision": 59,
+              "turn": "O",
+              "max_plies": 3
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

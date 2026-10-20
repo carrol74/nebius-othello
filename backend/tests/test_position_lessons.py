@@ -15,7 +15,6 @@ from nemothello.position_lessons import (
     check_teachable,
     lesson_context,
     position_at,
-    previous_decision_revision,
 )
 from nemothello.storage import Store
 from nemothello.tasks import Tasks
@@ -125,10 +124,9 @@ def forced_case():
     return json.loads((Path(__file__).parent / "fixtures/forced-move-native.json").read_text())
 
 
-def test_native_forced_position_leads_back_to_last_real_choice(forced_case):
+def test_native_forced_position_has_a_distant_choice_but_no_current_alternative(forced_case):
     game = forced_case["game"]
     assert position_at(game, 58).moves == ("d8",)
-    assert previous_decision_revision(game, 58) == 42
     assert position_at(game, 42).moves == ("b3", "a4")
     replayed = {**game, "board": game["initial_board"], "turn": game["initial_turn"],
                 "revision": 0, "history": [], "result": None}
@@ -155,7 +153,7 @@ def test_forced_lesson_is_factual_and_needs_no_model_credentials(forced_case):
         model.close()
 
 
-def test_real_forced_lesson_task_succeeds_without_model_and_returns_previous_choice(forced_case, tmp_path):
+def test_real_forced_lesson_task_succeeds_without_model_and_avoids_an_unverified_previous_choice(forced_case, tmp_path):
     root = Path(__file__).resolve().parents[2]
     executable, weights = root / "deploy/edax/edax", root / "deploy/edax/eval.dat"
     if not executable.is_file() or not weights.is_file():
@@ -191,8 +189,8 @@ def test_real_forced_lesson_task_succeeds_without_model_and_returns_previous_cho
         result = store.get("task", task["task_id"], "owner")
         assert result["status"] == "succeeded", result["error"]
         assert result["result"]["model_id"] is None and result["result"]["usage"] is None
-        assert result["result"]["previous_decision_revision"] == 42
-        assert games.position_lesson("owner", game["game_id"], 58)["previous_decision_revision"] == 42
+        assert 'previous_decision_revision' not in result['result']
+        assert games.position_lesson("owner", game["game_id"], 58)['earlier_eligible']
         cached = store.get("lesson", f"{game['game_id']}:58", "owner")
         assert cached["reflection"] == recollection
         context = lesson_context(game, cached["evidence"], [])

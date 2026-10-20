@@ -34,7 +34,7 @@ export function positionFactText(fact: ReviewFact, entry: ReviewEvidence, locale
   const b = entry.comparisons?.find((item) => item.coordinate === entry.recommended_move);
   const kind = fact.id.split(":")[1];
   const hasComparison = actual.coordinate !== best.coordinate;
-  if (kind === "forced_move") return `${entry.actual_move} 是${color(entry.actor)}唯一的合法落点，这一回合没有其他走法可选。${a?.opponent_corners.length ? `随后${color(entry.actor === "X" ? "O" : "X")}可以占 ${a.opponent_corners.join("、")}。` : ""}想学习可调整的选择，请回看更早有多个合法落点的回合。`;
+  if (kind === "forced_move") return `${entry.actual_move} 是${color(entry.actor)}唯一的合法落点，这一回合没有其他走法可选。${a?.opponent_corners.length ? `随后${color(entry.actor === "X" ? "O" : "X")}可以占 ${a.opponent_corners.join("、")}。` : ""}`;
   if (kind === "decision") {
     const judgment = assessment ? ({forced:"这是唯一合法落点。", best:"这是评分最高的合法落点。", tied_best:"这是并列最高评分的落点。", lower_rated:`当前评分低于 ${entry.recommended_move}。`})[assessment.status] : "";
     return `局面 ${entry.revision}，${color(entry.actor)}${entry.is_played === false ? "可以下" : "实际落子"} ${entry.actual_move}。${judgment}`;

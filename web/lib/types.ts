@@ -11,6 +11,8 @@ export type PracticeQuestion = components["schemas"]["PracticeQuestion"] | compo
 export type PracticeFeedback = components["schemas"]["PracticeFeedback"] | components["schemas"]["ReplyPracticeFeedback"];
 export type ReplyPracticeFeedback = components["schemas"]["ReplyPracticeFeedback"];
 export type ReplyOpportunity = components["schemas"]["ReplyOpportunity"];
+export type EarlierDecisionResult = components["schemas"]["EarlierDecisionResult"];
+export type EarlierDecisionLink = components["schemas"]["EarlierDecisionLink"];
 
 export type Color = "X" | "O";
 export type Difficulty = "easy" | "medium" | "hard";

@@ -2,9 +2,9 @@ from itertools import pairwise
 
 from nemothello.board_features import CORNERS, capture_lines
 from nemothello.coaching import variation_frames
-from nemothello.decision import assess_decision, lesson_moves, reference_move
-from nemothello.decision_contrast import decision_contrast
 from nemothello.corner_proof import prove_corner
+from nemothello.decision import assess_decision, lesson_moves, reference_move
+from nemothello.decision_contrast import decision_contrast, reply_opportunity
 from nemothello.errors import AppError
 from nemothello.rules import (
     apply_move,
@@ -103,10 +103,69 @@ def teach_move(item, move):
     return lesson
 
 
+def corner_comparison_witness(worse, better, target, example):
+    defender = worse['frames'][0]['turn']
+    attacker = opponent(defender)
+    actual = {'move': worse['coordinate'], 'board': tuple(worse['frames'][1]['board'])}
+    defensive = {'move': better['coordinate'], 'board': tuple(better['frames'][1]['board'])}
+
+    def witness(available, blocked, actor, coordinate, prefix):
+        if (coordinate in legal_moves(available['board'], actor)
+                and coordinate not in legal_moves(blocked['board'], actor)):
+            return {'prefix': prefix,
+                    'opportunity': reply_opportunity(available, blocked, actor, (), coordinate)}
+        return None
+
+    direct = witness(actual, defensive, attacker, target, [])
+    if direct:
+        return direct
+    attack = worse['corner_proof']['attack']
+    if attack != 'pass':
+        denied_setup = witness(actual, defensive, attacker, attack, [])
+        if denied_setup:
+            return denied_setup
+    if example is None or example['attack'] != attack:
+        return None
+    if attack == 'pass':
+        if legal_moves(actual['board'], attacker) or legal_moves(defensive['board'], attacker):
+            return None
+    elif any(attack not in legal_moves(state['board'], attacker) for state in (actual, defensive)):
+        return None
+    for state in (actual, defensive):
+        if attack != 'pass':
+            state['board'] = apply_move(state['board'], attacker, attack)
+    setup_difference = witness(actual, defensive, attacker, target, [attack])
+    if setup_difference:
+        return setup_difference
+    defense = example['defense']
+    if defense is None:
+        return None
+    if defense != 'pass':
+        new_defense = witness(defensive, actual, defender, defense, [attack])
+        if new_defense:
+            return new_defense
+    if defense == 'pass':
+        if legal_moves(actual['board'], defender) or legal_moves(defensive['board'], defender):
+            return None
+    elif any(defense not in legal_moves(state['board'], defender) for state in (actual, defensive)):
+        return None
+    for state in (actual, defensive):
+        if defense != 'pass':
+            state['board'] = apply_move(state['board'], defender, defense)
+    difference = witness(actual, defensive, attacker, target, [attack, defense])
+    if difference:
+        worse['frames'] = teaching_frames(tuple(worse['frames'][0]['board']), defender,
+                                          [worse['coordinate'], attack, defense, target])
+        worse['capture_lines'] = capture_lines(actual['board'], attacker, target)
+        worse['line_source'] = 'rules'
+    return difference
+
+
 def comparison_insight(choices):
     first = choices[0]
     result = {"kind": "forced", "better_move": None, "worse_move": None, "target": None, "gap": None,
-              "score_kind": first["assessment"]["score_kind"], "proof": None, "example": []}
+              "score_kind": first["assessment"]["score_kind"], "proof": None, "example": [],
+              'other_threats': [], 'witness': None}
     if first["assessment"]["status"] == "forced":
         return result
     if len(choices) == 1:
@@ -122,20 +181,27 @@ def comparison_insight(choices):
         defense_proof = prove_corner(tuple(better["frames"][1]["board"]), better["frames"][0]["turn"], target)
         if not defense_proof["forced"]:
             result.update(kind="corner_defense", target=target, proof=defense_proof)
+            after = tuple(better['frames'][1]['board'])
+            defender = better['frames'][0]['turn']
+            result['other_threats'] = [proof for other_target in CORNERS if other_target != target
+                                      for proof in [prove_corner(after, defender, other_target)] if proof['forced']]
             refutations = defense_proof["refutations"]
             example = next((entry for entry in refutations if entry["attack"] == worse["opponent_reply"]),
                            next(iter(refutations), None))
-            if example and better["kind"] == "line":
+            if example:
                 moves = [better["coordinate"], example["attack"]]
                 if example["defense"] is not None:
                     moves.append(example["defense"])
                 better["frames"] = teaching_frames(tuple(better["frames"][0]["board"]),
                                                     better["frames"][0]["turn"], moves)
-                better["line_source"] = "rules"
-                better["continuation_lesson"] = continuation_lesson(better["frames"])
+                better.update(kind='corner_defense', target=target, corner_proof=defense_proof,
+                              opponent_reply=example['attack'] if example['attack'] != 'pass' else None,
+                              line_source='rules', continuation_lesson=None, capture_lines=[],
+                              checked_defenses=[], defense_lines=[])
                 better["opponent_corner_moves_after_reply"] = (
                     corner_access(tuple(better["frames"][2]["board"]), defense_proof["attacker"]))
                 result["example"] = moves
+            result['witness'] = corner_comparison_witness(worse, better, target, example)
         elif better["kind"] in corner_kinds and better["target"] == target:
             result.update(kind="shared_corner", target=target)
         elif worse["kind"] == "corner_given" and target not in corner_access(

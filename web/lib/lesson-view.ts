@@ -1,9 +1,22 @@
-import type { LessonView, PositionLesson, TeachingFrame } from "./types";
+import type { LessonView, PositionLesson, TeachingComparison, TeachingFrame } from "./types";
+
+export function comparisonRay(comparison: TeachingComparison) {
+  const witness = comparison.insight.witness;
+  return witness ? {frame: witness.prefix.length + 1, squares: witness.opportunity.capture_line} : undefined;
+}
 
 export function coachFocus(lesson: PositionLesson) {
   const comparison = lesson.comparison;
   const facts = (lesson.coaching ?? []).flatMap((card) => card.facts);
   for (const fact of facts) {
+    if (fact.id === `p${lesson.revision}:corner_contrast` && comparison.insight.witness) {
+      const choice = comparison.choices.find((move) => move.coordinate === comparison.insight.witness!.opportunity.available_after);
+      if (choice) return {choice, frame: comparison.insight.witness.prefix.length + 1};
+    }
+    if (fact.id === `p${lesson.revision}:defense`) {
+      const choice = comparison.choices.find((move) => move.coordinate === comparison.insight.better_move);
+      if (choice?.kind === 'corner_defense') return {choice, frame: Math.min(2, choice.frames.length - 1)};
+    }
     const choice = comparison.choices.find((move) =>
       fact.id === `p${lesson.revision}:continuation_${move.coordinate}`
       || fact.id === `p${lesson.revision}:proof_${move.coordinate}`);

@@ -13,8 +13,8 @@ COLORS = {"X": "Black", "O": "White"}
 LESSONS = {
     "forced_move": {
         "title": "Recognize a forced move",
-        "text": "When only one square is legal, you must play it. To study a decision you could change, revisit an earlier turn with more than one legal move.",
-        "question": "At which earlier turn did you still have a choice?",
+        "text": "When only one square is legal, you must play it. Follow the continuation to understand which discs and opportunities it changes.",
+        "question": "What changes after this forced move?",
     },
     "comparison": {
         "title": "Compare the whole position",
@@ -163,8 +163,7 @@ def position_facts(item: dict[str, Any], extra_moves: set[str] | None = None, co
                        + ", ".join(a["opponent_corners"]) + ".") if a["opponent_corners"] else ""
         return [fact(prefix + "decision", decision, "forced_move", revision),
                 fact(prefix + "forced_move", f"{actual} is the only legal move for {COLORS[actor]}. "
-                     "There is no alternative to compare on this turn." + consequence
-                     + " Revisit an earlier turn with more than one legal move to study a choice you could change.",
+                     "There is no alternative to compare on this turn." + consequence,
                      "forced_move", revision)], ["forced_move"]
     score_kind = "exact endgame scores under best play" if assessment["score_kind"] == "exact" else "search scores; non-exact values are estimates"
     judgment = (" This is one of the equally highest-rated moves."
@@ -252,7 +251,7 @@ def verified_teaching_facts(teaching, revision):
                               "not the reason for the full search evaluation or a forced continuation.",
                               "comparison", revision))
         proof = choice["corner_proof"]
-        if not proof:
+        if not proof or not proof['forced']:
             continue
         attack = proof["attack"]
         action = f"take {proof['target']} immediately" if attack == proof["target"] else (
@@ -262,6 +261,21 @@ def verified_teaching_facts(teaching, revision):
                           "This is a rules-verified corner threat within three plies after the root move; "
                           "it does not establish the reason for the full search-score difference.", "corners", revision))
     insight = teaching["insight"]
+    witness = insight.get('witness')
+    if witness:
+        opportunity = witness['opportunity']
+        prefix = ' → '.join(witness['prefix']) or 'no further moves'
+        cells = ', '.join(f"{entry['coordinate']}: {entry['available']} versus {entry['blocked']}"
+                          for entry in opportunity['changes'])
+        facts.append(fact(f'p{revision}:corner_contrast',
+                          f"Compare {opportunity['available_after']} and {opportunity['blocked_after']} "
+                          f"after the same further sequence ({prefix}). "
+                          f"{COLORS[opportunity['actor']]} has a capture line from {opportunity['coordinate']} "
+                          f"only in the {opportunity['available_after']} variation: "
+                          f"{' → '.join(opportunity['capture_line'])}. Changed cells: {cells}. "
+                          "This compares capture geometry on those boards; it does not let that player "
+                          "move out of turn or establish the reason for the full search-score gap.",
+                          'corners', revision))
     contrast = teaching.get("decision_contrast")
     if contrast:
         changes = []
@@ -278,10 +292,20 @@ def verified_teaching_facts(teaching, revision):
                           "not proof of the reason for the full search-score gap; fewer replies alone do not imply a better move.",
                           "comparison", revision))
     if insight["kind"] == "corner_defense":
+        response = ("either ends the game without that corner or has a defense that prevents it on the following turn. "
+                    if any(entry['defense'] is None for entry in insight['proof']['refutations']) else
+                    f"has a defense that prevents {insight['target']} on the following turn. ")
         facts.append(fact(f"p{revision}:defense", f"After {insight['better_move']}, every legal first reply "
-                          f"has a defense that prevents {insight['target']} on the following turn. "
+                          + response +
                           "This is verified within three plies after the root move, not permanent corner safety.",
                           "corners", revision))
+        if insight['other_threats']:
+            targets = ', '.join(proof['target'] for proof in insight['other_threats'])
+            facts.append(fact(f'p{revision}:other_corners',
+                              f"After {insight['better_move']}, other corner threats remain: {targets}. "
+                              "Each is forced within the opponent's next two turns under the checked rules. "
+                              "Defending the compared corner does not secure the other corners or explain the full score gap.",
+                              'corners', revision))
     return facts
 
 
@@ -326,6 +350,22 @@ def review_context(review: dict[str, Any], question: str | None, revision: int |
             facts.append(fact(f"p{item['revision']}:view", f"The question refers to the {view['selected_move']} line: {line}. "
                               + last + turn + ". Scores describe the root choice, not this later board.",
                               "comparison", item["revision"]))
+        earlier = review.get('earlier_decision') if revision == item['revision'] else None
+        if earlier and earlier['status'] == 'verified':
+            link = earlier['link']
+            move_number = sum(event['kind'] == 'move' and event['revision'] <= link['revision']
+                              for event in review['history']) + 1
+            topic = 'forced_move' if assess_decision(item, item['actual_move'])['status'] == 'forced' else 'corners'
+            facts.append(fact(f"p{item['revision']}:earlier_decision",
+                              f"In the recorded history, at move {move_number}, "
+                              f"{COLORS[link['actor']]} played {link['recorded_move']}, allowing a forced "
+                              f"{link['target']} capture within the next two opponent turns. "
+                              f"The higher-rated {link['recommended_move']} offers a defense within that horizon. "
+                              "The same bounded threat remained at every subsequent recorded state up to this decision. "
+                              "This is a verified local connection, not proof of permanent corner safety, "
+                              "the full score difference, or a different game result.", topic, item['revision']))
+            if topic not in lessons:
+                lessons.append(topic)
         positions.append({"revision": item["revision"], "actor": COLORS[item["actor"]],
                           "decision": assess_decision(item, item["actual_move"]),
                           "player_reflection": review.get("player_reflection") if revision == item["revision"] else None,

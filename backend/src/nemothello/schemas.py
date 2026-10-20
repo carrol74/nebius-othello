@@ -256,7 +256,7 @@ class TeachingMove(BaseModel):
     coordinate: Coordinate
     score: float
     score_kind: Literal["estimate", "exact"]
-    kind: Literal["line", "corner_taken", "corner_given", "corner_forced", "pass"]
+    kind: Literal["line", "corner_taken", "corner_given", "corner_forced", "corner_defense", "pass"]
     target: Coordinate | None
     opponent_reply: Coordinate | None
     checked_defenses: list[Coordinate]
@@ -268,17 +268,6 @@ class TeachingMove(BaseModel):
     assessment: DecisionAssessment
     corner_proof: CornerProof | None = None
     continuation_lesson: ContinuationLesson | None = None
-
-
-class TeachingInsight(BaseModel):
-    kind: Literal["forced", "best", "equal", "corner_access", "illustrated_corner", "shared_corner", "search", "corner_defense"]
-    better_move: Coordinate | None
-    worse_move: Coordinate | None
-    target: Coordinate | None
-    gap: Coordinate | None
-    score_kind: Literal["estimate", "exact"]
-    proof: CornerProof | None = None
-    example: list[Coordinate | Literal["pass"]] = Field(default_factory=list)
 
 
 class ContrastSquare(BaseModel):
@@ -294,6 +283,24 @@ class ReplyOpportunity(BaseModel):
     blocked_after: Coordinate
     capture_line: list[Coordinate]
     changes: list[ContrastSquare]
+
+
+class CornerComparisonWitness(BaseModel):
+    prefix: list[Coordinate | Literal["pass"]] = Field(max_length=2)
+    opportunity: ReplyOpportunity
+
+
+class TeachingInsight(BaseModel):
+    kind: Literal["forced", "best", "equal", "corner_access", "illustrated_corner", "shared_corner", "search", "corner_defense"]
+    better_move: Coordinate | None
+    worse_move: Coordinate | None
+    target: Coordinate | None
+    gap: Coordinate | None
+    score_kind: Literal["estimate", "exact"]
+    proof: CornerProof | None = None
+    example: list[Coordinate | Literal["pass"]] = Field(default_factory=list)
+    other_threats: list[CornerProof] = Field(default_factory=list)
+    witness: CornerComparisonWitness | None = None
 
 
 class DecisionContrast(BaseModel):
@@ -438,6 +445,36 @@ class BranchResult(BaseModel):
     result: GameResult
 
 
+class ThreatObservation(BaseModel):
+    revision: int
+    turn: Color
+    max_plies: Literal[3, 4]
+
+
+class EarlierDecisionLink(BaseModel):
+    revision: int
+    actor: Color
+    target: Coordinate
+    recorded_move: Coordinate
+    recommended_move: Coordinate
+    evidence: ReviewEvidence
+    recorded_proof: CornerProof
+    recommended_proof: CornerProof
+    continuity: list[ThreatObservation]
+
+
+class EarlierDecisionResult(BaseModel):
+    status: Literal['verified', 'not_found', 'not_applicable']
+    scope: Literal['continuous_bounded_corner_threat']
+    link: EarlierDecisionLink | None
+
+    @model_validator(mode='after')
+    def link_matches_status(self):
+        if (self.link is not None) != (self.status == 'verified'):
+            raise ValueError('Only a verified result can contain an earlier decision link')
+        return self
+
+
 class QuestionResult(BaseModel):
     answer: str
     model_id: str | None
@@ -447,6 +484,7 @@ class QuestionResult(BaseModel):
     answer_facts: list[ReviewFact] = Field(default_factory=list)
     topic: str | None = None
     view: LessonView | None = None
+    earlier_decision: EarlierDecisionResult | None = None
 
 
 class PlayerReflection(BaseModel):
@@ -461,12 +499,13 @@ class PositionLesson(BaseModel):
     game_id: str
     revision: int
     task_id: str | None = None
-    previous_decision_revision: int | None = None
+    earlier_eligible: bool = False
+    earlier_decision: EarlierDecisionResult | None = None
     evidence: ReviewEvidence
     comparison: TeachingComparison
     hint_adoption: HintAdoption
     coaching: list[CoachingCard] = Field(default_factory=list)
-    coaching_status: Literal["pending", "ready", "failed"]
+    coaching_status: Literal["not_requested", "pending", "ready", "failed"]
     coaching_error: str | None = None
     model_id: str | None = None
     usage: dict[str, Any] | None = None

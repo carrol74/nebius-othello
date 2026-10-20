@@ -1440,8 +1440,11 @@
       "gap": null,
       "score_kind": "exact",
       "proof": null,
-      "example": []
+      "example": [],
+      "other_threats": [],
+      "witness": null
     },
+    "decision_contrast": null,
     "choices": [
       {
         "coordinate": "d8",
@@ -1482,6 +1485,7 @@
           "defenses": [],
           "refutations": []
         },
+        "continuation_lesson": null,
         "frames": [
           {
             "board": [

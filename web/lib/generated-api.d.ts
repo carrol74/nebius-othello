@@ -261,6 +261,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/games/{game_id}/lessons/earlier": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Earlier Decision */
+        get: operations["earlier_decision_games__game_id__lessons_earlier_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/games/{game_id}/branches": {
         parameters: {
             query?: never;
@@ -452,6 +469,12 @@ export interface components {
              */
             blocked: "X" | "O" | ".";
         };
+        /** CornerComparisonWitness */
+        CornerComparisonWitness: {
+            /** Prefix */
+            prefix: (string | "pass")[];
+            opportunity: components["schemas"]["ReplyOpportunity"];
+        };
         /** CornerProof */
         CornerProof: {
             /** Target */
@@ -536,6 +559,41 @@ export interface components {
             replies_after_recommended: string[];
             removed_reply: components["schemas"]["ReplyOpportunity"] | null;
             added_reply: components["schemas"]["ReplyOpportunity"] | null;
+        };
+        /** EarlierDecisionLink */
+        EarlierDecisionLink: {
+            /** Revision */
+            revision: number;
+            /**
+             * Actor
+             * @enum {string}
+             */
+            actor: "X" | "O";
+            /** Target */
+            target: string;
+            /** Recorded Move */
+            recorded_move: string;
+            /** Recommended Move */
+            recommended_move: string;
+            evidence: components["schemas"]["ReviewEvidence"];
+            recorded_proof: components["schemas"]["CornerProof"];
+            recommended_proof: components["schemas"]["CornerProof"];
+            /** Continuity */
+            continuity: components["schemas"]["ThreatObservation"][];
+        };
+        /** EarlierDecisionResult */
+        EarlierDecisionResult: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "verified" | "not_found" | "not_applicable";
+            /**
+             * Scope
+             * @constant
+             */
+            scope: "continuous_bounded_corner_threat";
+            link: components["schemas"]["EarlierDecisionLink"] | null;
         };
         /** GameResult */
         GameResult: {
@@ -746,8 +804,12 @@ export interface components {
             revision: number;
             /** Task Id */
             task_id?: string | null;
-            /** Previous Decision Revision */
-            previous_decision_revision?: number | null;
+            /**
+             * Earlier Eligible
+             * @default false
+             */
+            earlier_eligible: boolean;
+            earlier_decision?: components["schemas"]["EarlierDecisionResult"] | null;
             evidence: components["schemas"]["ReviewEvidence"];
             comparison: components["schemas"]["TeachingComparison"];
             hint_adoption: components["schemas"]["HintAdoption"];
@@ -757,7 +819,7 @@ export interface components {
              * Coaching Status
              * @enum {string}
              */
-            coaching_status: "pending" | "ready" | "failed";
+            coaching_status: "not_requested" | "pending" | "ready" | "failed";
             /** Coaching Error */
             coaching_error?: string | null;
             /** Model Id */
@@ -876,6 +938,7 @@ export interface components {
             /** Topic */
             topic?: string | null;
             view?: components["schemas"]["LessonView"] | null;
+            earlier_decision?: components["schemas"]["EarlierDecisionResult"] | null;
         };
         /** ReplyOpportunity */
         ReplyOpportunity: {
@@ -1181,6 +1244,9 @@ export interface components {
             proof?: components["schemas"]["CornerProof"] | null;
             /** Example */
             example?: (string | "pass")[];
+            /** Other Threats */
+            other_threats?: components["schemas"]["CornerProof"][];
+            witness?: components["schemas"]["CornerComparisonWitness"] | null;
         };
         /** TeachingMove */
         TeachingMove: {
@@ -1197,7 +1263,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "line" | "corner_taken" | "corner_given" | "corner_forced" | "pass";
+            kind: "line" | "corner_taken" | "corner_given" | "corner_forced" | "corner_defense" | "pass";
             /** Target */
             target: string | null;
             /** Opponent Reply */
@@ -1220,6 +1286,21 @@ export interface components {
             assessment: components["schemas"]["DecisionAssessment"];
             corner_proof?: components["schemas"]["CornerProof"] | null;
             continuation_lesson?: components["schemas"]["ContinuationLesson"] | null;
+        };
+        /** ThreatObservation */
+        ThreatObservation: {
+            /** Revision */
+            revision: number;
+            /**
+             * Turn
+             * @enum {string}
+             */
+            turn: "X" | "O";
+            /**
+             * Max Plies
+             * @enum {integer}
+             */
+            max_plies: 3 | 4;
         };
         /** ValidationError */
         ValidationError: {
@@ -1857,6 +1938,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PracticeFeedback"] | components["schemas"]["ReplyPracticeFeedback"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    earlier_decision_games__game_id__lessons_earlier_get: {
+        parameters: {
+            query: {
+                revision: number;
+            };
+            header: {
+                authorization: string;
+                "x-session-id": string;
+            };
+            path: {
+                game_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EarlierDecisionResult"];
                 };
             };
             /** @description Validation Error */

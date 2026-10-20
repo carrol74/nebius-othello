@@ -6,11 +6,17 @@ from typing import Any
 from uuid import uuid4
 
 from nemothello.coaching import REVIEW_VERSION, summary_facts
+from nemothello.earlier_decision import earlier_target, find_earlier_decision
 from nemothello.edax import Edax
 from nemothello.errors import AppError
 from nemothello.lesson_view import resolve_lesson_view
 from nemothello.opponents import Difficulty, EdaxOpponent
-from nemothello.position_lessons import check_teachable, previous_decision_revision
+from nemothello.position_lessons import (
+    bind_recorded_move,
+    check_teachable,
+    lesson_context,
+    lesson_document,
+)
 from nemothello.practice import grade_practice, select_practice
 from nemothello.rules import Position, opponent
 from nemothello.schemas import GameState
@@ -333,29 +339,65 @@ class Games:
                      if t["game_id"] == game_id and t["kind"] == "review"]
             return {"task": self.public_task(tasks[-1]) if tasks else None}
 
+    def _lesson_at(self, db, owner, game, revision):
+        saved = next((item for item in self.store.list_records('lesson', owner, db)
+                      if item['game_id'] == game['game_id'] and item['revision'] == revision), None)
+        if saved:
+            saved.pop('previous_decision_revision', None)
+            evidence = bind_recorded_move(game, saved['evidence'])
+            if evidence != saved['evidence']:
+                context = lesson_context(game, evidence, self.store.list_records('hint', owner, db))
+                saved = {**lesson_document(context, evidence), 'reflection': saved.get('reflection')}
+                self.store.save(db, 'lesson', f"{game['game_id']}:{revision}", owner, saved)
+        return saved
+
     def position_lesson(self, owner: str, game_id: str, revision: int) -> dict[str, Any]:
         game = self.store.get("game", game_id, owner)
         check_teachable(game, revision)
         with self.store.transaction() as db:
-            saved = next((item for item in self.store.list_records("lesson", owner, db)
-                          if item["game_id"] == game_id and item["revision"] == revision), None)
+            saved = self._lesson_at(db, owner, game, revision)
             if saved:
                 comparison = compare_lesson({"evidence": [saved["evidence"]]}, revision,
                                             saved["evidence"]["actual_move"])
                 return {**saved, "comparison": comparison,
                         "evidence": {**saved["evidence"], "recommended_move": comparison["recommended_move"],
                                      "score_loss": comparison["choices"][0]["assessment"]["score_loss"]},
-                        "previous_decision_revision": previous_decision_revision(game, revision)}
+                        "earlier_eligible": earlier_target(game, saved['evidence'], comparison) is not None}
             tasks = [item for item in self.store.list_records("task", owner, db)
                      if item["game_id"] == game_id and item["kind"] == "lesson"
                      and item["inputs"]["revision"] == revision]
             return {"task": self.public_task(tasks[-1]) if tasks else None}
 
+    def earlier_decision(self, owner, game_id, revision):
+        saved = self.position_lesson(owner, game_id, revision)
+        if 'evidence' not in saved:
+            raise AppError('LESSON_NOT_FOUND', 'Teach this position before checking earlier choices', 409)
+        game = self.store.get('game', game_id, owner)
+        result = saved.get('earlier_decision')
+        if result is None:
+            known = {item['revision']: bind_recorded_move(game, item['evidence'])
+                     for item in self.store.list_records('lesson', owner) if item['game_id'] == game_id}
+            result = find_earlier_decision(game, saved['evidence'], saved['comparison'], self.review_engine_of(game), known)
+        with self.store.transaction() as db:
+            current = self.store.get('lesson', f'{game_id}:{revision}', owner, db)
+            if any(current['evidence'][key] != saved['evidence'][key]
+                   for key in ('revision', 'actor', 'actual_move', 'analysis')):
+                raise AppError('LESSON_CHANGED', 'Reload the position before checking earlier choices', 409)
+            current['earlier_decision'] = result
+            self.store.save(db, 'lesson', f'{game_id}:{revision}', owner, current)
+            if result['link'] is not None:
+                earlier_revision = result['link']['revision']
+                existing = self._lesson_at(db, owner, game, earlier_revision)
+                if not existing:
+                    context = lesson_context(game, result['link']['evidence'], self.store.list_records('hint', owner, db))
+                    self.store.save(db, 'lesson', f'{game_id}:{earlier_revision}', owner,
+                                    lesson_document(context, result['link']['evidence']))
+        return result
+
     def _practice_question(self, owner, game_id, revision, lesson_move, db):
         game = self.store.get("game", game_id, owner, db)
         check_teachable(game, revision)
-        saved = next((item for item in self.store.list_records("lesson", owner, db)
-                      if item["game_id"] == game_id and item["revision"] == revision), None)
+        saved = self._lesson_at(db, owner, game, revision)
         if not saved:
             raise AppError("LESSON_NOT_FOUND", "Teach this position before practicing", 409)
         comparison = compare_lesson({"evidence": [saved["evidence"]]}, revision, lesson_move)
@@ -408,8 +450,7 @@ class Games:
         def operation(db: Connection) -> dict[str, Any]:
             game = self.store.get("game", game_id, owner, db)
             check_teachable(game, revision)
-            saved = next((item for item in self.store.list_records("lesson", owner, db)
-                          if item["game_id"] == game_id and item["revision"] == revision), None)
+            saved = self._lesson_at(db, owner, game, revision)
             if question:
                 if not saved:
                     raise AppError("LESSON_NOT_FOUND", "Teach this position before asking a question", 409)

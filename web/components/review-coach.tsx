@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocale } from "@/lib/locale";
 import { comparisonTakeaway, lessonText, stepText, teachingChoiceLabel, teachingFactText } from "@/lib/teaching-text";
-import { coachFocus, sameTeachingView, teachingView } from "@/lib/lesson-view";
+import { coachFocus, comparisonRay, sameTeachingView, teachingView } from "@/lib/lesson-view";
 import { positionFactText } from "@/lib/review-text";
+import { earlierDecisionText } from "@/lib/earlier-decision";
 import type { GameState, LessonView, PositionLesson, QuestionResult, TeachingDefense, TeachingFrame, TeachingMove } from "@/lib/types";
 
 export type Variation = {
@@ -10,10 +11,11 @@ export type Variation = {
   assessment: TeachingMove["assessment"];
   focus_square?: string | null; capture_lines?: string[][];
   capture_frame?: number;
+  comparison_ray?: {frame: number; squares: string[]};
   exercise?: {defenses: TeachingDefense[]; target: string; attempt: string | null};
 };
 
-export function ReviewCoach({game, lesson, variation, pending, busy, showVariation, ask, answer, questionPending, continueGame, replay, practice}: {
+export function ReviewCoach({game, lesson, variation, pending, busy, showVariation, ask, answer, questionPending, continueGame, replay, practice, findEarlier, revisit}: {
   game: GameState;
   lesson: PositionLesson;
   variation: Variation | null;
@@ -26,6 +28,8 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
   continueGame: (revision: number) => void;
   replay: (revision: number) => void;
   practice: (move: string) => void;
+  findEarlier: () => void;
+  revisit: (revision: number) => void;
 }) {
   const {locale, t} = useLocale();
   const comparison = lesson.comparison;
@@ -46,7 +50,10 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
     recommended_move: referenceChoice?.coordinate ?? activeMove.coordinate,
     score_loss: Math.abs(activeMove.score - (referenceChoice?.score ?? activeMove.score))};
   const takeaway = comparisonTakeaway(comparison, locale);
-  const answerFacts = [...(answer?.answer_facts ?? []), ...(answer?.coaching ?? []).flatMap((card) => card.facts)];
+  const answerFacts = [...(currentAnswer?.answer_facts ?? []), ...(currentAnswer?.coaching ?? []).flatMap((card) => card.facts)];
+  const answerIncludesEarlier = answerFacts.some((fact) => fact.id.endsWith(':earlier_decision'));
+  const earlier = currentAnswer?.earlier_decision ?? lesson.earlier_decision;
+  const earlierMoveNumber = earlier?.link ? game.history.filter((event) => event.kind === 'move' && event.revision <= earlier.link!.revision).length + 1 : 0;
 
   useEffect(() => {
     const initial = initialComparison.current;
@@ -54,6 +61,7 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
     const initialView = {revision: initial.revision, coordinate: first.coordinate, frame: 1,
       assessment: first.assessment,
       lesson_frames: first.frames, focus_square: first.target,
+      comparison_ray: comparisonRay(initial),
       capture_lines: first.continuation_lesson ? [first.continuation_lesson.capture_line] : first.capture_lines,
       capture_frame: first.continuation_lesson ? first.continuation_lesson.frame_index - 1 : undefined};
     automaticView.current = initialView;
@@ -67,6 +75,7 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
     if (!focus) return;
     const {choice, frame} = focus;
     showVariation({revision: lesson.revision, coordinate: choice.coordinate, frame,
+      comparison_ray: comparisonRay(comparison),
       assessment: choice.assessment, lesson_frames: choice.frames, focus_square: choice.target,
       capture_lines: choice.continuation_lesson ? [choice.continuation_lesson.capture_line] : choice.capture_lines,
       capture_frame: choice.continuation_lesson ? choice.continuation_lesson.frame_index - 1 : undefined});
@@ -76,6 +85,7 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
     {item.is_played === false && <p>{t("You have not played this turn yet.", "你在这一回合还没有落子。")}</p>}
     <div className="teaching-choices" role="group" aria-label={t("Choose a line to explore", "选择要演示的走法")}>
       {[...comparison.choices].sort((a, b) => Number(b.assessment.is_played) - Number(a.assessment.is_played)).map((choice) => <button key={choice.coordinate} aria-pressed={choice.coordinate === activeMove.coordinate} onClick={() => showVariation({revision: lesson.revision, coordinate: choice.coordinate, frame: 1, assessment: choice.assessment, lesson_frames: choice.frames, focus_square: choice.target,
+        comparison_ray: comparisonRay(comparison),
         capture_lines: choice.continuation_lesson ? [choice.continuation_lesson.capture_line] : choice.capture_lines,
         capture_frame: choice.continuation_lesson ? choice.continuation_lesson.frame_index - 1 : undefined})}>
         {choice.coordinate}<span>{teachingChoiceLabel(choice, locale)}</span>
@@ -91,6 +101,11 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
     })}>{t(`See the ${activeMove.continuation_lesson.capture_line[0]} capture`, `查看 ${activeMove.continuation_lesson.capture_line[0]} 的夹击`)}</button>}
     {!takeaway && activeMove.continuation_lesson && <button disabled={busy} onClick={() => practice(activeMove.coordinate)}>{t("Try this idea in another position", "换个局面试试")}</button>}
     {comparison.decision_contrast && <button disabled={busy} onClick={() => practice(activeMove.coordinate)}>{t("Compare replies in another position", "换个局面对比回应")}</button>}
+    {lesson.earlier_eligible && !answerIncludesEarlier && <div className="earlier-choice">
+      {!earlier ? <button disabled={busy} onClick={findEarlier}>{busy ? t('Checking earlier choices…', '正在核验更早的选择…') : t('Could I have defended this corner earlier?', '更早能守住这个角吗？')}</button>
+        : earlier.link ? <><p>{earlierDecisionText(earlier.link, earlierMoveNumber, locale)}</p><button disabled={busy} onClick={() => revisit(earlier.link!.revision)}>{t('Inspect that decision', '查看那次选择')}</button></>
+          : <p className="muted">{t('No earlier recommendation was verified to defend against this continuing threat.', '还没有核验出可防住同一抢角威胁的更早推荐走法。')}</p>}
+    </div>}
     {!forcedMove && activeMove.kind === "corner_forced" && activeMove.defense_lines.length > 0 && <button disabled={busy} onClick={() => showVariation({
       revision: lesson.revision, coordinate: activeMove.coordinate, frame: 2, lesson_frames: activeMove.frames,
       assessment: activeMove.assessment,
@@ -106,8 +121,9 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
       <div><input aria-label={t("Ask about this position", "询问这个局面")} value={question} maxLength={1800} onChange={(event) => setQuestion(event.target.value)} placeholder={t("Why this move? Ask a question…", "对这一步有疑问？继续提问…")} /><button disabled={busy || questionPending || !question.trim()}>{questionPending ? t("Answering…", "回答中…") : t("Ask", "提问")}</button></div>
     </form>
     {currentAnswer && <div className="position-answer" role="status">{currentAnswer.topic === "unsupported" ? t("The saved evidence cannot answer that question. Ask about this position or its moves.", "已保存的证据无法回答这个问题，可以询问当前局面和落点。") : locale === "en" ? currentAnswer.answer : [...new Map(answerFacts.map((fact) => [fact.id, fact])).values()].map((fact) => <p key={fact.id}>{
-      fact.id.endsWith(":view") ? `${view.selected_move} 走法，${view.line.length ? stepText(frames[view.line.length], locale) : "落子前的局面"}。评分针对起点的选择。` : fact.id === "outcome_limit" ? "更高的搜索评分不保证获胜，分支对局的结果只适用于那一次对弈。" : fact.id === "result" && game.result ? `终局：黑方 ${game.result.black_count}，白方 ${game.result.white_count}。` : fact.id === "adoption" ? `显示过提示的 ${lesson.hint_adoption.shown_turns} 个回合中，你采用了 ${lesson.hint_adoption.adopted_turns} 次提示。` : teachingFactText(comparison, fact.id, locale) ?? positionFactText(fact, answerEntry, locale, activeMove.assessment)
+      fact.id.endsWith(":earlier_decision") && earlier?.link ? earlierDecisionText(earlier.link, earlierMoveNumber, locale) : fact.id.endsWith(":view") ? `${view.selected_move} 走法，${view.line.length ? stepText(frames[view.line.length], locale) : "落子前的局面"}。评分针对起点的选择。` : fact.id === "outcome_limit" ? "更高的搜索评分不保证获胜，分支对局的结果只适用于那一次对弈。" : fact.id === "result" && game.result ? `终局：黑方 ${game.result.black_count}，白方 ${game.result.white_count}。` : fact.id === "adoption" ? `显示过提示的 ${lesson.hint_adoption.shown_turns} 个回合中，你采用了 ${lesson.hint_adoption.adopted_turns} 次提示。` : teachingFactText(comparison, fact.id, locale) ?? positionFactText(fact, answerEntry, locale, activeMove.assessment)
     }</p>)}</div>}
+    {answerIncludesEarlier && earlier?.link && <button disabled={busy} onClick={() => revisit(earlier.link!.revision)}>{t('Inspect that decision', '查看那次选择')}</button>}
     <details className="lesson-tools"><summary>{t("Play from this position", "从这个局面继续")}</summary><div className="branch-actions"><button disabled={busy} onClick={() => continueGame(lesson.revision)}>{t("Play a new branch", "创建对局分支")}</button><button disabled={busy} onClick={() => replay(lesson.revision)}>{t("Replay with hints", "按提示回放")}</button></div></details>
   </div>;
 }

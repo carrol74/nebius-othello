@@ -5,7 +5,7 @@ import ts from "typescript";
 
 const source = readFileSync(new URL("../lib/lesson-view.ts", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, {compilerOptions: {module: ts.ModuleKind.ESNext}}).outputText;
-const {teachingView, sameTeachingView, coachFocus} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const {teachingView, sameTeachingView, coachFocus, comparisonRay} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const cases = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/teaching-native-cases.json", import.meta.url), "utf8"));
 
 test("question context follows the selected move, frame and defense attempt", () => {
@@ -38,4 +38,33 @@ test("coach focus uses a verified canonical continuation and ignores unavailable
   assert.equal(focus.choice.frames[focus.frame + 1].coordinate, choice.continuation_lesson.capture_line[0]);
   assert.equal(coachFocus({...lesson, coaching: []}), null);
   assert.equal(coachFocus({...lesson, coaching: [{facts: [{id: "p2:continuation_a1"}]}]}), null);
+});
+
+test("a selected defense fact focuses its own defensive line before the response", () => {
+  for (const comparison of [cases['16'], cases['earlier-h8']]) {
+    const lesson = {revision:comparison.revision, comparison,
+      coaching:[{facts:[{id:`p${comparison.revision}:defense`}]}]};
+    const focus = coachFocus(lesson);
+    assert.equal(focus.choice.coordinate, comparison.insight.better_move);
+    assert.equal(focus.choice.target, comparison.insight.target);
+    assert.equal(focus.frame, 2);
+    assert.equal(focus.choice.frames[focus.frame + 1].coordinate, comparison.insight.example[2]);
+  }
+});
+
+test('corner comparison overlays and coach focus use the exact shared-prefix board', () => {
+  for (const comparison of Object.values(cases)) {
+    const witness = comparison.insight.witness;
+    if (!witness) {assert.equal(comparisonRay(comparison), undefined); continue;}
+    const ray = comparisonRay(comparison);
+    assert.equal(ray.frame, witness.prefix.length + 1);
+    assert.deepEqual(ray.squares, witness.opportunity.capture_line);
+    for (const choice of comparison.choices) {
+      assert.deepEqual(choice.frames.slice(2, ray.frame + 1).map((frame) => frame.coordinate), witness.prefix);
+    }
+    const focus = coachFocus({revision:comparison.revision, comparison,
+      coaching:[{facts:[{id:`p${comparison.revision}:corner_contrast`}]}]});
+    assert.equal(focus.frame, ray.frame);
+    assert.equal(focus.choice.coordinate, witness.opportunity.available_after);
+  }
 });

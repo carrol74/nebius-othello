@@ -32,7 +32,7 @@ def test_concrete_corner_trap_checks_every_defense(review):
         assert line.frames[4].board[0][0] == "O"
         assert {square for ray in line.capture_lines for square in ray[1:-1]} == set(line.frames[4].flipped)
     assert bad.frames[-1].board[0][0] == "O"
-    assert better.coordinate == "b3" and better.kind == "line"
+    assert better.coordinate == "b3" and better.kind == "corner_defense"
     assert [frame.coordinate for frame in better.frames] == [None, "b3", "e1", "b1"]
     assert "a1" not in legal_moves(tuple(better.frames[3].board), "O")
     assert lesson.insight.kind == "corner_defense"
