@@ -140,8 +140,8 @@ class Games:
         return engine
 
     def review_engine_of(self, game: dict[str, Any]) -> Edax:
-        hint_engine = self.hint_engine_of(game)
-        return hint_engine if hint_engine.level > self.edax.level else self.edax
+        return max((self.edax, self.hint_engine_of(game), *self.difficulty_hints.values()),
+                   key=lambda engine: engine.level)
 
     def check_turn(self, game: dict[str, Any], revision: int, human: bool) -> None:
         if game["revision"] != revision:

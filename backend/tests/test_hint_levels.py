@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from nemothello.main import app
 from nemothello.opponents import DIFFICULTY_LEVELS, HINT_LEVELS
+from nemothello.position_lessons import analyze_position
 from nemothello.rules import Position
 
 
@@ -52,7 +53,12 @@ def test_real_hint_routes_by_game_and_branch_keeps_saved_level(client, difficult
     assert hint["analysis"]["settings"]["level"] == level
     assert {item["coordinate"] for item in hint["analysis"]["candidates"]} == set(game["legal_moves"])
     assert hint["recommended_move"] in game["legal_moves"]
-    assert app.state.games.review_engine_of(game).level >= level
+    review_engine = app.state.games.review_engine_of(game)
+    assert review_engine.level == max(app.state.games.hint_engines)
+    stored = app.state.store.get('game', game['game_id'], 'hint-test-owner')
+    review_analysis = analyze_position(stored, 0, review_engine)['analysis']
+    assert review_analysis['settings']['level'] == 10
+    assert hint['analysis']['settings']['level'] == level
     assert app.state.games.edax.level == 8
 
     post(client, f"/games/{game['game_id']}/hint-displays", expected_revision=0,
