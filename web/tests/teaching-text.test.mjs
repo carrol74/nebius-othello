@@ -5,10 +5,11 @@ import ts from "typescript";
 
 const source = readFileSync(new URL("../lib/teaching-text.ts", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, {compilerOptions: {module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022}}).outputText;
-const {lessonText, lessonPrompt, defenseFeedback, comparisonTakeaway, stepText, captureLineText, teachingChoiceLabel, teachingFactText} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const {lessonText, lessonPrompt, defenseFeedback, comparisonTakeaway, stepText, captureLineText, teachingChoiceLabel, teachingFactText, continuationText} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const cases = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/teaching-native-cases.json", import.meta.url), "utf8"));
 const {review} = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/review-native-positions.json", import.meta.url), "utf8"));
 const forced = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/forced-move-native.json", import.meta.url), "utf8"));
+const ordinary = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/ordinary-move-native.json", import.meta.url), "utf8"));
 
 test("both languages teach the verified corner threat with the actual response", () => {
   const item = cases["16"], choice = item.choices[0];
@@ -45,12 +46,41 @@ test("the recommendation stays paired with the lower-rated history without promi
   assert.equal(comparison.reference_move, "b1");
   const text = lessonText(comparison, best, "en").join(" ");
   assert.match(text, /highest|equally best/);
-  assert.match(text, /position still favors White/);
+  assert.doesNotMatch(text, /position still favors|局面仍偏向/);
   assert.doesNotMatch(text, /only legal/);
   const opening = cases["0"].choices[0];
   assert.equal(teachingChoiceLabel(opening, "en"), "Your game move");
   assert.equal(teachingChoiceLabel(best, "zh"), "推荐走法");
   assert.equal(teachingChoiceLabel(best, "en"), "Recommended move");
+});
+
+test("an ordinary highest-rated move teaches a concrete continuation instead of stating an unexplained advantage", () => {
+  const comparison = ordinary.comparison, choice = comparison.choices[0];
+  for (const locale of ["en", "zh"]) {
+    const text = lessonText(comparison, choice, locale).join(" ");
+    assert.ok(text.includes("e5") && text.includes("c6"));
+    assert.match(text, /anchor|夹击/);
+    assert.doesNotMatch(text, /position still favors|偏向白方|because.*score|所以.*评分/);
+    assert.equal(teachingFactText(comparison, "p8:continuation_f5", locale), continuationText(choice, locale));
+    const explanation = captureLineText([choice.continuation_lesson.capture_line], "X", locale);
+    for (const coordinate of ["e2", "e3", "e4", "e5"]) assert.ok(explanation.includes(coordinate));
+  }
+  assert.equal(choice.continuation_lesson.frame_index, 3);
+  assert.equal(choice.frames[2].coordinate, "c6");
+  assert.equal(choice.frames[3].coordinate, "e2");
+});
+
+test("every displayed ordinary move has a lesson about the local mechanism or the final count", () => {
+  for (const comparison of [...Object.values(cases), ordinary.comparison]) {
+    for (const choice of comparison.choices.filter((choice) => choice.kind === "line")) {
+      for (const locale of ["en", "zh"]) {
+        const text = lessonText(comparison, choice, locale);
+        const explainedByComparison = ["corner_defense", "corner_access", "shared_corner"].includes(comparison.insight.kind);
+        if (!explainedByComparison) assert.ok(text.length > 1);
+        assert.doesNotMatch(text.join(" "), /position still favors|局面仍偏向/);
+      }
+    }
+  }
 });
 
 test("a tied-best historical move is shown alone without an unnecessary alternative", () => {

@@ -102,7 +102,8 @@ class Tasks:
                   "model_id": None, "usage": None}
         key = f"{game_id}:{revision}"
         context["teaching_comparison"] = {"insight": lesson["comparison"]["insight"], "choices": [
-            {"coordinate": entry["coordinate"], "corner_proof": entry["corner_proof"]}
+            {"coordinate": entry["coordinate"], "corner_proof": entry["corner_proof"],
+             "continuation_lesson": entry["continuation_lesson"]}
             for entry in lesson["comparison"]["choices"]]}
         with self.store.transaction() as db:
             self.store.save(db, "lesson", key, owner, lesson)

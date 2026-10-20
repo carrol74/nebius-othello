@@ -1,0 +1,1276 @@
+{
+  "source_game_id": "a326bde6-b488-4599-8f89-8d7da1e99ede",
+  "initial_board": [
+    "........",
+    "........",
+    "........",
+    "...OX...",
+    "...XO...",
+    "........",
+    "........",
+    "........"
+  ],
+  "history": [
+    {
+      "event_index": 0,
+      "actor": "X",
+      "kind": "move",
+      "coordinate": "d3",
+      "revision": 1,
+      "board": [
+        "........",
+        "........",
+        "...X....",
+        "...XX...",
+        "...XO...",
+        "........",
+        "........",
+        "........"
+      ],
+      "turn": "O"
+    },
+    {
+      "event_index": 1,
+      "actor": "O",
+      "kind": "move",
+      "coordinate": "c5",
+      "revision": 2,
+      "board": [
+        "........",
+        "........",
+        "...X....",
+        "...XX...",
+        "..OOO...",
+        "........",
+        "........",
+        "........"
+      ],
+      "turn": "X"
+    },
+    {
+      "event_index": 2,
+      "actor": "X",
+      "kind": "move",
+      "coordinate": "d6",
+      "revision": 3,
+      "board": [
+        "........",
+        "........",
+        "...X....",
+        "...XX...",
+        "..OXO...",
+        "...X....",
+        "........",
+        "........"
+      ],
+      "turn": "O"
+    },
+    {
+      "event_index": 3,
+      "actor": "O",
+      "kind": "move",
+      "coordinate": "e3",
+      "revision": 4,
+      "board": [
+        "........",
+        "........",
+        "...XO...",
+        "...OO...",
+        "..OXO...",
+        "...X....",
+        "........",
+        "........"
+      ],
+      "turn": "X"
+    },
+    {
+      "event_index": 4,
+      "actor": "X",
+      "kind": "move",
+      "coordinate": "b4",
+      "revision": 5,
+      "board": [
+        "........",
+        "........",
+        "...XO...",
+        ".X.OO...",
+        "..XXO...",
+        "...X....",
+        "........",
+        "........"
+      ],
+      "turn": "O"
+    },
+    {
+      "event_index": 5,
+      "actor": "O",
+      "kind": "move",
+      "coordinate": "c3",
+      "revision": 6,
+      "board": [
+        "........",
+        "........",
+        "..OOO...",
+        ".X.OO...",
+        "..XXO...",
+        "...X....",
+        "........",
+        "........"
+      ],
+      "turn": "X"
+    },
+    {
+      "event_index": 6,
+      "actor": "X",
+      "kind": "move",
+      "coordinate": "d2",
+      "revision": 7,
+      "board": [
+        "........",
+        "...X....",
+        "..XXO...",
+        ".X.XO...",
+        "..XXO...",
+        "...X....",
+        "........",
+        "........"
+      ],
+      "turn": "O"
+    },
+    {
+      "event_index": 7,
+      "actor": "O",
+      "kind": "move",
+      "coordinate": "c2",
+      "revision": 8,
+      "board": [
+        "........",
+        "..OX....",
+        "..XOO...",
+        ".X.XO...",
+        "..XXO...",
+        "...X....",
+        "........",
+        "........"
+      ],
+      "turn": "X"
+    }
+  ],
+  "evidence": {
+    "revision": 8,
+    "actor": "X",
+    "actual_move": "f5",
+    "is_played": true,
+    "recommended_move": "f5",
+    "score_loss": 0,
+    "analysis": {
+      "board": [
+        "........",
+        "..OX....",
+        "..XOO...",
+        ".X.XO...",
+        "..XXO...",
+        "...X....",
+        "........",
+        "........"
+      ],
+      "turn": "X",
+      "candidates": [
+        {
+          "coordinate": "c1",
+          "score": -18,
+          "principal_variation": [
+            "c1",
+            "c6",
+            "f3",
+            "e6",
+            "f4",
+            "b5"
+          ],
+          "depth": 8,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "b2",
+          "score": -37,
+          "principal_variation": [
+            "b2",
+            "c4",
+            "b3",
+            "c1",
+            "f3",
+            "f4"
+          ],
+          "depth": 8,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "f2",
+          "score": -21,
+          "principal_variation": [
+            "f2",
+            "f3",
+            "f5",
+            "c4",
+            "e2",
+            "f4"
+          ],
+          "depth": 8,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "f3",
+          "score": -22,
+          "principal_variation": [
+            "f3",
+            "f5",
+            "f6",
+            "d1",
+            "g5",
+            "f4"
+          ],
+          "depth": 8,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "f4",
+          "score": -31,
+          "principal_variation": [
+            "f4",
+            "d1",
+            "b1",
+            "b3",
+            "a3",
+            "a5"
+          ],
+          "depth": 8,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "f5",
+          "score": -16,
+          "principal_variation": [
+            "f5",
+            "c6",
+            "e2",
+            "c4",
+            "b3",
+            "e6"
+          ],
+          "depth": 8,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "f6",
+          "score": -18,
+          "principal_variation": [
+            "f6",
+            "c6",
+            "e2",
+            "f1",
+            "e1",
+            "d1"
+          ],
+          "depth": 8,
+          "score_kind": "estimate"
+        }
+      ],
+      "recommended_move": "f5",
+      "score_perspective": "X",
+      "score_kind": "estimate",
+      "engine_version": "4.6",
+      "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+      "depth": 8,
+      "settings": {
+        "level": 8,
+        "minimum_depth": 8,
+        "threads": 1,
+        "book": false,
+        "selectivity": 5
+      },
+      "elapsed_ms": 162.99
+    },
+    "shown_hint_ids": [],
+    "adopted_hint": false,
+    "comparisons": [
+      {
+        "coordinate": "c1",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 10,
+        "own_moves": 5,
+        "frontier_difference": 5,
+        "disc_difference": 5,
+        "opponent_legal_moves": [
+          "b1",
+          "d1",
+          "b2",
+          "b3",
+          "c4",
+          "b5",
+          "b6",
+          "c6",
+          "c7",
+          "d7"
+        ],
+        "opponent_corners": [],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "..X.....",
+              "..XX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "c1"
+          },
+          {
+            "board": [
+              "..X.....",
+              "..XX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XOO...",
+              "..OX....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "c6"
+          },
+          {
+            "board": [
+              "..X.....",
+              "..XX....",
+              "..XXXX..",
+              ".X.XO...",
+              "..XOO...",
+              "..OX....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "f3"
+          },
+          {
+            "board": [
+              "..X.....",
+              "..XX....",
+              "..XXXX..",
+              ".X.XO...",
+              "..XOO...",
+              "..OOO...",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "e6"
+          },
+          {
+            "board": [
+              "..X.....",
+              "..XX....",
+              "..XXXX..",
+              ".X.XXX..",
+              "..XOO...",
+              "..OOO...",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "f4"
+          },
+          {
+            "board": [
+              "..X.....",
+              "..XX....",
+              "..XXXX..",
+              ".X.XXX..",
+              ".OOOO...",
+              "..OOO...",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "b5"
+          }
+        ]
+      },
+      {
+        "coordinate": "b2",
+        "corner": 0,
+        "empty_corner_neighbor": 2,
+        "opponent_moves": 11,
+        "own_moves": 5,
+        "frontier_difference": 5,
+        "disc_difference": 5,
+        "opponent_legal_moves": [
+          "a1",
+          "b1",
+          "c1",
+          "d1",
+          "b3",
+          "c4",
+          "b5",
+          "b6",
+          "c6",
+          "c7",
+          "d7"
+        ],
+        "opponent_corners": [
+          "a1"
+        ],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              ".XXX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "b2"
+          },
+          {
+            "board": [
+              "........",
+              ".XXX....",
+              "..XOO...",
+              ".XOOO...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "c4"
+          },
+          {
+            "board": [
+              "........",
+              ".XXX....",
+              ".XXOO...",
+              ".XXOO...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "b3"
+          },
+          {
+            "board": [
+              "..O.....",
+              ".XXO....",
+              ".XXOO...",
+              ".XXOO...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "c1"
+          },
+          {
+            "board": [
+              "..O.....",
+              ".XXO....",
+              ".XXXXX..",
+              ".XXOX...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "f3"
+          },
+          {
+            "board": [
+              "..O.....",
+              ".XXO....",
+              ".XXXOX..",
+              ".XXOOO..",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "f4"
+          }
+        ]
+      },
+      {
+        "coordinate": "f2",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 10,
+        "own_moves": 7,
+        "frontier_difference": 5,
+        "disc_difference": 5,
+        "opponent_legal_moves": [
+          "d1",
+          "b2",
+          "e2",
+          "b3",
+          "f3",
+          "c4",
+          "b5",
+          "c6",
+          "c7",
+          "d7"
+        ],
+        "opponent_corners": [],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              "..OX.X..",
+              "..XOX...",
+              ".X.XO...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "f2"
+          },
+          {
+            "board": [
+              "........",
+              "..OX.X..",
+              "..XOOO..",
+              ".X.XO...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "f3"
+          },
+          {
+            "board": [
+              "........",
+              "..OX.X..",
+              "..XOOO..",
+              ".X.XO...",
+              "..XXXX..",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "f5"
+          },
+          {
+            "board": [
+              "........",
+              "..OX.X..",
+              "..OOOO..",
+              ".XOOO...",
+              "..XXXX..",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "c4"
+          },
+          {
+            "board": [
+              "........",
+              "..OXXX..",
+              "..OOXO..",
+              ".XOOX...",
+              "..XXXX..",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "e2"
+          },
+          {
+            "board": [
+              "........",
+              "..OXXX..",
+              "..OOXO..",
+              ".XOOOO..",
+              "..XXXX..",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "f4"
+          }
+        ]
+      },
+      {
+        "coordinate": "f3",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 6,
+        "own_moves": 7,
+        "frontier_difference": 9,
+        "disc_difference": 9,
+        "opponent_legal_moves": [
+          "b2",
+          "e2",
+          "c4",
+          "b5",
+          "f5",
+          "c7"
+        ],
+        "opponent_corners": [],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XXXX..",
+              ".X.XX...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "f3"
+          },
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOXX..",
+              ".X.XO...",
+              "..XXOO..",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "f5"
+          },
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOXX..",
+              ".X.XO...",
+              "..XXXO..",
+              "...X.X..",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "f6"
+          },
+          {
+            "board": [
+              "...O....",
+              "..OO....",
+              "..XOXX..",
+              ".X.XO...",
+              "..XXXO..",
+              "...X.X..",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "d1"
+          },
+          {
+            "board": [
+              "...O....",
+              "..OO....",
+              "..XOXX..",
+              ".X.XO...",
+              "..XXXXX.",
+              "...X.X..",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "g5"
+          },
+          {
+            "board": [
+              "...O....",
+              "..OO....",
+              "..XOOX..",
+              ".X.XOO..",
+              "..XXXXX.",
+              "...X.X..",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "f4"
+          }
+        ]
+      },
+      {
+        "coordinate": "f4",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 7,
+        "own_moves": 3,
+        "frontier_difference": 9,
+        "disc_difference": 9,
+        "opponent_legal_moves": [
+          "d1",
+          "e2",
+          "b3",
+          "f3",
+          "c4",
+          "f5",
+          "d7"
+        ],
+        "opponent_corners": [],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOX...",
+              ".X.XXX..",
+              "..XXX...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "f4"
+          },
+          {
+            "board": [
+              "...O....",
+              "..OO....",
+              "..XOX...",
+              ".X.XXX..",
+              "..XXX...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "d1"
+          },
+          {
+            "board": [
+              ".X.O....",
+              "..XO....",
+              "..XXX...",
+              ".X.XXX..",
+              "..XXX...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "b1"
+          },
+          {
+            "board": [
+              ".X.O....",
+              "..OO....",
+              ".OXXX...",
+              ".X.XXX..",
+              "..XXX...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "b3"
+          },
+          {
+            "board": [
+              ".X.O....",
+              "..OO....",
+              "XXXXX...",
+              ".X.XXX..",
+              "..XXX...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "a3"
+          },
+          {
+            "board": [
+              ".X.O....",
+              "..OO....",
+              "XXOXX...",
+              ".O.XXX..",
+              "O.XXX...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "a5"
+          }
+        ]
+      },
+      {
+        "coordinate": "f5",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 10,
+        "own_moves": 7,
+        "frontier_difference": 5,
+        "disc_difference": 5,
+        "opponent_legal_moves": [
+          "c1",
+          "d1",
+          "e2",
+          "b3",
+          "c4",
+          "b6",
+          "c6",
+          "e6",
+          "g6",
+          "d7"
+        ],
+        "opponent_corners": [],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XXXX..",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "f5"
+          },
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XOXX..",
+              "..OX....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "c6"
+          },
+          {
+            "board": [
+              "........",
+              "..OXX...",
+              "..XOX...",
+              ".X.XX...",
+              "..XOXX..",
+              "..OX....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "e2"
+          },
+          {
+            "board": [
+              "........",
+              "..OXX...",
+              "..OOX...",
+              ".XOXX...",
+              "..OOXX..",
+              "..OX....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "c4"
+          },
+          {
+            "board": [
+              "........",
+              "..OXX...",
+              ".XXXX...",
+              ".XOXX...",
+              "..OOXX..",
+              "..OX....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "b3"
+          },
+          {
+            "board": [
+              "........",
+              "..OXX...",
+              ".XXXX...",
+              ".XOXX...",
+              "..OOXX..",
+              "..OOO...",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "e6"
+          }
+        ]
+      },
+      {
+        "coordinate": "f6",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 9,
+        "own_moves": 6,
+        "frontier_difference": 5,
+        "disc_difference": 5,
+        "opponent_legal_moves": [
+          "c1",
+          "d1",
+          "e2",
+          "b3",
+          "c4",
+          "b6",
+          "c6",
+          "e6",
+          "d7"
+        ],
+        "opponent_corners": [],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XXX...",
+              "...X.X..",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "f6"
+          },
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XOX...",
+              "..OX.X..",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "c6"
+          },
+          {
+            "board": [
+              "........",
+              "..OXX...",
+              "..XOX...",
+              ".X.XX...",
+              "..XOX...",
+              "..OX.X..",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "e2"
+          },
+          {
+            "board": [
+              ".....O..",
+              "..OXO...",
+              "..XOX...",
+              ".X.XX...",
+              "..XOX...",
+              "..OX.X..",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "f1"
+          },
+          {
+            "board": [
+              "....XO..",
+              "..OXX...",
+              "..XOX...",
+              ".X.XX...",
+              "..XOX...",
+              "..OX.X..",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "e1"
+          },
+          {
+            "board": [
+              "...OOO..",
+              "..OOX...",
+              "..XOX...",
+              ".X.XX...",
+              "..XOX...",
+              "..OX.X..",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "d1"
+          }
+        ]
+      }
+    ],
+    "stage": "opening"
+  },
+  "comparison": {
+    "revision": 8,
+    "actor": "X",
+    "selected_move": "f5",
+    "recommended_move": "f5",
+    "reference_move": null,
+    "insight": {
+      "kind": "best",
+      "better_move": null,
+      "worse_move": null,
+      "target": null,
+      "gap": null,
+      "score_kind": "estimate",
+      "proof": null,
+      "example": []
+    },
+    "choices": [
+      {
+        "coordinate": "f5",
+        "score": -16,
+        "score_kind": "estimate",
+        "assessment": {
+          "status": "best",
+          "legal_move_count": 7,
+          "best_moves": [
+            "f5"
+          ],
+          "is_played": true,
+          "score_loss": 0,
+          "score_kind": "estimate",
+          "position": "behind"
+        },
+        "kind": "line",
+        "target": null,
+        "opponent_reply": null,
+        "checked_defenses": [],
+        "defense_lines": [],
+        "capture_lines": [],
+        "line_source": "engine",
+        "corner_proof": null,
+        "continuation_lesson": {
+          "kind": "anchor",
+          "frame_index": 3,
+          "capture_line": [
+            "e2",
+            "e3",
+            "e4",
+            "e5"
+          ],
+          "recaptured": []
+        },
+        "frames": [
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XXO...",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": null,
+            "actor": null,
+            "flipped": []
+          },
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XXXX..",
+              "...X....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "f5",
+            "actor": "X",
+            "flipped": [
+              "e5"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              "..OX....",
+              "..XOO...",
+              ".X.XO...",
+              "..XOXX..",
+              "..OX....",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "c6",
+            "actor": "O",
+            "flipped": [
+              "d5"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              "..OXX...",
+              "..XOX...",
+              ".X.XX...",
+              "..XOXX..",
+              "..OX....",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "e2",
+            "actor": "X",
+            "flipped": [
+              "e3",
+              "e4"
+            ]
+          }
+        ],
+        "opponent_corner_moves_after_reply": []
+      }
+    ]
+  }
+}

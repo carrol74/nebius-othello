@@ -402,6 +402,23 @@ export interface components {
             lesson_id: string;
             lesson: components["schemas"]["Lesson"];
         };
+        /** ContinuationLesson */
+        ContinuationLesson: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "anchor" | "recapture" | "reply";
+            /**
+             * Frame Index
+             * @enum {integer}
+             */
+            frame_index: 2 | 3;
+            /** Capture Line */
+            capture_line: string[];
+            /** Recaptured */
+            recaptured: string[];
+        };
         /** CornerProof */
         CornerProof: {
             /** Target */
@@ -994,6 +1011,7 @@ export interface components {
             frames: components["schemas"]["TeachingFrame"][];
             assessment: components["schemas"]["DecisionAssessment"];
             corner_proof?: components["schemas"]["CornerProof"] | null;
+            continuation_lesson?: components["schemas"]["ContinuationLesson"] | null;
         };
         /** ValidationError */
         ValidationError: {

@@ -238,6 +238,19 @@ def pass_context(review: dict[str, Any], revision: int):
 def verified_teaching_facts(teaching, revision):
     facts = []
     for choice in teaching["choices"]:
+        continuation = choice.get("continuation_lesson")
+        if continuation:
+            ray = continuation["capture_line"]
+            mechanism = (f"The disc gained at {ray[-1]} by the root move anchors the later capture from {ray[0]}."
+                         if continuation["kind"] == "anchor" else
+                         f"The opponent can flip back newly gained discs: {', '.join(continuation['recaptured'])}."
+                         if continuation["kind"] == "recapture" else
+                         f"The opponent can use the disc at {ray[-1]} to capture from {ray[0]}.")
+            facts.append(fact(f"p{revision}:continuation_{choice['coordinate']}",
+                              f"In the displayed {choice['coordinate']} continuation, {mechanism} "
+                              f"Verified capture line: {' → '.join(ray)}. This demonstrates a local mechanism, "
+                              "not the reason for the full search evaluation or a forced continuation.",
+                              "comparison", revision))
         proof = choice["corner_proof"]
         if not proof:
             continue
@@ -285,9 +298,9 @@ def review_context(review: dict[str, Any], question: str | None, revision: int |
                           if choice["coordinate"] != item["actual_move"]), None) if teaching else None
         facts, lessons = position_facts(item, {move.lower() for move in extra}, reference)
         if teaching and assess_decision(item, item["actual_move"])["status"] != "forced":
-            proof_facts = verified_teaching_facts(teaching, item["revision"])
-            facts.extend(proof_facts)
-            if proof_facts and "corners" not in lessons:
+            teaching_facts = verified_teaching_facts(teaching, item["revision"])
+            facts.extend(teaching_facts)
+            if any(entry["topic"] == "corners" for entry in teaching_facts) and "corners" not in lessons:
                 lessons.append("corners")
         if view:
             line = " → ".join(view["line"]) or "before the selected move"

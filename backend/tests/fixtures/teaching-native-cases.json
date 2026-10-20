@@ -42,6 +42,16 @@
         "capture_lines": [],
         "line_source": "engine",
         "corner_proof": null,
+        "continuation_lesson": {
+          "kind": "anchor",
+          "frame_index": 3,
+          "capture_line": [
+            "f3",
+            "e3",
+            "d3"
+          ],
+          "recaptured": []
+        },
         "frames": [
           {
             "board": [
@@ -1218,6 +1228,7 @@
           ],
           "refutations": []
         },
+        "continuation_lesson": null,
         "frames": [
           {
             "board": [
@@ -1339,6 +1350,16 @@
         "capture_lines": [],
         "line_source": "rules",
         "corner_proof": null,
+        "continuation_lesson": {
+          "kind": "reply",
+          "frame_index": 2,
+          "capture_line": [
+            "e1",
+            "d1",
+            "c1"
+          ],
+          "recaptured": []
+        },
         "frames": [
           {
             "board": [
@@ -1511,6 +1532,16 @@
         "capture_lines": [],
         "line_source": "rules",
         "corner_proof": null,
+        "continuation_lesson": {
+          "kind": "reply",
+          "frame_index": 2,
+          "capture_line": [
+            "e1",
+            "d1",
+            "c1"
+          ],
+          "recaptured": []
+        },
         "frames": [
           {
             "board": [
@@ -2617,6 +2648,7 @@
           ],
           "refutations": []
         },
+        "continuation_lesson": null,
         "frames": [
           {
             "board": [
@@ -2778,6 +2810,7 @@
           "defenses": [],
           "refutations": []
         },
+        "continuation_lesson": null,
         "frames": [
           {
             "board": [
@@ -2876,6 +2909,7 @@
           "defenses": [],
           "refutations": []
         },
+        "continuation_lesson": null,
         "frames": [
           {
             "board": [
@@ -2981,6 +3015,19 @@
         "capture_lines": [],
         "line_source": "engine",
         "corner_proof": null,
+        "continuation_lesson": {
+          "kind": "recapture",
+          "frame_index": 2,
+          "capture_line": [
+            "d6",
+            "d5",
+            "d4",
+            "d3"
+          ],
+          "recaptured": [
+            "d5"
+          ]
+        },
         "frames": [
           {
             "board": [

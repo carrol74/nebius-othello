@@ -21,6 +21,7 @@ def resolve_lesson_view(item, view):
         "recorded_move": item["actual_move"] if item.get("is_played", True) else None,
         "assessment": choice["assessment"], "insight": comparison["insight"],
         "teaching": {"insight": comparison["insight"], "choices": [
-            {"coordinate": entry["coordinate"], "corner_proof": entry["corner_proof"]}
+            {"coordinate": entry["coordinate"], "corner_proof": entry["corner_proof"],
+             "continuation_lesson": entry["continuation_lesson"]}
             for entry in comparison["choices"]]},
     }

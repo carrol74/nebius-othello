@@ -49,7 +49,6 @@ export function captureLineText(lines: string[][], actor: "X" | "O", locale: Loc
 export function lessonText(comparison: TeachingComparison, move: TeachingMove, locale: Locale): string[] {
   const zh = locale === "zh";
   const own = comparison.actor === "X" ? zh ? "黑方" : "Black" : zh ? "白方" : "White";
-  const other = comparison.actor === "X" ? zh ? "白方" : "White" : zh ? "黑方" : "Black";
   const assessment = move.assessment;
   if (assessment.status === "forced") {
     const context = zh ? `${move.coordinate} 是${own}此时唯一的合法落点，这一回合没有其他走法可以选择。`
@@ -65,10 +64,28 @@ export function lessonText(comparison: TeachingComparison, move: TeachingMove, l
       : `This move has the highest rating in ${basis.toLowerCase()}.`
       : zh ? `${basis}对 ${comparison.recommended_move} 的评分高于 ${move.coordinate}。`
         : `${basis} rates ${comparison.recommended_move} above ${move.coordinate}.`;
-  const evaluation = assessment.position === "behind" ? zh ? `局面仍偏向${other}。`
-    : `The position still favors ${other}.` : "";
   const comparedTactic = ["corner_defense", "corner_access", "shared_corner"].includes(comparison.insight.kind);
-  return [context + (evaluation ? ` ${evaluation}` : ""), ...(comparedTactic ? [] : moveConsequence(comparison, move, locale))];
+  return [context, ...(comparedTactic ? [] : moveConsequence(comparison, move, locale))];
+}
+
+export function continuationText(move: TeachingMove, locale: Locale): string | null {
+  const lesson = move.continuation_lesson;
+  if (!lesson) return null;
+  const zh = locale === "zh";
+  const ray = lesson.capture_line, anchor = ray[ray.length - 1];
+  const rootActor = move.frames[1].actor;
+  const own = rootActor === "X" ? zh ? "黑方" : "Black" : zh ? "白方" : "White";
+  const other = rootActor === "X" ? zh ? "白方" : "White" : zh ? "黑方" : "Black";
+  const reply = move.frames[2].coordinate;
+  if (lesson.kind === "anchor") return zh
+    ? `重点看 ${anchor}：这一手拿到的棋子，能成为下一次夹击的另一端。在这段续着中，${other}回应 ${reply} 后，${own}仍能借它反击。落子前，试着找出新拿到的哪颗棋子能接应下一手。`
+    : `Focus on ${anchor}: the disc gained by this move can anchor another capture. In this continuation, after ${other} replies at ${reply}, ${own} can use it to capture again. Before playing, look for a disc your move gains that could support your next move.`;
+  if (lesson.kind === "recapture") return zh
+    ? `这一手刚拿到的 ${lesson.recaptured.join("、")}，对手下一步就有办法翻回去。这段变化说明，眼前多拿几颗棋子未必保得住。落子前，先检查对手能否把这些棋子夹在两端之间。`
+    : `The opponent can flip back ${lesson.recaptured.join(", ")}, gained by this move, on the very next turn. This sequence shows why gaining discs now does not mean keeping them. Before playing, check whether the opponent can trap those discs between two ends.`;
+  return zh
+    ? `对手在 ${anchor} 的棋子是现成的夹击另一端；这手之后，它能沿图中的连线反击。轮到对手时，先找它已有的棋子，再沿中间的己方棋子看向空位，就能发现这种威胁。这是当前续着里的一个可能回应。`
+    : `The opponent's disc at ${anchor} anchors a capture along the highlighted line after this move. To spot this reply, start at an opponent disc and look past your own discs toward an empty square. This is one possible reply in the displayed continuation.`;
 }
 
 function moveConsequence(comparison: TeachingComparison, move: TeachingMove, locale: Locale): string[] {
@@ -84,6 +101,14 @@ function moveConsequence(comparison: TeachingComparison, move: TeachingMove, loc
   ];
   if (move.kind === "corner_taken") return [zh ? `${move.coordinate} 本身就是角落。下在这里，这颗棋子会一直保留到终局。点击演示，查看同时翻转了哪些棋子。` : `${move.coordinate} is a corner. Playing there keeps that disc safe through the end of the game. Step through to see which other discs it flips.`];
   if (move.kind === "pass") return [zh ? `下 ${move.coordinate} 后，${other}没有合法落点，必须跳过回合。${own}因此可以再下一步。点击演示，注意跳过回合时棋盘没有变化。` : `After ${move.coordinate}, ${other} has no legal move and must pass, so ${own} gets another move. In the demonstration, notice that passing does not change the board.`];
+  const continuation = continuationText(move, locale);
+  if (continuation) return [continuation];
+  const last = move.frames.at(-1)!;
+  if (last.turn === null) {
+    const black = last.board.join("").split("X").length - 1;
+    const white = last.board.join("").split("O").length - 1;
+    return [zh ? `这条续着结束时，双方都没有合法落点，按棋子数结算：黑方 ${black}，白方 ${white}。终局比较的是棋子总数，不能只看最后一手翻了多少。` : `At the end of this continuation neither player can move: Black has ${black} discs and White has ${white}. The final total decides the result, not how many discs the last move flips.`];
+  }
   return [];
 }
 
@@ -119,6 +144,10 @@ export function comparisonTakeaway(comparison: TeachingComparison, locale: Local
 
 export function teachingFactText(comparison: TeachingComparison, id: string, locale: Locale): string | null {
   const kind = id.split(":")[1];
+  if (kind?.startsWith("continuation_")) {
+    const choice = comparison.choices.find((choice) => choice.coordinate === kind.slice(13));
+    return choice ? continuationText(choice, locale) : null;
+  }
   if (kind === "defense") return comparisonTakeaway(comparison, locale);
   if (!kind?.startsWith("proof_")) return null;
   const coordinate = kind.slice(6);

@@ -46,6 +46,22 @@ def capture_lines(board, actor, move):
     return lines
 
 
+def continuation_lesson(frames):
+    if len(frames) < 3 or frames[2]["coordinate"] == "pass":
+        return None
+    gains = {frames[1]["coordinate"], *frames[1]["flipped"]}
+    if len(frames) > 3 and frames[3]["coordinate"] != "pass":
+        rays = capture_lines(tuple(frames[2]["board"]), frames[3]["actor"], frames[3]["coordinate"])
+        anchor = next((ray for ray in rays if ray[-1] in gains), None)
+        if anchor:
+            return {"kind": "anchor", "frame_index": 3, "capture_line": anchor, "recaptured": []}
+    rays = capture_lines(tuple(frames[1]["board"]), frames[2]["actor"], frames[2]["coordinate"])
+    recaptured = [move for move in frames[2]["flipped"] if move in gains]
+    ray = next((ray for ray in rays if set(ray[1:-1]) & set(recaptured)), rays[0])
+    return {"kind": "recapture" if recaptured else "reply", "frame_index": 2,
+            "capture_line": ray, "recaptured": recaptured}
+
+
 def teach_move(item, move):
     candidate = next(entry for entry in item["analysis"]["candidates"] if entry["coordinate"] == move)
     board, actor = tuple(item["analysis"]["board"]), item["actor"]
@@ -58,7 +74,7 @@ def teach_move(item, move):
               "assessment": assess_decision(item, move),
               "kind": "line", "target": None, "opponent_reply": None,
               "checked_defenses": [], "defense_lines": [], "capture_lines": [], "line_source": "engine",
-              "corner_proof": None}
+              "corner_proof": None, "continuation_lesson": None}
     demonstration = pv[:3]
     if move in CORNERS:
         lesson.update(kind="corner_taken", target=move)
@@ -97,6 +113,8 @@ def teach_move(item, move):
         corner_access(tuple(lesson["frames"][2]["board"]), other)
         if len(lesson["frames"]) > 2 else []
     )
+    if lesson["kind"] == "line":
+        lesson["continuation_lesson"] = continuation_lesson(lesson["frames"])
     return lesson
 
 
@@ -129,6 +147,7 @@ def comparison_insight(choices):
                 better["frames"] = teaching_frames(tuple(better["frames"][0]["board"]),
                                                     better["frames"][0]["turn"], moves)
                 better["line_source"] = "rules"
+                better["continuation_lesson"] = continuation_lesson(better["frames"])
                 better["opponent_corner_moves_after_reply"] = (
                     corner_access(tuple(better["frames"][2]["board"]), defense_proof["attacker"]))
                 result["example"] = moves

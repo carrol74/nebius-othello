@@ -196,6 +196,13 @@ class CornerProof(BaseModel):
     refutations: list[CornerRefutation]
 
 
+class ContinuationLesson(BaseModel):
+    kind: Literal["anchor", "recapture", "reply"]
+    frame_index: Literal[2, 3]
+    capture_line: list[Coordinate] = Field(min_length=3)
+    recaptured: list[Coordinate]
+
+
 class TeachingMove(BaseModel):
     coordinate: Coordinate
     score: float
@@ -211,6 +218,7 @@ class TeachingMove(BaseModel):
     frames: list[TeachingFrame]
     assessment: DecisionAssessment
     corner_proof: CornerProof | None = None
+    continuation_lesson: ContinuationLesson | None = None
 
 
 class TeachingInsight(BaseModel):

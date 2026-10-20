@@ -1444,6 +1444,52 @@
         ],
         "title": "CoachingCard"
       },
+      "ContinuationLesson": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "anchor",
+              "recapture",
+              "reply"
+            ],
+            "title": "Kind"
+          },
+          "frame_index": {
+            "type": "integer",
+            "enum": [
+              2,
+              3
+            ],
+            "title": "Frame Index"
+          },
+          "capture_line": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "minItems": 3,
+            "title": "Capture Line"
+          },
+          "recaptured": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Recaptured"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "frame_index",
+          "capture_line",
+          "recaptured"
+        ],
+        "title": "ContinuationLesson"
+      },
       "CornerProof": {
         "properties": {
           "target": {
@@ -3422,6 +3468,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/CornerProof"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "continuation_lesson": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ContinuationLesson"
               },
               {
                 "type": "null"

@@ -9,6 +9,7 @@ export type Variation = {
   revision: number; coordinate: string; frame: number; lesson_frames: TeachingFrame[];
   assessment: TeachingMove["assessment"];
   focus_square?: string | null; capture_lines?: string[][];
+  capture_frame?: number;
   exercise?: {defenses: TeachingDefense[]; target: string; attempt: string | null};
 };
 
@@ -50,18 +51,28 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
     const first = initial.choices.find((choice) => choice.coordinate === initial.selected_move)!;
     showVariation({revision: initial.revision, coordinate: first.coordinate, frame: 1,
       assessment: first.assessment,
-      lesson_frames: first.frames, focus_square: first.target, capture_lines: first.capture_lines});
+      lesson_frames: first.frames, focus_square: first.target,
+      capture_lines: first.continuation_lesson ? [first.continuation_lesson.capture_line] : first.capture_lines,
+      capture_frame: first.continuation_lesson ? first.continuation_lesson.frame_index - 1 : undefined});
   }, [showVariation]);
 
   return <div className="position-coach">
     {item.is_played === false && <p>{t("You have not played this turn yet.", "你在这一回合还没有落子。")}</p>}
     <div className="teaching-choices" role="group" aria-label={t("Choose a line to explore", "选择要演示的走法")}>
-      {[...comparison.choices].sort((a, b) => Number(b.assessment.is_played) - Number(a.assessment.is_played)).map((choice) => <button key={choice.coordinate} aria-pressed={choice.coordinate === activeMove.coordinate} onClick={() => showVariation({revision: lesson.revision, coordinate: choice.coordinate, frame: 1, assessment: choice.assessment, lesson_frames: choice.frames, focus_square: choice.target, capture_lines: choice.capture_lines})}>
+      {[...comparison.choices].sort((a, b) => Number(b.assessment.is_played) - Number(a.assessment.is_played)).map((choice) => <button key={choice.coordinate} aria-pressed={choice.coordinate === activeMove.coordinate} onClick={() => showVariation({revision: lesson.revision, coordinate: choice.coordinate, frame: 1, assessment: choice.assessment, lesson_frames: choice.frames, focus_square: choice.target,
+        capture_lines: choice.continuation_lesson ? [choice.continuation_lesson.capture_line] : choice.capture_lines,
+        capture_frame: choice.continuation_lesson ? choice.continuation_lesson.frame_index - 1 : undefined})}>
         {choice.coordinate}<span>{teachingChoiceLabel(choice, locale)}</span>
       </button>)}
     </div>
     <div className="concrete-lesson">{lessonText(comparison, activeMove, locale).map((text) => <p key={text}>{text}</p>)}</div>
     {takeaway && <p className="concrete-takeaway">{takeaway}</p>}
+    {!takeaway && activeMove.continuation_lesson && <button onClick={() => showVariation({
+      revision: lesson.revision, coordinate: activeMove.coordinate,
+      frame: activeMove.continuation_lesson!.frame_index - 1, assessment: activeMove.assessment,
+      lesson_frames: activeMove.frames, capture_lines: [activeMove.continuation_lesson!.capture_line],
+      capture_frame: activeMove.continuation_lesson!.frame_index - 1,
+    })}>{t(`See the ${activeMove.continuation_lesson.capture_line[0]} capture`, `查看 ${activeMove.continuation_lesson.capture_line[0]} 的夹击`)}</button>}
     {forcedMove && lesson.previous_decision_revision != null && <button disabled={busy} onClick={() => revisit(lesson.previous_decision_revision!)}>{t("Review the last turn with a choice", "回看上一次有选择的回合")}</button>}
     {!forcedMove && activeMove.kind === "corner_forced" && activeMove.defense_lines.length > 0 && <button disabled={busy} onClick={() => showVariation({
       revision: lesson.revision, coordinate: activeMove.coordinate, frame: 2, lesson_frames: activeMove.frames,
