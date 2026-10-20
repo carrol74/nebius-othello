@@ -1644,6 +1644,40 @@
         ],
         "title": "ContinuationLesson"
       },
+      "ContrastSquare": {
+        "properties": {
+          "coordinate": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Coordinate"
+          },
+          "available": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O",
+              "."
+            ],
+            "title": "Available"
+          },
+          "blocked": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O",
+              "."
+            ],
+            "title": "Blocked"
+          }
+        },
+        "type": "object",
+        "required": [
+          "coordinate",
+          "available",
+          "blocked"
+        ],
+        "title": "ContrastSquare"
+      },
       "CornerProof": {
         "properties": {
           "target": {
@@ -1857,6 +1891,66 @@
           "position"
         ],
         "title": "DecisionAssessment"
+      },
+      "DecisionContrast": {
+        "properties": {
+          "actual_move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Actual Move"
+          },
+          "recommended_move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Recommended Move"
+          },
+          "replies_after_actual": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Replies After Actual"
+          },
+          "replies_after_recommended": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Replies After Recommended"
+          },
+          "removed_reply": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReplyOpportunity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "added_reply": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReplyOpportunity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "actual_move",
+          "recommended_move",
+          "replies_after_actual",
+          "replies_after_recommended",
+          "removed_reply",
+          "added_reply"
+        ],
+        "title": "DecisionContrast"
       },
       "GameResult": {
         "properties": {
@@ -2875,6 +2969,58 @@
         ],
         "title": "QuestionResult"
       },
+      "ReplyOpportunity": {
+        "properties": {
+          "actor": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Actor"
+          },
+          "coordinate": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Coordinate"
+          },
+          "available_after": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Available After"
+          },
+          "blocked_after": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Blocked After"
+          },
+          "capture_line": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Capture Line"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/ContrastSquare"
+            },
+            "type": "array",
+            "title": "Changes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "actor",
+          "coordinate",
+          "available_after",
+          "blocked_after",
+          "capture_line",
+          "changes"
+        ],
+        "title": "ReplyOpportunity"
+      },
       "Review": {
         "properties": {
           "game_id": {
@@ -3468,6 +3614,16 @@
             },
             "type": "array",
             "title": "Choices"
+          },
+          "decision_contrast": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DecisionContrast"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",

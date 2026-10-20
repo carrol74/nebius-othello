@@ -1161,6 +1161,7 @@
       "proof": null,
       "example": []
     },
+    "decision_contrast": null,
     "choices": [
       {
         "coordinate": "f5",

@@ -265,6 +265,30 @@ class TeachingInsight(BaseModel):
     example: list[Coordinate | Literal["pass"]] = Field(default_factory=list)
 
 
+class ContrastSquare(BaseModel):
+    coordinate: Coordinate
+    available: Literal["X", "O", "."]
+    blocked: Literal["X", "O", "."]
+
+
+class ReplyOpportunity(BaseModel):
+    actor: Color
+    coordinate: Coordinate
+    available_after: Coordinate
+    blocked_after: Coordinate
+    capture_line: list[Coordinate]
+    changes: list[ContrastSquare]
+
+
+class DecisionContrast(BaseModel):
+    actual_move: Coordinate
+    recommended_move: Coordinate
+    replies_after_actual: list[Coordinate]
+    replies_after_recommended: list[Coordinate]
+    removed_reply: ReplyOpportunity | None
+    added_reply: ReplyOpportunity | None
+
+
 class TeachingComparison(BaseModel):
     revision: int
     actor: Color
@@ -273,6 +297,7 @@ class TeachingComparison(BaseModel):
     reference_move: Coordinate | None
     insight: TeachingInsight
     choices: list[TeachingMove]
+    decision_contrast: DecisionContrast | None = None
 
 
 class MoveComparison(BaseModel):

@@ -15,6 +15,7 @@
       "proof": null,
       "example": []
     },
+    "decision_contrast": null,
     "choices": [
       {
         "coordinate": "d3",
@@ -198,6 +199,7 @@
         "b1"
       ]
     },
+    "decision_contrast": null,
     "choices": [
       {
         "coordinate": "b1",
@@ -1508,6 +1510,7 @@
         "b1"
       ]
     },
+    "decision_contrast": null,
     "choices": [
       {
         "coordinate": "b3",
@@ -2765,6 +2768,7 @@
       "proof": null,
       "example": []
     },
+    "decision_contrast": null,
     "choices": [
       {
         "coordinate": "a3",
@@ -2989,6 +2993,7 @@
       "proof": null,
       "example": []
     },
+    "decision_contrast": null,
     "choices": [
       {
         "coordinate": "c6",
@@ -3105,6 +3110,544 @@
               "d5",
               "d4",
               "d3"
+            ]
+          }
+        ],
+        "opponent_corner_moves_after_reply": []
+      }
+    ]
+  },
+  "2": {
+    "revision": 2,
+    "actor": "X",
+    "selected_move": "b6",
+    "recommended_move": "e6",
+    "reference_move": "e6",
+    "insight": {
+      "kind": "search",
+      "better_move": "e6",
+      "worse_move": "b6",
+      "target": null,
+      "gap": null,
+      "score_kind": "estimate",
+      "proof": null,
+      "example": []
+    },
+    "decision_contrast": {
+      "actual_move": "b6",
+      "recommended_move": "e6",
+      "replies_after_actual": [
+        "d2",
+        "c3",
+        "e3",
+        "f3",
+        "b5"
+      ],
+      "replies_after_recommended": [
+        "d2",
+        "e3",
+        "f3",
+        "f5",
+        "f7"
+      ],
+      "removed_reply": {
+        "actor": "O",
+        "coordinate": "b5",
+        "available_after": "b6",
+        "blocked_after": "e6",
+        "capture_line": [
+          "b5",
+          "c5",
+          "d5"
+        ],
+        "changes": [
+          {
+            "coordinate": "c5",
+            "available": "X",
+            "blocked": "O"
+          }
+        ]
+      },
+      "added_reply": {
+        "actor": "O",
+        "coordinate": "f5",
+        "available_after": "e6",
+        "blocked_after": "b6",
+        "capture_line": [
+          "f5",
+          "e5",
+          "d5"
+        ],
+        "changes": [
+          {
+            "coordinate": "e5",
+            "available": "X",
+            "blocked": "O"
+          }
+        ]
+      }
+    },
+    "choices": [
+      {
+        "coordinate": "b6",
+        "score": -10,
+        "score_kind": "estimate",
+        "assessment": {
+          "status": "lower_rated",
+          "legal_move_count": 5,
+          "best_moves": [
+            "e6",
+            "f6"
+          ],
+          "is_played": true,
+          "score_loss": 10,
+          "score_kind": "estimate",
+          "position": "level"
+        },
+        "kind": "line",
+        "target": "b5",
+        "opponent_reply": null,
+        "checked_defenses": [],
+        "defense_lines": [],
+        "capture_lines": [
+          [
+            "b5",
+            "c5",
+            "d5"
+          ]
+        ],
+        "line_source": "rules",
+        "corner_proof": null,
+        "continuation_lesson": {
+          "kind": "recapture",
+          "frame_index": 2,
+          "capture_line": [
+            "b5",
+            "c5",
+            "d5"
+          ],
+          "recaptured": [
+            "c5"
+          ]
+        },
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              "...X....",
+              "...XX...",
+              "..OOO...",
+              "........",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": null,
+            "actor": null,
+            "flipped": []
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "...X....",
+              "...XX...",
+              "..XOO...",
+              ".X......",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "b6",
+            "actor": "X",
+            "flipped": [
+              "c5"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "...X....",
+              "...XX...",
+              ".OOOO...",
+              ".X......",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "b5",
+            "actor": "O",
+            "flipped": [
+              "c5"
+            ]
+          }
+        ],
+        "opponent_corner_moves_after_reply": []
+      },
+      {
+        "coordinate": "e6",
+        "score": 0,
+        "score_kind": "estimate",
+        "assessment": {
+          "status": "tied_best",
+          "legal_move_count": 5,
+          "best_moves": [
+            "e6",
+            "f6"
+          ],
+          "is_played": false,
+          "score_loss": 0,
+          "score_kind": "estimate",
+          "position": "level"
+        },
+        "kind": "line",
+        "target": "f5",
+        "opponent_reply": null,
+        "checked_defenses": [],
+        "defense_lines": [],
+        "capture_lines": [
+          [
+            "f5",
+            "e5",
+            "d5"
+          ]
+        ],
+        "line_source": "rules",
+        "corner_proof": null,
+        "continuation_lesson": {
+          "kind": "recapture",
+          "frame_index": 2,
+          "capture_line": [
+            "f5",
+            "e5",
+            "d5"
+          ],
+          "recaptured": [
+            "e5"
+          ]
+        },
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              "...X....",
+              "...XX...",
+              "..OOO...",
+              "........",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": null,
+            "actor": null,
+            "flipped": []
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "...X....",
+              "...XX...",
+              "..OOX...",
+              "....X...",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "e6",
+            "actor": "X",
+            "flipped": [
+              "e5"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "...X....",
+              "...XX...",
+              "..OOOO..",
+              "....X...",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "f5",
+            "actor": "O",
+            "flipped": [
+              "e5"
+            ]
+          }
+        ],
+        "opponent_corner_moves_after_reply": []
+      }
+    ]
+  },
+  "2-best": {
+    "revision": 2,
+    "actor": "X",
+    "selected_move": "e6",
+    "recommended_move": "e6",
+    "reference_move": "b6",
+    "insight": {
+      "kind": "search",
+      "better_move": "e6",
+      "worse_move": "b6",
+      "target": null,
+      "gap": null,
+      "score_kind": "estimate",
+      "proof": null,
+      "example": []
+    },
+    "decision_contrast": {
+      "actual_move": "b6",
+      "recommended_move": "e6",
+      "replies_after_actual": [
+        "d2",
+        "c3",
+        "e3",
+        "f3",
+        "b5"
+      ],
+      "replies_after_recommended": [
+        "d2",
+        "e3",
+        "f3",
+        "f5",
+        "f7"
+      ],
+      "removed_reply": {
+        "actor": "O",
+        "coordinate": "b5",
+        "available_after": "b6",
+        "blocked_after": "e6",
+        "capture_line": [
+          "b5",
+          "c5",
+          "d5"
+        ],
+        "changes": [
+          {
+            "coordinate": "c5",
+            "available": "X",
+            "blocked": "O"
+          }
+        ]
+      },
+      "added_reply": {
+        "actor": "O",
+        "coordinate": "f5",
+        "available_after": "e6",
+        "blocked_after": "b6",
+        "capture_line": [
+          "f5",
+          "e5",
+          "d5"
+        ],
+        "changes": [
+          {
+            "coordinate": "e5",
+            "available": "X",
+            "blocked": "O"
+          }
+        ]
+      }
+    },
+    "choices": [
+      {
+        "coordinate": "e6",
+        "score": 0,
+        "score_kind": "estimate",
+        "assessment": {
+          "status": "tied_best",
+          "legal_move_count": 5,
+          "best_moves": [
+            "e6",
+            "f6"
+          ],
+          "is_played": false,
+          "score_loss": 0,
+          "score_kind": "estimate",
+          "position": "level"
+        },
+        "kind": "line",
+        "target": "f5",
+        "opponent_reply": null,
+        "checked_defenses": [],
+        "defense_lines": [],
+        "capture_lines": [
+          [
+            "f5",
+            "e5",
+            "d5"
+          ]
+        ],
+        "line_source": "rules",
+        "corner_proof": null,
+        "continuation_lesson": {
+          "kind": "recapture",
+          "frame_index": 2,
+          "capture_line": [
+            "f5",
+            "e5",
+            "d5"
+          ],
+          "recaptured": [
+            "e5"
+          ]
+        },
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              "...X....",
+              "...XX...",
+              "..OOO...",
+              "........",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": null,
+            "actor": null,
+            "flipped": []
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "...X....",
+              "...XX...",
+              "..OOX...",
+              "....X...",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "e6",
+            "actor": "X",
+            "flipped": [
+              "e5"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "...X....",
+              "...XX...",
+              "..OOOO..",
+              "....X...",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "f5",
+            "actor": "O",
+            "flipped": [
+              "e5"
+            ]
+          }
+        ],
+        "opponent_corner_moves_after_reply": []
+      },
+      {
+        "coordinate": "b6",
+        "score": -10,
+        "score_kind": "estimate",
+        "assessment": {
+          "status": "lower_rated",
+          "legal_move_count": 5,
+          "best_moves": [
+            "e6",
+            "f6"
+          ],
+          "is_played": true,
+          "score_loss": 10,
+          "score_kind": "estimate",
+          "position": "level"
+        },
+        "kind": "line",
+        "target": "b5",
+        "opponent_reply": null,
+        "checked_defenses": [],
+        "defense_lines": [],
+        "capture_lines": [
+          [
+            "b5",
+            "c5",
+            "d5"
+          ]
+        ],
+        "line_source": "rules",
+        "corner_proof": null,
+        "continuation_lesson": {
+          "kind": "recapture",
+          "frame_index": 2,
+          "capture_line": [
+            "b5",
+            "c5",
+            "d5"
+          ],
+          "recaptured": [
+            "c5"
+          ]
+        },
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              "...X....",
+              "...XX...",
+              "..OOO...",
+              "........",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": null,
+            "actor": null,
+            "flipped": []
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "...X....",
+              "...XX...",
+              "..XOO...",
+              ".X......",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "b6",
+            "actor": "X",
+            "flipped": [
+              "c5"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "...X....",
+              "...XX...",
+              ".OOOO...",
+              ".X......",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "b5",
+            "actor": "O",
+            "flipped": [
+              "c5"
             ]
           }
         ],

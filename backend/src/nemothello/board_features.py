@@ -1,6 +1,21 @@
-from nemothello.rules import DIRECTIONS, apply_move, legal_moves, opponent, square
+from nemothello.rules import DIRECTIONS, apply_move, coordinate, flips, legal_moves, opponent, square
 
 CORNERS = ("a1", "h1", "a8", "h8")
+
+
+def capture_lines(board, actor, move):
+    captured = set(flips(board, actor, move))
+    row, col = square(move)
+    lines = []
+    for dr, dc in DIRECTIONS:
+        r, c = row + dr, col + dc
+        ray = []
+        while (r, c) in captured:
+            ray.append(coordinate(r, c))
+            r, c = r + dr, c + dc
+        if ray:
+            lines.append([move, *ray, coordinate(r, c)])
+    return lines
 
 
 def candidate_features(board, turn):

@@ -1,12 +1,12 @@
 from itertools import pairwise
 
-from nemothello.board_features import CORNERS
+from nemothello.board_features import CORNERS, capture_lines
 from nemothello.coaching import variation_frames
 from nemothello.decision import assess_decision, lesson_moves, reference_move
+from nemothello.decision_contrast import decision_contrast
 from nemothello.corner_proof import prove_corner
 from nemothello.errors import AppError
 from nemothello.rules import (
-    DIRECTIONS,
     apply_move,
     coordinate,
     flips,
@@ -29,21 +29,6 @@ def teaching_frames(board, turn, moves):
 
 def corner_access(board, actor):
     return sorted(set(legal_moves(board, actor)) & set(CORNERS))
-
-
-def capture_lines(board, actor, move):
-    captured = set(flips(board, actor, move))
-    row, col = square(move)
-    lines = []
-    for dr, dc in DIRECTIONS:
-        r, c = row + dr, col + dc
-        ray = []
-        while (r, c) in captured:
-            ray.append(coordinate(r, c))
-            r, c = r + dr, c + dc
-        if ray:
-            lines.append([move, *ray, coordinate(r, c)])
-    return lines
 
 
 def continuation_lesson(frames):
@@ -173,6 +158,20 @@ def compare_lesson(review, revision, move):
         raise AppError("REVIEW_MOVE", "Choose the recorded move or the recommendation", 422)
     reference = reference_move(item, move)
     choices = [teach_move(item, coordinate) for coordinate in [move, reference] if coordinate is not None]
+    insight = comparison_insight(choices)
+    contrast = decision_contrast(item, choices) if insight["kind"] == "search" else None
+    if contrast:
+        for choice in choices:
+            witness = next((entry for entry in (contrast["removed_reply"], contrast["added_reply"])
+                            if entry and entry["available_after"] == choice["coordinate"]), None)
+            if witness:
+                choice["frames"] = teaching_frames(tuple(item["analysis"]["board"]), item["actor"],
+                                                    [choice["coordinate"], witness["coordinate"]])
+                choice["capture_lines"] = [witness["capture_line"]]
+                choice["line_source"] = "rules"
+                choice["target"] = witness["coordinate"]
+                choice["continuation_lesson"] = continuation_lesson(choice["frames"])
+                choice["opponent_corner_moves_after_reply"] = corner_access(tuple(choice["frames"][2]["board"]), opponent(item["actor"]))
     return {"revision": revision, "actor": item["actor"], "selected_move": move,
             "recommended_move": max(choices, key=lambda choice: choice["score"])["coordinate"], "reference_move": reference,
-            "insight": comparison_insight(choices), "choices": choices}
+            "insight": insight, "decision_contrast": contrast, "choices": choices}

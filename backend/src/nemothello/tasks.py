@@ -101,7 +101,8 @@ class Tasks:
                   "coaching": [], "coaching_status": "pending", "coaching_error": None,
                   "model_id": None, "usage": None}
         key = f"{game_id}:{revision}"
-        context["teaching_comparison"] = {"insight": lesson["comparison"]["insight"], "choices": [
+        context["teaching_comparison"] = {"insight": lesson["comparison"]["insight"],
+                                         "decision_contrast": lesson["comparison"]["decision_contrast"], "choices": [
             {"coordinate": entry["coordinate"], "corner_proof": entry["corner_proof"],
              "continuation_lesson": entry["continuation_lesson"]}
             for entry in lesson["comparison"]["choices"]]}

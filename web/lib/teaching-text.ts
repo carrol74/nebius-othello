@@ -64,8 +64,11 @@ export function lessonText(comparison: TeachingComparison, move: TeachingMove, l
       : `This move has the highest rating in ${basis.toLowerCase()}.`
       : zh ? `${basis}对 ${comparison.recommended_move} 的评分高于 ${move.coordinate}。`
         : `${basis} rates ${comparison.recommended_move} above ${move.coordinate}.`;
-  const comparedTactic = ["corner_defense", "corner_access", "shared_corner"].includes(comparison.insight.kind);
-  return [context, ...(comparedTactic ? [] : moveConsequence(comparison, move, locale))];
+  const comparedTactic = !!comparison.decision_contrast || ["corner_defense", "corner_access", "shared_corner"].includes(comparison.insight.kind);
+  const unresolved = comparison.choices.length > 1 && comparison.insight.kind === "search" && !comparison.decision_contrast
+    ? [zh ? "这段续着展示了可能发生的变化，但现有证据还不足以解释两手的评分差距。"
+      : "This continuation shows a possible outcome, but the available evidence does not explain the score gap between the moves."] : [];
+  return [context, ...(comparedTactic ? [] : moveConsequence(comparison, move, locale)), ...unresolved];
 }
 
 export function continuationText(move: TeachingMove, locale: Locale): string | null {
@@ -115,6 +118,28 @@ function moveConsequence(comparison: TeachingComparison, move: TeachingMove, loc
 export function comparisonTakeaway(comparison: TeachingComparison, locale: Locale): string | null {
   const zh = locale === "zh";
   const insight = comparison.insight;
+  const contrast = comparison.decision_contrast;
+  if (contrast) {
+    const removed = contrast.removed_reply, added = contrast.added_reply;
+    const witness = removed ?? added!;
+    const actor = witness.actor === "X" ? zh ? "黑方" : "Black" : zh ? "白方" : "White";
+    const anchor = witness.capture_line[witness.capture_line.length - 1];
+    const change = witness.changes.find((entry) => entry.coordinate === anchor) ?? witness.changes[0];
+    const cell = (value: string) => value === "." ? zh ? "空位" : "empty" : value === "X" ? zh ? "黑棋" : "a Black disc" : zh ? "白棋" : "a White disc";
+    const mechanism = change.coordinate === witness.coordinate
+      ? zh ? "这个落点已经被占据" : "occupying the landing square"
+      : change.coordinate === anchor ? zh ? "这条夹击线的另一端消失了" : "removing its anchor"
+        : zh ? "这条夹击线在这里中断" : "breaking the line there";
+    const difference = zh
+      ? `${witness.available_after} 后，${actor}可以走 ${witness.coordinate}；换成 ${witness.blocked_after}，这个回应不再合法。图中 ${change.coordinate} 从${cell(change.available)}变为${cell(change.blocked)}，${mechanism}。`
+      : `After ${witness.available_after}, ${actor} can play ${witness.coordinate}; after ${witness.blocked_after}, that reply is illegal. In the illustrated capture line, ${change.coordinate} changes from ${cell(change.available)} to ${cell(change.blocked)}, ${mechanism}.`;
+    const tradeoff = removed && added ? zh
+      ? `不过，${contrast.recommended_move} 也开放了 ${added.coordinate}：${actor}在 ${contrast.actual_move} 后原本不能下这里。`
+      : `However, ${contrast.recommended_move} also opens ${added.coordinate}, which ${actor} cannot play after ${contrast.actual_move}.` : "";
+    const scope = zh ? "比较时要同时检查关掉和开放的回应；这些变化还不能单独解释完整评分差距。"
+      : "Check both the replies you close and those you open. These changes alone do not explain the full score gap.";
+    return [difference, tradeoff, scope].filter(Boolean).join(" ");
+  }
   if (insight.kind === "forced" || insight.kind === "best" || insight.kind === "search") return null;
   if (insight.kind === "equal") return comparison.choices[0].assessment.status === "tied_best" ? null
     : zh ? "这两种走法的评分相同。" : "These two moves have the same rating.";
@@ -144,6 +169,7 @@ export function comparisonTakeaway(comparison: TeachingComparison, locale: Local
 
 export function teachingFactText(comparison: TeachingComparison, id: string, locale: Locale): string | null {
   const kind = id.split(":")[1];
+  if (kind === "decision_contrast") return comparisonTakeaway(comparison, locale);
   if (kind?.startsWith("continuation_")) {
     const choice = comparison.choices.find((choice) => choice.coordinate === kind.slice(13));
     return choice ? continuationText(choice, locale) : null;

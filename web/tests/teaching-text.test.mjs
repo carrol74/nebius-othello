@@ -75,9 +75,25 @@ test("every displayed ordinary move has a lesson about the local mechanism or th
     for (const choice of comparison.choices.filter((choice) => choice.kind === "line")) {
       for (const locale of ["en", "zh"]) {
         const text = lessonText(comparison, choice, locale);
-        const explainedByComparison = ["corner_defense", "corner_access", "shared_corner"].includes(comparison.insight.kind);
+        const explainedByComparison = !!comparison.decision_contrast || ["corner_defense", "corner_access", "shared_corner"].includes(comparison.insight.kind);
         if (!explainedByComparison) assert.ok(text.length > 1);
         assert.doesNotMatch(text.join(" "), /position still favors|局面仍偏向/);
+      }
+    }
+  }
+});
+
+test("decision explanations include both the reply removed and the reply opened, with no claim about score causation", () => {
+  for (const comparison of [cases["2"], cases["2-best"]]) {
+    for (const locale of ["en", "zh"]) {
+      const text = comparisonTakeaway(comparison, locale);
+      for (const coordinate of ["b6", "e6", "b5", "c5", "f5"]) assert.ok(text.includes(coordinate));
+      assert.match(text, /also opens|也开放/);
+      assert.match(text, /do not explain the full score gap|不能单独解释完整评分差距/);
+      assert.doesNotMatch(text, /fewer.*better|少.*所以.*更好|wins|必胜/);
+      assert.equal(teachingFactText(comparison, "p2:decision_contrast", locale), text);
+      for (const choice of comparison.choices) {
+        assert.equal(lessonText(comparison, choice, locale).length, 1);
       }
     }
   }

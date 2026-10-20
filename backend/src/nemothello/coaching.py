@@ -262,6 +262,21 @@ def verified_teaching_facts(teaching, revision):
                           "This is a rules-verified corner threat within three plies after the root move; "
                           "it does not establish the reason for the full search-score difference.", "corners", revision))
     insight = teaching["insight"]
+    contrast = teaching.get("decision_contrast")
+    if contrast:
+        changes = []
+        for witness in (contrast["removed_reply"], contrast["added_reply"]):
+            if witness:
+                cells = ", ".join(f"{entry['coordinate']}: {entry['available']} versus {entry['blocked']}"
+                                  for entry in witness["changes"])
+                changes.append(f"{COLORS[witness['actor']]} can play {witness['coordinate']} after "
+                               f"{witness['available_after']}, but it is illegal after {witness['blocked_after']}. "
+                               f"One verified capture line is {' → '.join(witness['capture_line'])}; "
+                               f"the alternative board changes {cells}.")
+        facts.append(fact(f"p{revision}:decision_contrast", " ".join(changes)
+                          + " Both complete immediate reply sets were checked. These are opportunity changes, "
+                          "not proof of the reason for the full search-score gap; fewer replies alone do not imply a better move.",
+                          "comparison", revision))
     if insight["kind"] == "corner_defense":
         facts.append(fact(f"p{revision}:defense", f"After {insight['better_move']}, every legal first reply "
                           f"has a defense that prevents {insight['target']} on the following turn. "

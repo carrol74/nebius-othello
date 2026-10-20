@@ -20,7 +20,7 @@ def resolve_lesson_view(item, view):
         "legal_moves": list(legal_moves(tuple(frame["board"]), frame["turn"])) if frame["turn"] else [],
         "recorded_move": item["actual_move"] if item.get("is_played", True) else None,
         "assessment": choice["assessment"], "insight": comparison["insight"],
-        "teaching": {"insight": comparison["insight"], "choices": [
+        "teaching": {"insight": comparison["insight"], "decision_contrast": comparison["decision_contrast"], "choices": [
             {"coordinate": entry["coordinate"], "corner_proof": entry["corner_proof"],
              "continuation_lesson": entry["continuation_lesson"]}
             for entry in comparison["choices"]]},

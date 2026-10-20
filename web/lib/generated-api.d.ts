@@ -437,6 +437,21 @@ export interface components {
             /** Recaptured */
             recaptured: string[];
         };
+        /** ContrastSquare */
+        ContrastSquare: {
+            /** Coordinate */
+            coordinate: string;
+            /**
+             * Available
+             * @enum {string}
+             */
+            available: "X" | "O" | ".";
+            /**
+             * Blocked
+             * @enum {string}
+             */
+            blocked: "X" | "O" | ".";
+        };
         /** CornerProof */
         CornerProof: {
             /** Target */
@@ -508,6 +523,19 @@ export interface components {
              * @enum {string}
              */
             position: "ahead" | "behind" | "level";
+        };
+        /** DecisionContrast */
+        DecisionContrast: {
+            /** Actual Move */
+            actual_move: string;
+            /** Recommended Move */
+            recommended_move: string;
+            /** Replies After Actual */
+            replies_after_actual: string[];
+            /** Replies After Recommended */
+            replies_after_recommended: string[];
+            removed_reply: components["schemas"]["ReplyOpportunity"] | null;
+            added_reply: components["schemas"]["ReplyOpportunity"] | null;
         };
         /** GameResult */
         GameResult: {
@@ -828,6 +856,24 @@ export interface components {
             topic?: string | null;
             view?: components["schemas"]["LessonView"] | null;
         };
+        /** ReplyOpportunity */
+        ReplyOpportunity: {
+            /**
+             * Actor
+             * @enum {string}
+             */
+            actor: "X" | "O";
+            /** Coordinate */
+            coordinate: string;
+            /** Available After */
+            available_after: string;
+            /** Blocked After */
+            blocked_after: string;
+            /** Capture Line */
+            capture_line: string[];
+            /** Changes */
+            changes: components["schemas"]["ContrastSquare"][];
+        };
         /** Review */
         Review: {
             /** Game Id */
@@ -1013,6 +1059,7 @@ export interface components {
             insight: components["schemas"]["TeachingInsight"];
             /** Choices */
             choices: components["schemas"]["TeachingMove"][];
+            decision_contrast?: components["schemas"]["DecisionContrast"] | null;
         };
         /** TeachingDefense */
         TeachingDefense: {
