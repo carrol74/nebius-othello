@@ -69,5 +69,15 @@
     "requirement": "The recommended line must demonstrate a defense against the same corner discussed in the comparison, even when the recommendation also has a different corner threat.",
     "other_risks": "Retain certificates for other forced corners in the recommendation, state those risks separately, and never present a defensive refutation as a positive attack certificate.",
     "passes_and_terminal_lines": "Represent mandatory passes and game termination explicitly; neither is a freely chosen defensive move."
+  },
+  "assessment_preparation": {
+    "command": "backend/.venv/bin/python scripts/teaching_assessment.py prepare --output <new-private-directory>",
+    "sources": "Four fresh complete native Edax level-1 games, each with eight seeded random opening plies. Keep the generated seed and source games in the private answer packet. These are generated sources, not independent expert annotations.",
+    "forms": "Two forms with eight questions each: two anchor, two recapture, two capture-line and two reply-access questions. Each form uses different complete games. Equal objective counts do not establish equal difficulty; descriptors are retained for review.",
+    "exclusion": "Reject any selected board matching a known teaching/practice board or any state of the other form, including rotations, reflections and color swaps. Include the actual study teaching games with --exclude-games; the default checks known project samples and the shipped practice bank only.",
+    "administration": "Give each participant the assigned form before teaching and the other after teaching, with identical instructions, no recommendations and no immediate feedback. Keep the private answer and allocation packets away from participants. Preparation defaults to zero enrolled participants.",
+    "allocation": "With --participants, freeze randomized blocks of four balancing both teaching condition and form order. Preserve the assigned schedule prefix if enrolling additional participants.",
+    "grading": "Use the grade command for one participant at a time. Retain every assigned question in the denominator and all missing answers. Grade only the first recorded attempt. Export shuffled reason packets without form, condition, source-game or automatic-score fields; the evaluator retains their separate mapping.",
+    "status": "Preparation is automatic. Expert review, empirical form equivalence and learner benefit remain unverified. Development contract tests do not count as participant results."
   }
 }

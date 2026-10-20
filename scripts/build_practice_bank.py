@@ -38,44 +38,49 @@ def add_reply_cases(bank):
     bank["source"]["reply_criterion"] = "Select one legal root move denying the target reply and another allowing it; check complete immediate reply sets; written reasons await human review"
 
 
-def main():
-    engine = Edax(ROOT / "deploy/edax/edax", ROOT / "deploy/edax/eval.dat", "4.6", 1)
+def build_bank(seeds, engine):
     bank = {"rubric_version": "capture-lines-v1", "source": {
-        "engine": "Edax 4.6", "level": 1, "random_opening_plies": 8, "seeds": list(SEEDS),
+        "engine": f"Edax {engine.version}", "level": engine.level, "random_opening_plies": 8, "seeds": list(seeds),
         "selection": "First distinct qualifying position per objective per completed game, plies 12–44",
         "criterion": "A legal capture meeting the stated goal and its matching anchor; prose is retained for human review",
     }, "games": [], "cases": []}
     seen = set()
+    for index, seed in enumerate(seeds):
+        position, moves = Position(), []
+        rng = random.Random(seed)
+        while position.turn:
+            if len(moves) < 8:
+                move = rng.choice(position.moves)
+            else:
+                analysis = engine.analyze(position.board, position.turn)
+                move = analysis["recommended_move"]
+            moves.append(move)
+            position, _ = position.play(move)
+        bank["games"].append({"moves": moves, "result": position.result()})
+        for objective in ("anchor", "recapture", "reply"):
+            for ply in range(12, min(45, len(moves))):
+                candidate, history = practice_position(moves, ply)
+                context = history[-2:] if objective == "anchor" else history[-1:]
+                key = position_key(candidate.board)
+                lines = answer_lines(candidate, context, objective)
+                if len(candidate.moves) < 3 or not lines or key in seen:
+                    continue
+                if objective != "reply" and len({line[0] for line in lines}) == len(candidate.moves):
+                    continue
+                seen.add(key)
+                bank["cases"].append({"id": f"{objective}-{index + 1}", "objective": objective,
+                                      "game_index": index, "ply": ply})
+                break
+            else:
+                raise ValueError(f"No exercise for {objective} in game {index + 1}")
+    add_reply_cases(bank)
+    return bank
+
+
+def main():
+    engine = Edax(ROOT / "deploy/edax/edax", ROOT / "deploy/edax/eval.dat", "4.6", 1)
     try:
-        for index, seed in enumerate(SEEDS):
-            position, moves = Position(), []
-            rng = random.Random(seed)
-            while position.turn:
-                if len(moves) < 8:
-                    move = rng.choice(position.moves)
-                else:
-                    analysis = engine.analyze(position.board, position.turn)
-                    move = analysis["recommended_move"]
-                moves.append(move)
-                position, _ = position.play(move)
-            bank["games"].append({"moves": moves, "result": position.result()})
-            for objective in ("anchor", "recapture", "reply"):
-                for ply in range(12, min(45, len(moves))):
-                    candidate, history = practice_position(moves, ply)
-                    context = history[-2:] if objective == "anchor" else history[-1:]
-                    key = position_key(candidate.board)
-                    lines = answer_lines(candidate, context, objective)
-                    if len(candidate.moves) < 3 or not lines or key in seen:
-                        continue
-                    if objective != "reply" and len({line[0] for line in lines}) == len(candidate.moves):
-                        continue
-                    seen.add(key)
-                    bank["cases"].append({"id": f"{objective}-{index + 1}", "objective": objective,
-                                          "game_index": index, "ply": ply})
-                    break
-                else:
-                    raise ValueError(f"No exercise for {objective} in game {index + 1}")
-        add_reply_cases(bank)
+        bank = build_bank(SEEDS, engine)
         output = ROOT / "backend/src/nemothello/practice-bank.json"
         output.write_text(json.dumps(bank, indent=2) + "\n")
         print(f"Saved {len(bank['cases'])} exercises from {len(bank['games'])} completed games")
