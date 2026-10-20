@@ -90,6 +90,7 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
       capture_frame: activeMove.continuation_lesson!.frame_index - 1,
     })}>{t(`See the ${activeMove.continuation_lesson.capture_line[0]} capture`, `查看 ${activeMove.continuation_lesson.capture_line[0]} 的夹击`)}</button>}
     {!takeaway && activeMove.continuation_lesson && <button disabled={busy} onClick={() => practice(activeMove.coordinate)}>{t("Try this idea in another position", "换个局面试试")}</button>}
+    {comparison.decision_contrast && <button disabled={busy} onClick={() => practice(activeMove.coordinate)}>{t("Compare replies in another position", "换个局面对比回应")}</button>}
     {!forcedMove && activeMove.kind === "corner_forced" && activeMove.defense_lines.length > 0 && <button disabled={busy} onClick={() => showVariation({
       revision: lesson.revision, coordinate: activeMove.coordinate, frame: 2, lesson_frames: activeMove.frames,
       assessment: activeMove.assessment,

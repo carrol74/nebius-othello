@@ -7,8 +7,10 @@ export type TeachingDefense = components["schemas"]["TeachingDefense"];
 export type PositionLesson = components["schemas"]["PositionLesson"];
 export type QuestionResult = components["schemas"]["QuestionResult"];
 export type LessonView = components["schemas"]["LessonView"];
-export type PracticeQuestion = components["schemas"]["PracticeQuestion"];
-export type PracticeFeedback = components["schemas"]["PracticeFeedback"];
+export type PracticeQuestion = components["schemas"]["PracticeQuestion"] | components["schemas"]["ReplyPracticeQuestion"];
+export type PracticeFeedback = components["schemas"]["PracticeFeedback"] | components["schemas"]["ReplyPracticeFeedback"];
+export type ReplyPracticeFeedback = components["schemas"]["ReplyPracticeFeedback"];
+export type ReplyOpportunity = components["schemas"]["ReplyOpportunity"];
 
 export type Color = "X" | "O";
 export type Difficulty = "easy" | "medium" | "hard";

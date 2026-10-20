@@ -226,6 +226,7 @@ textarea::placeholder { color: #7b8b7c; }
 .lesson-start { display: grid; gap: 16px; justify-items: start; }
 .lesson-start details { width: 100%; }
 .lesson-start textarea { margin-top: 12px; }
+.practice-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .branch-panel { display: flex; align-items: center; justify-content: flex-end; gap: 22px; background: #1c271b; }
 .branch-panel p { color: var(--muted); font-size: 13px; margin: 0 auto 0 0; }
 .branch-actions { display: flex; flex-wrap: wrap; gap: 10px; flex-shrink: 0; }

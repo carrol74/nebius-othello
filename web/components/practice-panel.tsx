@@ -1,12 +1,15 @@
 import { useLocale } from "@/lib/locale";
 import { captureLineText } from "@/lib/teaching-text";
 import type { PracticeFeedback, PracticeQuestion } from "@/lib/types";
+import { ReplyPracticePanel } from "@/components/reply-practice-panel";
 
 export type PracticeState = {
   question: PracticeQuestion;
   lesson_move: string;
   move: string | null;
   anchor: string | null;
+  alternative: string | null;
+  feedback_line: "blocking" | "allowing";
   reason: string;
   feedback: PracticeFeedback | null;
 };
@@ -16,7 +19,9 @@ export function PracticePanel({practice, busy, change, check, close}: {
   change: (value: PracticeState) => void; check: () => void; close: () => void;
 }) {
   const {locale, t} = useLocale();
-  const {question, move, anchor, reason, feedback} = practice;
+  const {question, move, anchor, reason} = practice;
+  if (question.objective === "reply_access") return <ReplyPracticePanel practice={practice} busy={busy} change={change} check={check} close={close} />;
+  const feedback = practice.feedback && !("witness" in practice.feedback) ? practice.feedback : null;
   const color = (actor: string) => actor === "X" ? t("Black", "黑方") : t("White", "白方");
   const goal = question.objective === "anchor"
     ? t("Find a legal capture that uses a disc you gained on your previous turn as its other end.", "找一手合法夹击，利用你上一回合拿到的棋子作为另一端。")

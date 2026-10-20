@@ -10,10 +10,18 @@ from fastapi.testclient import TestClient
 from nemothello.edax import PV_MOVE, RESULT_LINE
 from nemothello.games import advance
 from nemothello.main import app
-from nemothello.practice import answer_lines, case_position, grade_practice, position_key, practice_bank, practice_position, select_practice
+from nemothello.practice import (
+    answer_lines,
+    case_position,
+    grade_practice,
+    position_key,
+    practice_bank,
+    practice_position,
+    select_practice,
+)
+from nemothello.reply_practice import reply_options
 from nemothello.rules import INITIAL_BOARD, apply_move, legal_moves, opponent, square
 from nemothello.schemas import PracticeFeedback, PracticeQuestion
-
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -58,17 +66,26 @@ def test_frozen_games_replay_to_terminal_and_cases_are_distinct_from_teaching_sa
         key = position_key(position.board)
         assert key not in seen and key not in excluded
         seen.add(key)
-        lines = answer_lines(position, context, case['objective'])
-        assert lines and len(position.moves) >= 3
-        if case['objective'] != 'reply':
-            assert len({line[0] for line in lines}) < len(position.moves)
+        assert len(position.moves) >= 3
+        if case['objective'] == 'reply_access':
+            options = reply_options(position.board, position.turn)
+            assert case['target'] not in options
+            assert any(case['target'] in replies for replies in options.values())
+            assert any(case['target'] not in replies for replies in options.values())
+        else:
+            lines = answer_lines(position, context, case['objective'])
+            assert lines
+            if case['objective'] != 'reply':
+                assert len({line[0] for line in lines}) < len(position.moves)
         counts[case['objective']] = counts.get(case['objective'], 0) + 1
-    assert counts == {'anchor': 4, 'recapture': 4, 'reply': 4}
+    assert counts == {'anchor': 4, 'recapture': 4, 'reply': 4, 'reply_access': 4}
 
 
 def test_grading_accepts_every_matching_capture_and_rejects_wrong_anchors():
     bank = practice_bank()
     for case in bank['cases']:
+        if case['objective'] == 'reply_access':
+            continue
         position, context = case_position(case, bank)
         question = PracticeQuestion.model_validate({
             'question_id': case['id'], 'objective': case['objective'], 'board': list(position.board),

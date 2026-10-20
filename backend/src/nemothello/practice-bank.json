@@ -11,7 +11,9 @@
       3613
     ],
     "selection": "First distinct qualifying position per objective per completed game, plies 12\u201344",
-    "criterion": "A legal capture meeting the stated goal and its matching anchor; prose is retained for human review"
+    "criterion": "A legal capture meeting the stated goal and its matching anchor; prose is retained for human review",
+    "reply_selection": "First distinct qualifying reply comparison per completed game, plies 12\u201344; target is not a root legal move or corner",
+    "reply_criterion": "Select one legal root move denying the target reply and another allowing it; check complete immediate reply sets; written reasons await human review"
   },
   "games": [
     {
@@ -363,6 +365,34 @@
       "objective": "reply",
       "game_index": 3,
       "ply": 14
+    },
+    {
+      "id": "reply-access-1",
+      "objective": "reply_access",
+      "game_index": 0,
+      "ply": 15,
+      "target": "a4"
+    },
+    {
+      "id": "reply-access-2",
+      "objective": "reply_access",
+      "game_index": 1,
+      "ply": 15,
+      "target": "a7"
+    },
+    {
+      "id": "reply-access-3",
+      "objective": "reply_access",
+      "game_index": 2,
+      "ply": 15,
+      "target": "a2"
+    },
+    {
+      "id": "reply-access-4",
+      "objective": "reply_access",
+      "game_index": 3,
+      "ply": 15,
+      "target": "a2"
     }
   ]
 }

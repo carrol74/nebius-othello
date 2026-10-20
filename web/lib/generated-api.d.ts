@@ -793,7 +793,9 @@ export interface components {
             /** Move */
             move: string;
             /** Anchor */
-            anchor: string;
+            anchor?: string | null;
+            /** Alternative */
+            alternative?: string | null;
             /** Reason */
             reason: string;
         };
@@ -892,6 +894,60 @@ export interface components {
             capture_line: string[];
             /** Changes */
             changes: components["schemas"]["ContrastSquare"][];
+        };
+        /** ReplyPracticeFeedback */
+        ReplyPracticeFeedback: {
+            /**
+             * Objective
+             * @constant
+             */
+            objective: "reply_access";
+            /** Legal */
+            legal: boolean;
+            /** Move Matches Goal */
+            move_matches_goal: boolean;
+            /** Alternative Legal */
+            alternative_legal: boolean;
+            /** Alternative Matches */
+            alternative_matches: boolean;
+            witness: components["schemas"]["ReplyOpportunity"];
+            added_reply: components["schemas"]["ReplyOpportunity"] | null;
+            blocking_frame: components["schemas"]["TeachingFrame"];
+            allowing_frame: components["schemas"]["TeachingFrame"];
+            /** Replies After Blocking */
+            replies_after_blocking: string[];
+            /** Replies After Allowing */
+            replies_after_allowing: string[];
+            /**
+             * Reason Reviewed
+             * @constant
+             */
+            reason_reviewed: false;
+            /** Rubric Version */
+            rubric_version: string;
+        };
+        /** ReplyPracticeQuestion */
+        ReplyPracticeQuestion: {
+            /** Question Id */
+            question_id: string;
+            /**
+             * Objective
+             * @constant
+             */
+            objective: "reply_access";
+            /** Board */
+            board: string[];
+            /**
+             * Turn
+             * @enum {string}
+             */
+            turn: "X" | "O";
+            /** Context */
+            context: components["schemas"]["PracticeContext"][];
+            /** Target */
+            target: string;
+            /** Rubric Version */
+            rubric_version: string;
         };
         /** Review */
         Review: {
@@ -1762,7 +1818,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PracticeQuestion"] | null;
+                    "application/json": components["schemas"]["PracticeQuestion"] | components["schemas"]["ReplyPracticeQuestion"] | null;
                 };
             };
             /** @description Validation Error */
@@ -1800,7 +1856,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PracticeFeedback"];
+                    "application/json": components["schemas"]["PracticeFeedback"] | components["schemas"]["ReplyPracticeFeedback"];
                 };
             };
             /** @description Validation Error */

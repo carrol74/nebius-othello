@@ -1,0 +1,16 @@
+{
+  "version": "reply-access-v1",
+  "study_status": "not_run",
+  "claim_to_test": "A learner can distinguish how two legal moves change one specific immediate opponent reply in an unseen position, and explain the relevant capture-line change.",
+  "task": "Choose one legal root move that denies the stated reply and another legal root move that permits it. Record the first pair and written reason before revealing feedback.",
+  "automatic_criteria": ["blocking_move_is_legal", "target_is_absent_from_complete_reply_set_after_blocking_move", "comparison_move_is_legal", "target_is_present_in_complete_reply_set_after_comparison_move"],
+  "feedback": "Replay both root moves, show a legal capture ray on the allowing board and changed cells on that ray. Verify every immediate reply in both boards. Also show a newly opened reply when the blocking move creates one.",
+  "reason_rubric_for_human_review": {
+    "0": "No relevant difference, or a claim contradicting the board or rules.",
+    "1": "Names a relevant changed square or reply but does not explain how the two choices affect the capture.",
+    "2": "Correctly relates the changed square, opposing capture ray and legal status of the target reply under both choices, without claiming this proves strongest play."
+  },
+  "selection": "First qualifying distinct position per fixed completed native Edax game, plies 12–44. Require at least three legal root moves, both denying and allowing choices, and a target that is not itself a root legal move or corner. Exclude positions in the current game including rotations, reflections and color swaps; exclude previously answered exercises in the session.",
+  "scope": "The goal concerns a specified immediate opportunity. Denying one reply may open others and does not prove that the blocking move has a higher search score, is strongest, or wins.",
+  "formal_evaluation": "Use the independent-game separation, blinded reason grading, baseline and recommendation-only comparison specified by decision-teaching-v1. The shipped public practice bank is not a sealed assessment set. No expert review or learner benefit has been established."
+}

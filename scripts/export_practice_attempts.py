@@ -19,7 +19,8 @@ def main():
                          "human_review": {"facts_correct": None, "mechanism_relevant": None,
                                           "reason_score": None, "notes": None}})
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps({"protocol": "capture-lines-v1", "attempts": attempts}, indent=2) + "\n")
+    protocols = sorted({attempt["automatic_feedback"]["rubric_version"] for attempt in attempts})
+    args.output.write_text(json.dumps({"protocols": protocols, "attempts": attempts}, indent=2) + "\n")
     print(f"Exported {len(attempts)} attempts for human review")
 
 

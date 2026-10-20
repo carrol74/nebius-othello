@@ -1,5 +1,5 @@
 import type { Locale } from "./locale";
-import type { TeachingComparison, TeachingFrame, TeachingMove } from "./types";
+import type { ReplyOpportunity, TeachingComparison, TeachingFrame, TeachingMove } from "./types";
 
 export function teachingChoiceLabel(move: TeachingMove, locale: Locale): string {
   return move.assessment.is_played ? locale === "zh" ? "你当时下的" : "Your game move"
@@ -115,6 +115,21 @@ function moveConsequence(comparison: TeachingComparison, move: TeachingMove, loc
   return [];
 }
 
+export function replyOpportunityText(witness: ReplyOpportunity, locale: Locale): string {
+  const zh = locale === "zh";
+  const actor = witness.actor === "X" ? zh ? "黑方" : "Black" : zh ? "白方" : "White";
+  const anchor = witness.capture_line[witness.capture_line.length - 1];
+  const change = witness.changes.find((entry) => entry.coordinate === anchor) ?? witness.changes[0];
+  const cell = (value: string) => value === "." ? zh ? "空位" : "empty" : value === "X" ? zh ? "黑棋" : "a Black disc" : zh ? "白棋" : "a White disc";
+  const mechanism = change.coordinate === witness.coordinate
+    ? zh ? "这个落点已经被占据" : "occupying the landing square"
+    : change.coordinate === anchor ? zh ? "这条夹击线的另一端消失了" : "removing its anchor"
+      : zh ? "这条夹击线在这里中断" : "breaking the line there";
+  return zh
+    ? `${witness.available_after} 后，${actor}可以走 ${witness.coordinate}；换成 ${witness.blocked_after}，这个回应不再合法。图中 ${change.coordinate} 从${cell(change.available)}变为${cell(change.blocked)}，${mechanism}。`
+    : `After ${witness.available_after}, ${actor} can play ${witness.coordinate}; after ${witness.blocked_after}, that reply is illegal. In the illustrated capture line, ${change.coordinate} changes from ${cell(change.available)} to ${cell(change.blocked)}, ${mechanism}.`;
+}
+
 export function comparisonTakeaway(comparison: TeachingComparison, locale: Locale): string | null {
   const zh = locale === "zh";
   const insight = comparison.insight;
@@ -123,16 +138,7 @@ export function comparisonTakeaway(comparison: TeachingComparison, locale: Local
     const removed = contrast.removed_reply, added = contrast.added_reply;
     const witness = removed ?? added!;
     const actor = witness.actor === "X" ? zh ? "黑方" : "Black" : zh ? "白方" : "White";
-    const anchor = witness.capture_line[witness.capture_line.length - 1];
-    const change = witness.changes.find((entry) => entry.coordinate === anchor) ?? witness.changes[0];
-    const cell = (value: string) => value === "." ? zh ? "空位" : "empty" : value === "X" ? zh ? "黑棋" : "a Black disc" : zh ? "白棋" : "a White disc";
-    const mechanism = change.coordinate === witness.coordinate
-      ? zh ? "这个落点已经被占据" : "occupying the landing square"
-      : change.coordinate === anchor ? zh ? "这条夹击线的另一端消失了" : "removing its anchor"
-        : zh ? "这条夹击线在这里中断" : "breaking the line there";
-    const difference = zh
-      ? `${witness.available_after} 后，${actor}可以走 ${witness.coordinate}；换成 ${witness.blocked_after}，这个回应不再合法。图中 ${change.coordinate} 从${cell(change.available)}变为${cell(change.blocked)}，${mechanism}。`
-      : `After ${witness.available_after}, ${actor} can play ${witness.coordinate}; after ${witness.blocked_after}, that reply is illegal. In the illustrated capture line, ${change.coordinate} changes from ${cell(change.available)} to ${cell(change.blocked)}, ${mechanism}.`;
+    const difference = replyOpportunityText(witness, locale);
     const tradeoff = removed && added ? zh
       ? `不过，${contrast.recommended_move} 也开放了 ${added.coordinate}：${actor}在 ${contrast.actual_move} 后原本不能下这里。`
       : `However, ${contrast.recommended_move} also opens ${added.coordinate}, which ${actor} cannot play after ${contrast.actual_move}.` : "";

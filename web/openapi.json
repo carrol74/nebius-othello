@@ -1055,6 +1055,9 @@
                       "$ref": "#/components/schemas/PracticeQuestion"
                     },
                     {
+                      "$ref": "#/components/schemas/ReplyPracticeQuestion"
+                    },
+                    {
                       "type": "null"
                     }
                   ],
@@ -1125,7 +1128,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PracticeFeedback"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/PracticeFeedback"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReplyPracticeFeedback"
+                    }
+                  ],
+                  "title": "Response Answer Practice Games  Game Id  Lessons Practice Post"
                 }
               }
             }
@@ -2775,9 +2786,28 @@
             "title": "Move"
           },
           "anchor": {
-            "type": "string",
-            "pattern": "^[a-h][1-8]$",
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Anchor"
+          },
+          "alternative": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Alternative"
           },
           "reason": {
             "type": "string",
@@ -2794,7 +2824,6 @@
           "lesson_move",
           "question_id",
           "move",
-          "anchor",
           "reason"
         ],
         "title": "PracticeAnswer"
@@ -3088,6 +3117,150 @@
           "changes"
         ],
         "title": "ReplyOpportunity"
+      },
+      "ReplyPracticeFeedback": {
+        "properties": {
+          "objective": {
+            "type": "string",
+            "const": "reply_access",
+            "title": "Objective"
+          },
+          "legal": {
+            "type": "boolean",
+            "title": "Legal"
+          },
+          "move_matches_goal": {
+            "type": "boolean",
+            "title": "Move Matches Goal"
+          },
+          "alternative_legal": {
+            "type": "boolean",
+            "title": "Alternative Legal"
+          },
+          "alternative_matches": {
+            "type": "boolean",
+            "title": "Alternative Matches"
+          },
+          "witness": {
+            "$ref": "#/components/schemas/ReplyOpportunity"
+          },
+          "added_reply": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReplyOpportunity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "blocking_frame": {
+            "$ref": "#/components/schemas/TeachingFrame"
+          },
+          "allowing_frame": {
+            "$ref": "#/components/schemas/TeachingFrame"
+          },
+          "replies_after_blocking": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Replies After Blocking"
+          },
+          "replies_after_allowing": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Replies After Allowing"
+          },
+          "reason_reviewed": {
+            "type": "boolean",
+            "const": false,
+            "title": "Reason Reviewed"
+          },
+          "rubric_version": {
+            "type": "string",
+            "title": "Rubric Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "objective",
+          "legal",
+          "move_matches_goal",
+          "alternative_legal",
+          "alternative_matches",
+          "witness",
+          "added_reply",
+          "blocking_frame",
+          "allowing_frame",
+          "replies_after_blocking",
+          "replies_after_allowing",
+          "reason_reviewed",
+          "rubric_version"
+        ],
+        "title": "ReplyPracticeFeedback"
+      },
+      "ReplyPracticeQuestion": {
+        "properties": {
+          "question_id": {
+            "type": "string",
+            "title": "Question Id"
+          },
+          "objective": {
+            "type": "string",
+            "const": "reply_access",
+            "title": "Objective"
+          },
+          "board": {
+            "items": {
+              "type": "string",
+              "pattern": "^[.XO]{8}$"
+            },
+            "type": "array",
+            "maxItems": 8,
+            "minItems": 8,
+            "title": "Board"
+          },
+          "turn": {
+            "type": "string",
+            "enum": [
+              "X",
+              "O"
+            ],
+            "title": "Turn"
+          },
+          "context": {
+            "items": {
+              "$ref": "#/components/schemas/PracticeContext"
+            },
+            "type": "array",
+            "title": "Context"
+          },
+          "target": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Target"
+          },
+          "rubric_version": {
+            "type": "string",
+            "title": "Rubric Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_id",
+          "objective",
+          "board",
+          "turn",
+          "context",
+          "target",
+          "rubric_version"
+        ],
+        "title": "ReplyPracticeQuestion"
       },
       "Review": {
         "properties": {

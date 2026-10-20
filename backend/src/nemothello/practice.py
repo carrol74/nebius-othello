@@ -4,6 +4,7 @@ from pathlib import Path
 
 from nemothello.data import canonical_board
 from nemothello.errors import AppError
+from nemothello.reply_practice import grade_reply
 from nemothello.rules import Position, flips, legal_moves, opponent
 from nemothello.teaching import capture_lines
 
@@ -62,11 +63,19 @@ def select_practice(objective, game, used):
         if position_key(position.board) in excluded:
             continue
         return {"question_id": case["id"], "objective": objective, "board": list(position.board),
-                "turn": position.turn, "context": context, "rubric_version": bank["rubric_version"]}
+                "turn": position.turn, "context": context,
+                "rubric_version": "reply-access-v1" if objective == "reply_access" else bank["rubric_version"],
+                **({"target": case["target"]} if objective == "reply_access" else {})}
     return None
 
 
-def grade_practice(question, move, anchor):
+def grade_practice(question, move, anchor, alternative=None):
+    if question["objective"] == "reply_access":
+        if alternative is None or anchor is not None:
+            raise AppError("PRACTICE_PAIR", "Choose a blocking move and a comparison move", 422)
+        return grade_reply(question, move, alternative)
+    if anchor is None or alternative is not None:
+        raise AppError("PRACTICE_ANCHOR", "Choose the disc at the other end of the capture", 422)
     position = Position(tuple(question["board"]), question["turn"])
     lines = answer_lines(position, question["context"], question["objective"])
     if not lines:

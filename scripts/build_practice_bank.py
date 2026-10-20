@@ -2,13 +2,40 @@ import json
 import random
 from pathlib import Path
 
+from nemothello.board_features import CORNERS
 from nemothello.edax import Edax
 from nemothello.practice import answer_lines, position_key, practice_position
+from nemothello.reply_practice import reply_options
 from nemothello.rules import Position
-
 
 ROOT = Path(__file__).resolve().parents[1]
 SEEDS = (631, 1189, 2027, 3613)
+
+
+def add_reply_cases(bank):
+    seen = {position_key(practice_position(bank["games"][case["game_index"]]["moves"], case["ply"])[0].board)
+            for case in bank["cases"]}
+    for index, game in enumerate(bank["games"]):
+        for ply in range(12, min(45, len(game["moves"]))):
+            position, _ = practice_position(game["moves"], ply)
+            key = position_key(position.board)
+            if len(position.moves) < 3 or key in seen:
+                continue
+            options = reply_options(position.board, position.turn)
+            targets = sorted(set().union(*(set(replies) for replies in options.values()))
+                             - set(options) - set(CORNERS))
+            target = next((target for target in targets
+                           if any(target not in replies for replies in options.values())), None)
+            if target is None:
+                continue
+            seen.add(key)
+            bank["cases"].append({"id": f"reply-access-{index + 1}", "objective": "reply_access",
+                                  "game_index": index, "ply": ply, "target": target})
+            break
+        else:
+            raise ValueError(f"No reply comparison for game {index + 1}")
+    bank["source"]["reply_selection"] = "First distinct qualifying reply comparison per completed game, plies 12–44; target is not a root legal move or corner"
+    bank["source"]["reply_criterion"] = "Select one legal root move denying the target reply and another allowing it; check complete immediate reply sets; written reasons await human review"
 
 
 def main():
@@ -48,6 +75,7 @@ def main():
                     break
                 else:
                     raise ValueError(f"No exercise for {objective} in game {index + 1}")
+        add_reply_cases(bank)
         output = ROOT / "backend/src/nemothello/practice-bank.json"
         output.write_text(json.dumps(bank, indent=2) + "\n")
         print(f"Saved {len(bank['cases'])} exercises from {len(bank['games'])} completed games")

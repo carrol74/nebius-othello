@@ -96,7 +96,8 @@ class PracticeAnswer(WriteRequest):
     lesson_move: Coordinate
     question_id: str = Field(min_length=1, max_length=100)
     move: Coordinate
-    anchor: Coordinate
+    anchor: Coordinate | None = None
+    alternative: Coordinate | None = None
     reason: str = Field(min_length=1, max_length=1000)
 
 
@@ -106,6 +107,16 @@ class PracticeFeedback(BaseModel):
     anchor_matches: bool
     capture_line: list[Coordinate]
     reason_reviewed: Literal[False]
+    rubric_version: str
+
+
+class ReplyPracticeQuestion(BaseModel):
+    question_id: str
+    objective: Literal["reply_access"]
+    board: BoardRows
+    turn: Color
+    context: list[PracticeContext]
+    target: Coordinate
     rubric_version: str
 
 
@@ -292,6 +303,22 @@ class DecisionContrast(BaseModel):
     replies_after_recommended: list[Coordinate]
     removed_reply: ReplyOpportunity | None
     added_reply: ReplyOpportunity | None
+
+
+class ReplyPracticeFeedback(BaseModel):
+    objective: Literal["reply_access"]
+    legal: bool
+    move_matches_goal: bool
+    alternative_legal: bool
+    alternative_matches: bool
+    witness: ReplyOpportunity
+    added_reply: ReplyOpportunity | None
+    blocking_frame: TeachingFrame
+    allowing_frame: TeachingFrame
+    replies_after_blocking: list[Coordinate]
+    replies_after_allowing: list[Coordinate]
+    reason_reviewed: Literal[False]
+    rubric_version: str
 
 
 class TeachingComparison(BaseModel):

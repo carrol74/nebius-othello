@@ -11,6 +11,7 @@ import { ReviewCoach } from "@/components/review-coach";
 import { LessonStart } from "@/components/lesson-start";
 import { GameRules } from "@/components/game-rules";
 import { PracticePanel } from "@/components/practice-panel";
+import { practiceFeedbackFrame, practiceSelection } from "@/lib/practice-view";
 import type { PracticeState } from "@/components/practice-panel";
 import type { Variation } from "@/components/review-coach";
 import type { Color, Difficulty, GameState, Hint, HistoryEvent, LessonView, PositionLesson, PracticeFeedback, PracticeQuestion, QuestionResult, Task, TrackedTask } from "@/lib/types";
@@ -255,8 +256,10 @@ export default function Home() {
 
   const position = game && mode === "review" ? savedPosition(game, historyRevision) : game;
   const teachingFrame = practice ? null : variation?.lesson_frames[variation.frame];
-  const board = practice?.question.board ?? teachingFrame?.board ?? (mode === "play" ? playback?.board : null) ?? position?.board;
-  const turn = practice?.question.turn ?? (teachingFrame ? teachingFrame.turn : position?.turn);
+  const replyFeedback = practice?.feedback && "witness" in practice.feedback ? practice.feedback : null;
+  const practiceFrame = practiceFeedbackFrame(practice);
+  const board = practiceFrame?.board ?? practice?.question.board ?? teachingFrame?.board ?? (mode === "play" ? playback?.board : null) ?? position?.board;
+  const turn = practiceFrame ? practiceFrame.turn : practice?.question.turn ?? (teachingFrame ? teachingFrame.turn : position?.turn);
   const nextEvent = game?.history.find((item) => item.revision === historyRevision + 1);
   const canTeach = mode === "review" && !!game && canTeachPosition(game, historyRevision);
   const canDefend = !practice && mode === "review" && !!variation?.exercise && variation.frame === 2 && !variation.exercise.attempt && !busy;
@@ -299,16 +302,18 @@ export default function Home() {
       if (practiceOrigin.current !== origin) return;
       if (!question) throw new Error(t("No unused exercise is available for this lesson.", "这项教学暂时没有未做过的练习。"));
       setVariation(null);
-      setPractice({question, lesson_move:move, move:null, anchor:null, reason:"", feedback:null});
+      setPractice({question, lesson_move:move, move:null, anchor:null, alternative:null, feedback_line:"blocking", reason:"", feedback:null});
     });
   }
   function checkPractice() {
-    if (!practice || !game || !practice.move || !practice.anchor || !practice.reason.trim()) return;
+    if (!practice || !game || !practice.move || !practice.reason.trim()
+      || (practice.question.objective === "reply_access" ? !practice.alternative : !practice.anchor)) return;
     const current = practice;
     void perform(async () => {
       const feedback = await api<PracticeFeedback>(`/games/${game.game_id}/lessons/practice`, {
         revision:historyRevision, lesson_move:current.lesson_move, question_id:current.question.question_id,
-        move:current.move, anchor:current.anchor, reason:current.reason, request_id:requestId(),
+        move:current.move, anchor:current.anchor, alternative:current.alternative,
+        reason:current.reason, request_id:requestId(),
       });
       setPractice((latest) => latest?.question.question_id === current.question.question_id ? {...latest, feedback} : latest);
     });
@@ -333,17 +338,17 @@ export default function Home() {
     {!loaded && !busy && <button onClick={() => {bootStarted.current = false; setBootRetry((n) => n + 1);}}>{t("Reconnect", "重新连接")}</button>}
     <div className={`play-layout ${mode === "review" ? "review-layout" : ""}`}>
       <section className="board-panel" id="game-board" aria-label={t("Othello board", "翻转棋棋盘")}>
-        <div className="board-topline"><span className="turn-label">{practice ? t("Practice", "练习") : variation ? t("Analysis line", "分析演示") : mode === "review" ? t("Game history", "对局记录") : game?.difficulty ? ({easy: t("Beginner", "初级"), medium: t("Intermediate", "中级"), hard: t("Advanced", "高级")})[game.difficulty] : ""}</span><span className="turn-label" aria-live="polite">{practice ? t(`You play ${colorName(practice.question.turn)}`, `你执${colorName(practice.question.turn)}`) : variation ? null : playback ? t(`${colorName(playback.event.actor)} plays ${playback.event.coordinate}`, `${colorName(playback.event.actor)}下 ${playback.event.coordinate}`) : !loaded ? t("Preparing game…", "正在准备对局…") : turn ? mode === "play" ? turn === game?.human_color ? t("Your turn", "轮到你") : t("AI's turn", "轮到 AI") : t(`${colorName(turn)} to move`, `轮到${colorName(turn)}`) : t("Game over", "对局结束")}</span></div>
+        <div className="board-topline"><span className="turn-label">{practice ? t("Practice", "练习") : variation ? t("Analysis line", "分析演示") : mode === "review" ? t("Game history", "对局记录") : game?.difficulty ? ({easy: t("Beginner", "初级"), medium: t("Intermediate", "中级"), hard: t("Advanced", "高级")})[game.difficulty] : ""}</span><span className="turn-label" aria-live="polite">{practice ? practiceFrame ? turn ? t(`${colorName(turn)} to move`, `轮到${colorName(turn)}`) : t("Game over", "对局结束") : t(`You play ${colorName(practice.question.turn)}`, `你执${colorName(practice.question.turn)}`) : variation ? null : playback ? t(`${colorName(playback.event.actor)} plays ${playback.event.coordinate}`, `${colorName(playback.event.actor)}下 ${playback.event.coordinate}`) : !loaded ? t("Preparing game…", "正在准备对局…") : turn ? mode === "play" ? turn === game?.human_color ? t("Your turn", "轮到你") : t("AI's turn", "轮到 AI") : t(`${colorName(turn)} to move`, `轮到${colorName(turn)}`) : t("Game over", "对局结束")}</span></div>
         <div className="board-with-labels"><div className="column-labels" aria-hidden="true">{"abcdefgh".split("").map((column) => <span key={column}>{column}</span>)}</div><div className="board-rows"><div className="row-labels" aria-hidden="true">{Array.from({length: 8}, (_, row) => <span key={row}>{row + 1}</span>)}</div><div className="board" role="group" aria-label={t("Board, a1 is at the top left", "棋盘，左上角为 a1")}>{Array.from({length: 64}, (_, index) => {
           const row = Math.floor(index / 8), column = index % 8, coordinate = `${"abcdefgh"[column]}${row + 1}`, cell = board?.[row]?.[column] ?? ".";
-          const legal = practice ? !busy && !practice.feedback && (cell === "." || (!!practice.move && cell === practice.question.turn)) : canDefend ? !!variation?.exercise?.defenses.some((item) => item.coordinate === coordinate) : canMove && !!game?.legal_moves.includes(coordinate);
+          const legal = practice ? !busy && !practice.feedback && (cell === "." || (practice.question.objective !== "reply_access" && !!practice.move && cell === practice.question.turn)) : canDefend ? !!variation?.exercise?.defenses.some((item) => item.coordinate === coordinate) : canMove && !!game?.legal_moves.includes(coordinate);
           const recommended = mode === "play" && visibleHint?.recommended_move === coordinate;
-          const placed = practice ? practice.move === coordinate : teachingFrame?.coordinate === coordinate || (!teachingFrame && lastMove?.coordinate === coordinate);
-          const flipped = teachingFrame?.flipped.includes(coordinate) || (mode === "play" && playback?.phase === "flipped" && playback.flipped.includes(coordinate));
-          const target = practice ? practice.anchor === coordinate : !!teachingFrame && variation?.focus_square === coordinate;
-          const ray = practice ? practice.feedback?.capture_line.includes(coordinate) : capturePreview && variation?.capture_lines?.some((line) => line.includes(coordinate));
-          return <button key={coordinate} className={`square ${recommended ? "recommended" : ""} ${placed ? "lesson-placed" : ""} ${flipped ? "lesson-flipped" : ""} ${target ? "lesson-target" : ""} ${ray ? "lesson-ray" : ""} ${flipped && playback ? "slow-flip" : ""}`} disabled={!legal} aria-label={`${coordinate}, ${cell === "X" ? t("black disc", "黑棋") : cell === "O" ? t("white disc", "白棋") : t("empty", "空位")}${legal ? practice ? t(", select square", "，选择格子") : t(", legal move", "，合法落点") : ""}${recommended ? t(", recommended move", "，推荐落点") : ""}${placed ? practice ? t(", your selected move", "，你选择的落点") : t(", last move", "，最近落子") : ""}${target && practice ? t(", your selected anchor", "，你选择的夹击另一端") : ""}${flipped ? t(", flipped this step", "，本步翻转") : ""}`} onClick={() => {
-            if (practice) {setPractice({...practice, ...(cell === "." ? {move:coordinate, anchor:null} : {anchor:coordinate})});}
+          const placed = practice ? (practiceFrame ? practiceFrame.coordinate === coordinate : practice.move === coordinate) : teachingFrame?.coordinate === coordinate || (!teachingFrame && lastMove?.coordinate === coordinate);
+          const flipped = practiceFrame?.flipped.includes(coordinate) || teachingFrame?.flipped.includes(coordinate) || (mode === "play" && playback?.phase === "flipped" && playback.flipped.includes(coordinate));
+          const target = practice ? (replyFeedback ? replyFeedback.witness.coordinate === coordinate : practice.question.objective === "reply_access" ? practice.alternative === coordinate : practice.anchor === coordinate) : !!teachingFrame && variation?.focus_square === coordinate;
+          const ray = practice ? (replyFeedback ? replyFeedback.witness.capture_line.includes(coordinate) : practice.feedback && "capture_line" in practice.feedback && practice.feedback.capture_line.includes(coordinate)) : capturePreview && variation?.capture_lines?.some((line) => line.includes(coordinate));
+          return <button key={coordinate} className={`square ${recommended ? "recommended" : ""} ${placed ? "lesson-placed" : ""} ${flipped ? "lesson-flipped" : ""} ${target ? "lesson-target" : ""} ${ray ? "lesson-ray" : ""} ${flipped && playback ? "slow-flip" : ""}`} disabled={!legal} aria-label={`${coordinate}, ${cell === "X" ? t("black disc", "黑棋") : cell === "O" ? t("white disc", "白棋") : t("empty", "空位")}${legal ? practice ? t(", select square", "，选择格子") : t(", legal move", "，合法落点") : ""}${recommended ? t(", recommended move", "，推荐落点") : ""}${placed ? practice ? practiceFrame ? t(", displayed comparison move", "，当前对照走法") : t(", your selected move", "，你选择的落点") : t(", last move", "，最近落子") : ""}${target && practice ? replyFeedback ? t(", target reply", "，指定回应") : practice.question.objective === "reply_access" ? t(", your comparison move", "，你选择作对照的走法") : t(", your selected anchor", "，你选择的夹击另一端") : ""}${flipped ? t(", flipped this step", "，本步翻转") : ""}`} onClick={() => {
+            if (practice) {setPractice(practiceSelection(practice, coordinate, cell));}
             else if (canDefend && variation?.exercise) {const defense = variation.exercise.defenses.find((item) => item.coordinate === coordinate); if (defense) setVariation({...variation, frame: 3, lesson_frames: defense.frames, capture_lines: defense.capture_lines, exercise: {...variation.exercise, attempt: coordinate}});}
             else if (game && canMove) void perform(async () => acceptGame(await api<GameState>(`/games/${game.game_id}/moves`, {coordinate, expected_revision: game.revision, request_id: requestId()})));
           }}>{cell !== "." && <span className={`disc ${cell === "X" ? "black" : "white"}`} />}{cell === "." && legal && !practice && (canDefend || showLegalMoves) && <span className="legal-marker" />}{recommended && <span className="hint-ring" />}{(placed || target || ray || recommended) && <span className="lesson-coordinate">{coordinate}</span>}</button>;
