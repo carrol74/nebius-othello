@@ -25,7 +25,7 @@ test("Chinese answers use the backend decision status for tied moves", () => {
   const cases = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/teaching-native-cases.json", import.meta.url), "utf8"));
   const opening = review.evidence.find((item) => item.revision === 0);
   const text = positionFactText({id:"p0:decision", revision:0, text:"",topic:"comparison"}, opening, "zh", cases["0"].choices[0].assessment);
-  assert.match(text, /并列最高评分/);
+  assert.match(text, /也在推荐走法之中/);
   assert.doesNotMatch(text, /引擎推荐/);
 });
 

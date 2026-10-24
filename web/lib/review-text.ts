@@ -38,7 +38,7 @@ export function positionFactText(fact: ReviewFact, entry: ReviewEvidence, locale
     if (kind === "forced_move") return `${entry.actual_move} is ${own}'s only legal move.`
       + (a?.opponent_corners.length ? ` The opponent can then take ${a.opponent_corners.join(", ")}.` : "");
     if (kind === "decision") {
-      const judgment = assessment ? ({forced:"It is the only legal move.", best:"It has the highest rating.", tied_best:"It is tied for the highest rating.", lower_rated:`The search rates ${entry.recommended_move} higher.`})[assessment.status] : "";
+      const judgment = assessment ? ({forced:"It is the only legal move.", best:"It is also the recommended move.", tied_best:"It is one of the recommended moves.", lower_rated:`Compare it with the recommended ${entry.recommended_move}.`})[assessment.status] : "";
       return `${entry.is_played === false ? "Compare" : "You played"} ${entry.actual_move}. ${judgment}`;
     }
     if (kind === "score" || kind === "endgame") return `From ${own}'s perspective, ${actual.coordinate} scores ${actual.score}`
@@ -58,7 +58,7 @@ export function positionFactText(fact: ReviewFact, entry: ReviewEvidence, locale
   }
   if (kind === "forced_move") return `${entry.actual_move} 是${color(entry.actor)}唯一的合法落点，这一回合没有其他走法可选。${a?.opponent_corners.length ? `随后${color(entry.actor === "X" ? "O" : "X")}可以占 ${a.opponent_corners.join("、")}。` : ""}`;
   if (kind === "decision") {
-    const judgment = assessment ? ({forced:"这是唯一合法落点。", best:"这是评分最高的合法落点。", tied_best:"这是并列最高评分的落点。", lower_rated:`当前评分低于 ${entry.recommended_move}。`})[assessment.status] : "";
+    const judgment = assessment ? ({forced:"这是唯一合法落点。", best:"这一步也是推荐走法。", tied_best:"这一步也在推荐走法之中。", lower_rated:`可以和推荐的 ${entry.recommended_move} 对比。`})[assessment.status] : "";
     return `局面 ${entry.revision}，${color(entry.actor)}${entry.is_played === false ? "可以下" : "实际落子"} ${entry.actual_move}。${judgment}`;
   }
   if (kind === "score" || kind === "endgame") return `从${color(entry.actor)}视角，${actual.coordinate} 评分 ${actual.score}` + (hasComparison ? `，${best.coordinate} 评分 ${best.score}，相差 ${entry.score_loss}` : "") + `。${actual.score_kind === "exact" && best.score_kind === "exact" ? "这是双方最佳应对下的 Edax 精确终局评分，剩余空格计入胜方；对局显示实际棋子数量。" : "这是搜索估计。"}`;

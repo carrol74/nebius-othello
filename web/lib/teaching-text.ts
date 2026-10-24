@@ -3,8 +3,8 @@ import type { ReplyOpportunity, TeachingComparison, TeachingFrame, TeachingMove 
 
 export function teachingNote(locale: Locale): string {
   return locale === "zh"
-    ? "评分针对落子前的局面，搜索估计不代表胜率。局部推演不保证整盘结果，也不一定解释全部评分差距。"
-    : "Scores refer to the position before your move; estimates are not win probabilities. Local continuations do not guarantee a game result or explain every score difference.";
+    ? "讲解基于已验证的局部变化，推演不代表整盘的最终结果。"
+    : "Lessons use verified local changes. A continuation does not determine the final game result.";
 }
 
 export function teachingChoiceLabel(move: TeachingMove, locale: Locale): string {
@@ -55,24 +55,75 @@ export function captureLineText(lines: string[][], actor: "X" | "O", locale: Loc
 
 export function lessonText(comparison: TeachingComparison, move: TeachingMove, locale: Locale): string[] {
   const zh = locale === "zh";
-  const own = comparison.actor === "X" ? zh ? "黑方" : "Black" : zh ? "白方" : "White";
-  const assessment = move.assessment;
-  if (assessment.status === "forced") {
-    const context = zh ? `${move.coordinate} 是${own}此时唯一的合法落点，这一回合没有其他走法可以选择。`
-      : `${move.coordinate} is ${own}'s only legal move here. There is no alternative to choose on this turn.`;
-    return [context, ...moveConsequence(comparison, move, locale)];
+  const forced = move.assessment.status === "forced";
+  const witness = comparison.insight.witness;
+  const contrast = comparison.decision_contrast;
+  if (!forced && (witness || contrast)) {
+    const opportunity = witness?.opportunity ?? contrast!.removed_reply ?? contrast!.added_reply!;
+    const ray = opportunity.capture_line;
+    const anchor = ray[ray.length - 1];
+    const change = opportunity.changes.find((item) => item.coordinate === anchor) ?? opportunity.changes[0];
+    const middle = ray.slice(1, -1).join(zh ? "、" : ", ");
+    const effect = change.coordinate === opportunity.coordinate
+      ? zh ? `${opportunity.blocked_after} 先占住了 ${change.coordinate}，对手就没有这个落点了。` : `${opportunity.blocked_after} occupies ${change.coordinate}, taking away that landing square.`
+      : change.coordinate === anchor
+        ? zh ? `换走 ${opportunity.blocked_after}，${anchor} 不再是对手的棋子，这条线就缺了夹击的另一端。` : `With ${opportunity.blocked_after}, ${anchor} is no longer an opponent disc, removing the capture's anchor.`
+        : change.blocked === "."
+          ? zh ? `${opportunity.available_after} 后，${change.coordinate} 上你的棋子接上了这条线；换走 ${opportunity.blocked_after}，那里空着，夹击线就断了。` : `After ${opportunity.available_after}, your disc at ${change.coordinate} connects that line. With ${opportunity.blocked_after}, that square stays empty and breaks it.`
+          : zh ? `换走 ${opportunity.blocked_after}，${change.coordinate} 变成对手的棋子，打断了这条连续夹击线。` : `With ${opportunity.blocked_after}, ${change.coordinate} becomes an opponent disc, breaking this continuous capture line.`;
+    const added = contrast?.removed_reply && contrast.added_reply;
+    return [
+      zh ? `先看 ${opportunity.coordinate}：对手要占这里，需要借哪颗棋子完成夹击？` : `Look at ${opportunity.coordinate}: which disc would let the opponent capture from here?`,
+      (zh ? `在这段推演里，对手借 ${anchor} 的棋子，从 ${opportunity.coordinate} 夹住 ${middle}。` : `In this continuation, the opponent uses ${anchor} to capture ${middle} from ${opportunity.coordinate}. `) + effect,
+      (zh ? `下次落子前，从对手已有的棋子沿着自己的棋子看向空位，先找出这种夹击。` : `Before your next move, look from an opponent disc, past your own discs, toward an empty square to spot this capture.`)
+        + (added ? zh ? `比较这两手时，也看看 ${opportunity.blocked_after} 给对手新开的 ${added.coordinate}。` : `For this comparison, also check the ${added.coordinate} reply opened by ${opportunity.blocked_after}.` : ""),
+    ];
   }
-  const basis = assessment.score_kind === "exact" ? zh ? "精确终局分析" : "Exact endgame analysis" : zh ? "当前搜索" : "The current search";
-  const context = assessment.status === "tied_best" ? zh
-    ? `这一步在${basis}中并列最高评分。`
-    : `This move is tied for the highest rating in ${basis.toLowerCase()}.`
-    : assessment.status === "best" ? zh
-      ? `这一步已是${basis}中评分最高的选择。`
-      : `This move has the highest rating in ${basis.toLowerCase()}.`
-      : zh ? `${basis}对 ${comparison.recommended_move} 的评分高于 ${move.coordinate}。`
-        : `${basis} rates ${comparison.recommended_move} above ${move.coordinate}.`;
-  const comparedTactic = !!comparison.decision_contrast || ["corner_defense", "corner_access", "shared_corner"].includes(comparison.insight.kind);
-  return [context, ...(comparedTactic ? [] : moveConsequence(comparison, move, locale))];
+  const continuation = move.continuation_lesson;
+  if (continuation) {
+    const ray = continuation.capture_line, anchor = ray[ray.length - 1];
+    const middle = ray.slice(1, -1).join(zh ? "、" : ", ");
+    const question = continuation.kind === "anchor"
+      ? zh ? `刚拿到的 ${anchor}，能帮你接上哪一步？` : `Which next move can your newly gained ${anchor} disc support?`
+      : zh ? `这一手翻到的棋子，对手下一步能夹回来吗？` : `Can the opponent capture your newly gained discs on the next turn?`;
+    return [
+      forced ? zh ? `${move.coordinate} 是唯一的合法落点。接下来，哪些棋子可能被翻回去？` : `${move.coordinate} is the only legal move. Which discs could be flipped back next?` : question,
+      continuation.kind === "anchor"
+        ? zh ? `推演中，对手回应 ${move.frames[2].coordinate} 后，你可以下 ${ray[0]}，借 ${anchor} 夹住 ${middle}。这颗棋子的作用，是接应下一次夹击。` : `In this continuation, after ${move.frames[2].coordinate}, you can play ${ray[0]} and use ${anchor} to capture ${middle}. That disc supports your next capture.`
+        : zh ? `对手可以下 ${ray[0]}，借 ${anchor} 夹住 ${middle}。${continuation.kind === "recapture" ? `其中 ${continuation.recaptured.join("、")} 是你这一手刚拿到的。` : ""}` : `The opponent can play ${ray[0]} and use ${anchor} to capture ${middle}. ${continuation.kind === "recapture" ? `You just gained ${continuation.recaptured.join(", ")}.` : ""}`,
+      continuation.kind === "anchor"
+        ? zh ? "落子前，除了看能翻几颗，还要找：新拿到的哪颗棋子能成为下一手夹击的另一端？" : "Before playing, look beyond how many discs you flip: which newly gained disc could anchor your next capture?"
+        : zh ? "落子前，先替对手找一次夹击，再判断眼前翻到的棋子能不能保住。" : "Before playing, find a capture for your opponent, then check which newly gained discs you can keep.",
+    ];
+  }
+  const target = move.target;
+  if (["corner_given", "corner_forced", "corner_defense"].includes(move.kind)) {
+    const ray = move.capture_lines[0];
+    return [
+      forced ? zh ? `${move.coordinate} 是唯一的合法落点。接下来要留意哪个角？` : `${move.coordinate} is the only legal move. Which corner needs attention next?`
+        : zh ? `先看 ${target}：对手准备怎样把这个角拿走？` : `Look at ${target}: how could the opponent take this corner?`,
+      ray ? captureLineText([ray], move.corner_proof?.attacker ?? (comparison.actor === "X" ? "O" : "X"), locale)!
+        : zh ? `对手准备占 ${target}。推演时，找出它落子所需的夹击另一端，看看你能否提前翻掉那颗棋子。` : `The opponent is preparing to take ${target}. In the continuation, find the disc that anchors that capture and check whether you can flip it first.`,
+      forced ? zh ? "在棋盘上找出这条夹击线的两端，再看中间哪些棋子会被翻转。" : "Find both ends of that capture line on the board, then identify which discs between them will flip."
+        : zh ? "以后在空角附近落子，先检查：自己的棋子会不会正好接上对手抢角的夹击线？" : "Before playing near an empty corner, check whether your disc would complete an opponent capture line into that corner.",
+    ];
+  }
+  if (move.kind === "corner_taken") return [
+    zh ? `${move.coordinate} 在角上，为什么这颗棋子能一直保住？` : `Why can you keep the disc at corner ${move.coordinate}?`,
+    zh ? "翻转棋子需要从两端夹住。角格外面没有棋盘，对手无法在它的另一侧落子，所以夹不住这颗棋子。" : "Flipping a disc requires enclosing it from both ends. There is no square beyond the corner where an opponent could complete that enclosure.",
+    zh ? "看到可下的角时，先检查它；再看看这一步会给对手哪些新落点。" : "When a corner is legal, inspect it first, then check which new replies the move gives your opponent.",
+  ];
+  if (move.kind === "pass") return [
+    zh ? `下 ${move.coordinate} 后，为什么又轮到你？` : `Why do you move again after ${move.coordinate}?`,
+    zh ? "对手没有合法落点，必须跳过回合；只要你还能下，对局就继续。" : "The opponent has no legal move and must pass. The game continues while you can still move.",
+    zh ? "判断谁能继续时，检查双方的合法落点；棋盘还有空格，对局也可能已经结束。" : "Check both players' legal moves to see who continues. Empty squares alone do not mean the game can continue.",
+  ];
+  const consequence = moveConsequence(comparison, move, locale);
+  return [
+    zh ? "这一步之后，你最需要检查什么？" : "What should you check after this move?",
+    ...consequence,
+    zh ? "先查看对手的合法回应，再看最终能保住哪些棋子。" : "Look at the opponent's legal replies, then check which discs you can keep.",
+  ];
 }
 
 export function continuationText(move: TeachingMove, locale: Locale): string | null {

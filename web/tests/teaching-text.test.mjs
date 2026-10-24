@@ -5,7 +5,7 @@ import ts from "typescript";
 
 const source = readFileSync(new URL("../lib/teaching-text.ts", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, {compilerOptions: {module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022}}).outputText;
-const {lessonText, lessonPrompt, defenseFeedback, comparisonTakeaway, stepText, captureLineText, teachingChoiceLabel, teachingFactText, continuationText, teachingNote} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const {lessonText, lessonPrompt, defenseFeedback, comparisonTakeaway, cornerWitnessText, otherCornerText, stepText, captureLineText, teachingChoiceLabel, teachingFactText, continuationText, teachingNote} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const cases = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/teaching-native-cases.json", import.meta.url), "utf8"));
 const {review} = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/review-native-positions.json", import.meta.url), "utf8"));
 const forced = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/forced-move-native.json", import.meta.url), "utf8"));
@@ -13,9 +13,9 @@ const ordinary = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/o
 
 test("analysis limits have one shared note while lessons retain concrete move explanations", () => {
   for (const locale of ["en", "zh"]) {
-    assert.match(teachingNote(locale), /before your move|落子前/);
-    assert.match(teachingNote(locale), /not win probabilities|不代表胜率/);
-    assert.match(teachingNote(locale), /every score difference|全部评分差距/);
+    assert.match(teachingNote(locale), /verified local changes|已验证的局部变化/);
+    assert.match(teachingNote(locale), /final game result|最终结果/);
+    assert.doesNotMatch(teachingNote(locale), /score|评分|胜率/);
     for (const comparison of [...Object.values(cases), ordinary.comparison]) {
       const body = comparison.choices.flatMap((choice) => lessonText(comparison, choice, locale)).join(" ")
         + (comparisonTakeaway(comparison, locale) ?? "");
@@ -58,7 +58,7 @@ test("the recommendation stays paired with the lower-rated history without promi
   assert.equal(comparison.choices.length, 2);
   assert.equal(comparison.reference_move, "b1");
   const text = lessonText(comparison, best, "en").join(" ");
-  assert.match(text, /highest|equally best/);
+  assert.match(text, /capture|夹击/);
   assert.doesNotMatch(text, /position still favors|局面仍偏向/);
   assert.doesNotMatch(text, /only legal/);
   const opening = cases["0"].choices[0];
@@ -105,9 +105,7 @@ test("decision explanations include both the reply removed and the reply opened,
       assert.doesNotMatch(text, /do not explain the full score gap|不能单独解释完整评分差距/);
       assert.doesNotMatch(text, /fewer.*better|少.*所以.*更好|wins|必胜/);
       assert.equal(teachingFactText(comparison, "p2:decision_contrast", locale), text);
-      for (const choice of comparison.choices) {
-        assert.equal(lessonText(comparison, choice, locale).length, 1);
-      }
+      for (const choice of comparison.choices) assert.equal(lessonText(comparison, choice, locale).length, 3);
     }
   }
 });
@@ -120,7 +118,7 @@ test("a tied-best historical move is shown alone without an unnecessary alternat
   assert.equal(opening.recommended_move, opening.choices[0].coordinate);
   for (const locale of ["en", "zh"]) {
     const text = lessonText(opening, opening.choices[0], locale).join(" ");
-    assert.match(text, /tied for the highest|并列/);
+    assert.doesNotMatch(text, /highest|评分/);
     assert.doesNotMatch(text, /失误|mistake|only legal/);
   }
   assert.equal(comparisonTakeaway(opening, "en"), null);
@@ -137,10 +135,33 @@ test("a highest-rated historical endgame move is shown alone and remains distinc
   }
 });
 
-test("exact outcomes and search estimates keep different labels", () => {
+test("engine scores and rankings stay out of the primary teaching text", () => {
   const exact = cases["47"], estimate = cases["16"];
-  assert.match(lessonText(exact, exact.choices[0], "en")[0], /exact endgame analysis/i);
-  assert.match(lessonText(estimate, estimate.choices[0], "en")[0], /current search/);
+  for (const comparison of [exact, estimate, ordinary.comparison]) {
+    for (const locale of ["en", "zh"]) {
+      const text = lessonText(comparison, comparison.choices[0], locale).join(" ");
+      assert.doesNotMatch(text, /rating|score|评分|分数|搜索/);
+    }
+  }
+});
+
+test("the corner lesson teaches one capture mechanism and a repeatable check before the branch details", () => {
+  for (const key of ["earlier-h8", "earlier-h8-best"]) {
+    const comparison = cases[key];
+    for (const choice of comparison.choices) {
+      for (const locale of ["en", "zh"]) {
+        const text = lessonText(comparison, choice, locale);
+        assert.equal(text.length, 3);
+        assert.match(text[0], /[?？]$/);
+        for (const coordinate of ["g7", "d7", "h8", "f6"]) assert.ok(text.join(" ").includes(coordinate));
+        assert.match(text[1], /stays empty|那里空着/);
+        assert.match(text[2], /Before your next move|下次落子前/);
+        assert.doesNotMatch(text.join(" "), /f8|e8|a8|every legal|全部合法|评分|score/);
+      }
+    }
+    assert.ok(otherCornerText(comparison, "zh").includes("a8"));
+    assert.ok(cornerWitnessText(comparison, "zh").includes("f8"));
+  }
 });
 
 test("step narration is reserved for the board and choice labels describe their origin", () => {

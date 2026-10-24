@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocale } from "@/lib/locale";
-import { captureLineText, comparisonTakeaway, cornerName, defenseFeedback, lessonText, stepText, teachingChoiceLabel, teachingFactText, teachingNote } from "@/lib/teaching-text";
-import { coachFocus, comparisonRay, sameTeachingView, teachingView } from "@/lib/lesson-view";
+import { captureLineText, cornerName, defenseFeedback, lessonText, otherCornerText, stepText, teachingChoiceLabel, teachingFactText, teachingNote } from "@/lib/teaching-text";
+import { comparisonRay, sameTeachingView, teachingView } from "@/lib/lesson-view";
 import { positionFactText } from "@/lib/review-text";
 import { earlierDecisionText } from "@/lib/earlier-decision";
 import type { GameState, LessonView, PositionLesson, QuestionResult, TeachingDefense, TeachingFrame, TeachingMove } from "@/lib/types";
@@ -46,9 +46,8 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
   const answerEntry = {...item, actual_move: activeMove.coordinate, is_played: activeMove.assessment.is_played,
     recommended_move: referenceChoice?.coordinate ?? activeMove.coordinate,
     score_loss: Math.abs(activeMove.score - (referenceChoice?.score ?? activeMove.score))};
-  const takeaway = comparisonTakeaway(comparison, locale);
   const answerFacts = [...(currentAnswer?.answer_facts ?? []), ...(currentAnswer?.coaching ?? []).flatMap((card) => card.facts)]
-    .filter((fact) => fact.id !== "outcome_limit");
+    .filter((fact) => fact.id !== "outcome_limit" && !["score", "endgame"].includes(fact.id.split(":")[1]));
   const answerIncludesEarlier = answerFacts.some((fact) => fact.id.endsWith(':earlier_decision'));
   const earlier = currentAnswer?.earlier_decision ?? lesson.earlier_decision;
   const earlierMoveNumber = earlier?.link ? game.history.filter((event) => event.kind === 'move' && event.revision <= earlier.link!.revision).length + 1 : 0;
@@ -71,15 +70,16 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
         {choice.coordinate}<span>{teachingChoiceLabel(choice, locale)}</span>
       </button>)}
     </div>
-    <div className="concrete-lesson">{lessonText(comparison, activeMove, locale).map((text) => <p key={text}>{text}</p>)}</div>
-    {takeaway && <p className="concrete-takeaway">{takeaway}</p>}
+    <div className="concrete-lesson">{lessonText(comparison, activeMove, locale).map((text, index) => <p key={text} className={index === 0 ? "lesson-question" : undefined}>{text}</p>)}</div>
     {!variation && <button onClick={() => {
-      const focus = coachFocus(lesson);
-      explore(focus?.choice ?? activeMove, focus?.frame ?? Math.min(2, activeMove.frames.length - 1));
+      const frame = comparison.insight.witness ? comparison.insight.witness.prefix.length + 1
+        : activeMove.continuation_lesson ? activeMove.continuation_lesson.frame_index - 1 : 2;
+      explore(activeMove, Math.min(frame, activeMove.frames.length - 1));
     }}>{t("Explore continuation", "查看推演")}</button>}
     {variation && <>
       {canDefend && variation.exercise && <p role="status">{t(`Choose a defense against the ${cornerName(variation.exercise.target, locale)} capture.`, `选择一步，试着守住${cornerName(variation.exercise.target, locale)}。`)}</p>}
       {capturePreview && variation.capture_lines && <p className="capture-explanation">{captureLineText(variation.capture_lines, variation.lesson_frames[captureFrame + 1].actor!, locale)}</p>}
+      {otherCornerText(comparison, locale) && <p className="other-corner">{otherCornerText(comparison, locale)}</p>}
       <div className="line-controls" role="group" aria-label={t("Teaching continuation", "教学推演")}>
         <button disabled={canDefend || variation.frame === 0} onClick={() => showVariation({...variation, frame: variation.frame - 1})}>{t("Previous step", "上一步")}</button>
         <span>{variation.frame}/{variation.lesson_frames.length - 1}</span>
@@ -91,13 +91,7 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
         <button onClick={() => showVariation({...variation, frame: 2, exercise: {...variation.exercise!, attempt: null}})}>{t("Try another defense", "换一步试试")}</button>
       </>}
     </>}
-    {!takeaway && activeMove.continuation_lesson && <button onClick={() => showVariation({
-      revision: lesson.revision, coordinate: activeMove.coordinate,
-      frame: activeMove.continuation_lesson!.frame_index - 1, assessment: activeMove.assessment,
-      lesson_frames: activeMove.frames, capture_lines: [activeMove.continuation_lesson!.capture_line],
-      capture_frame: activeMove.continuation_lesson!.frame_index - 1,
-    })}>{t(`See the ${activeMove.continuation_lesson.capture_line[0]} capture`, `查看 ${activeMove.continuation_lesson.capture_line[0]} 的夹击`)}</button>}
-    {!takeaway && activeMove.continuation_lesson && <button disabled={busy} onClick={() => practice(activeMove.coordinate)}>{t("Try this idea in another position", "换个局面试试")}</button>}
+    {!comparison.decision_contrast && activeMove.continuation_lesson && <button disabled={busy} onClick={() => practice(activeMove.coordinate)}>{t("Try this idea in another position", "换个局面试试")}</button>}
     {comparison.decision_contrast && <button disabled={busy} onClick={() => practice(activeMove.coordinate)}>{t("Compare replies in another position", "换个局面对比回应")}</button>}
     {lesson.earlier_eligible && !answerIncludesEarlier && <div className="earlier-choice">
       {!earlier ? <button disabled={busy} onClick={findEarlier}>{busy ? t('Checking earlier choices…', '正在核验更早的选择…') : t('Could I have defended this corner earlier?', '更早能守住这个角吗？')}</button>
@@ -111,9 +105,6 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
       exercise: {defenses: activeMove.defense_lines, target: activeMove.target!, attempt: null},
     })}>{t("Try defending", "试着防守")}</button>}
     {pending && <p className="muted" role="status">{t("The coach is choosing what to focus on…", "正在为这个局面选择讲解重点…")}</p>}
-    {comparison.choices.length > 1 && <details className="lesson-tools"><summary>{t("Scores", "评分")}</summary>
-      <table><thead><tr><th>{t("Move", "落点")}</th><th>{t("Search score", "搜索评分")}</th></tr></thead><tbody>{comparison.choices.map((choice) => <tr key={choice.coordinate}><td>{choice.coordinate}</td><td>{choice.score}</td></tr>)}</tbody></table>
-    </details>}
     <form className="question-form" onSubmit={(event) => {event.preventDefault(); if (question.trim()) {ask(question.trim(), view); setQuestion("");}}}>
       <div><input aria-label={t("Ask about this position", "询问这个局面")} value={question} maxLength={1800} onChange={(event) => setQuestion(event.target.value)} placeholder={t("Why this move? Ask a question…", "对这一步有疑问？继续提问…")} /><button disabled={busy || questionPending || !question.trim()}>{questionPending ? t("Answering…", "回答中…") : t("Ask", "提问")}</button></div>
     </form>

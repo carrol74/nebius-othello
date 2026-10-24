@@ -53,6 +53,7 @@ p { line-height: 1.7; }
 .position-coach .teaching-choices { margin-top: 0; }
 .position-coach .teaching-choices button { flex: 1; min-width: 100px; }
 .position-coach .concrete-lesson { font-size: 14px; }
+.lesson-question { font-weight: 600; }
 .position-coach .concrete-takeaway { padding-left: 12px; }
 .position-coach .teaching-steps { gap: 6px; }
 .position-coach .teaching-steps button { font-size: 12px; padding: 8px; }
