@@ -1,5 +1,7 @@
 import type { components } from "./generated-api";
 
+export type SavedGame = components["schemas"]["SavedGame"];
+
 export type TeachingComparison = components["schemas"]["TeachingComparison"];
 export type TeachingMove = components["schemas"]["TeachingMove"];
 export type TeachingFrame = components["schemas"]["TeachingFrame"];

@@ -1,5 +1,5 @@
 import type { Locale } from "./locale";
-import type { Color, GameState } from "./types";
+import type { Color, GameState, SavedGame } from "./types";
 
 export type RecentGame = {
   game_id: string;
@@ -27,7 +27,15 @@ export function readRecentGames(saved: string): RecentGame[] {
   }));
 }
 
-export function rememberGame(current: RecentGame[], game: GameState): RecentGame[] {
+export function restoreRecentGames(games: SavedGame[], current: RecentGame[]): RecentGame[] {
+  const ids = new Set(games.map((game) => game.game_id));
+  const accessible = current.filter((game) => ids.has(game.game_id));
+  return [...games].reverse().reduce((recent, game) => rememberGame(recent, {
+    ...game, created_at: game.created_at ?? null, parent_game_id: game.parent_game_id ?? null,
+  }), accessible);
+}
+
+export function rememberGame(current: RecentGame[], game: Pick<GameState, "game_id" | "status" | "created_at" | "human_color" | "parent_game_id">): RecentGame[] {
   if (game.status !== "finished") return current.filter((item) => item.game_id !== game.game_id);
   const previous = current.find((item) => item.game_id === game.game_id);
   return [{

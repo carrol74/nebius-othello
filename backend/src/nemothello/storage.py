@@ -149,6 +149,14 @@ class Store:
             ).fetchall()
             return [(row["owner"], json.loads(row["document"])) for row in rows]
 
+    def finished_games(self, owner: str) -> list[dict[str, Any]]:
+        with self.transaction() as db:
+            rows = db.execute(
+                "SELECT document FROM records WHERE kind='game' AND owner=? "
+                "AND status='finished' ORDER BY rowid DESC LIMIT 20", (owner,)
+            ).fetchall()
+            return [json.loads(row["document"]) for row in rows]
+
     def recover_tasks(self) -> None:
         with self.transaction() as db:
             rows = db.execute(

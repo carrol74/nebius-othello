@@ -10,6 +10,7 @@ from nemothello.main import app
 from nemothello.opponents import DIFFICULTY_LEVELS, HINT_LEVELS
 from nemothello.position_lessons import analyze_position
 from nemothello.rules import Position
+from nemothello.storage import Store
 
 
 @pytest.fixture
@@ -101,6 +102,19 @@ def test_real_follow_hints_replay_uses_inherited_level_to_terminal(client, diffi
             position, _ = position.play(event["coordinate"])
     assert list(position.board) == branch["board"]
     assert position.result() == task["result"]["result"]
+    saved = client.get('/games')
+    assert saved.status_code == 200
+    assert saved.json() == [{
+        'game_id': branch['game_id'], 'created_at': branch['created_at'],
+        'human_color': branch['human_color'], 'parent_game_id': game['game_id'],
+        'status': 'finished',
+    }]
+    assert Store(app.state.store.path).finished_games('hint-test-owner') == [branch]
+    assert client.get('/games', headers={'X-Session-ID': 'different-owner'}).json() == []
+    assert client.get(f"/games/{branch['game_id']}", headers={
+        'X-Session-ID': 'different-owner',
+    }).status_code == 404
+    assert client.get('/games', headers={'Authorization': 'Bearer incorrect'}).status_code == 401
 
 
 def test_saved_game_without_hint_level_keeps_original_analysis_level(client):

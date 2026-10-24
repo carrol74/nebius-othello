@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError, requestId } from "@/lib/api";
 import { LanguageSwitch, useLocale } from "@/lib/locale";
 import { captureLineText, cornerName, defenseFeedback, stepText } from "@/lib/teaching-text";
-import { readRecentGames, recentGameLabel, rememberGame } from "@/lib/recent-games";
+import { readRecentGames, recentGameLabel, rememberGame, restoreRecentGames } from "@/lib/recent-games";
+import type { SavedGame } from "@/lib/types";
 import type { RecentGame } from "@/lib/recent-games";
 import { canTeachPosition, moveFlips, placedBoard, savedPosition } from "@/lib/game-view";
 import { ReviewCoach } from "@/components/review-coach";
@@ -104,21 +105,8 @@ export default function Home() {
     void perform(async () => {
       await api("/session");
       const saved = localStorage.getItem("nemothello_recent_games");
-      if (saved) {
-        const restored = await Promise.all(readRecentGames(saved).map(async (item) => {
-          if (item.status === "finished") return item;
-          try {
-            const stored = await api<GameState>(`/games/${encodeURIComponent(item.game_id)}`);
-            return stored.status === "finished" ? {...item, status: "finished" as const,
-              created_at: stored.created_at ?? item.created_at, human_color: stored.human_color,
-              branch: !!stored.parent_game_id} : null;
-          } catch (failure) {
-            if (failure instanceof ApiError && failure.status === 404) return null;
-            throw failure;
-          }
-        }));
-        setRecent(restored.filter((item) => item !== null));
-      }
+      const stored = await api<SavedGame[]>("/games");
+      setRecent(restoreRecentGames(stored, saved ? readRecentGames(saved) : []));
       const savedSpeed = localStorage.getItem("nemothello_speed");
       if (savedSpeed === "slow" || savedSpeed === "normal") {setSpeed(savedSpeed); speedRef.current = savedSpeed;}
       const savedLegalMoves = localStorage.getItem("nemothello_legal_moves");

@@ -136,6 +136,14 @@ class GameResult(BaseModel):
     winner: Literal["X", "O", "draw"]
 
 
+class SavedGame(BaseModel):
+    game_id: str
+    created_at: str | None = None
+    human_color: Color
+    parent_game_id: str | None = None
+    status: Literal["finished"]
+
+
 class GameState(BaseModel):
     game_id: str
     created_at: str | None = None

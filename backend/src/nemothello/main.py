@@ -39,6 +39,7 @@ from nemothello.schemas import (
     Review,
     ReviewLookup,
     RevisionRequest,
+    SavedGame,
     Task,
     TeachingComparison,
     WriteRequest,
@@ -151,6 +152,11 @@ def health() -> dict[str, str]:
 @app.post("/games", response_model=GameState)
 def create_game(body: CreateGame, owner: Owner, request: Request):
     return request.app.state.games.create(owner, body.request_id, body.human_color, body.difficulty)
+
+
+@app.get("/games", response_model=list[SavedGame])
+def saved_games(owner: Owner, request: Request):
+    return request.app.state.store.finished_games(owner)
 
 
 @app.get("/games/{game_id}", response_model=GameState)

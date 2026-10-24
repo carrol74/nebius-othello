@@ -28,7 +28,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Saved Games */
+        get: operations["saved_games_games_get"];
         put?: never;
         /** Create Game */
         post: operations["create_game_games_post"];
@@ -1158,6 +1159,25 @@ export interface components {
             /** Expected Revision */
             expected_revision: number;
         };
+        /** SavedGame */
+        SavedGame: {
+            /** Game Id */
+            game_id: string;
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Human Color
+             * @enum {string}
+             */
+            human_color: "X" | "O";
+            /** Parent Game Id */
+            parent_game_id?: string | null;
+            /**
+             * Status
+             * @constant
+             */
+            status: "finished";
+        };
         /** Task */
         Task: {
             /** Task Id */
@@ -1362,6 +1382,38 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    saved_games_games_get: {
+        parameters: {
+            query?: never;
+            header: {
+                authorization: string;
+                "x-session-id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedGame"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
