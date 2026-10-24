@@ -14,9 +14,9 @@ test("earlier-choice explanations use game move numbers and bound the corner def
     for (const locale of ["en", "zh"]) {
       const text = earlierDecisionText(link, entry.move_number, locale);
       for (const value of [String(entry.move_number), link.recorded_move, link.recommended_move, link.target]) assert.ok(text.includes(value));
-      assert.match(text, /next two turns|两次行动/);
-      assert.match(text, /recorded continuation|实际续着/);
-      assert.match(text, /not a prediction|不能推断/);
+      assert.match(text, /next two turns|两次落子/);
+      assert.match(text, /defend against that corner threat|防住这轮抢角/);
+      assert.doesNotMatch(text, /local connection|not a prediction|不能推断|实际续着/);
       assert.doesNotMatch(text, /guarantee|必胜|第 42/);
       if (locale === "zh") assert.doesNotMatch(text, /Black|White|At move/);
     }

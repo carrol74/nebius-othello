@@ -41,3 +41,16 @@ test("single-move Chinese score facts never repeat the move as its own compariso
     }
   }
 });
+
+test("saved reply-count answers use concrete facts and a learning prompt in both languages", () => {
+  const {evidence:entry} = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/ordinary-move-native.json", import.meta.url), "utf8"));
+  const fact = {id:`p${entry.revision}:mobility`, revision:entry.revision, topic:"mobility", text:"Reply count alone does not explain the search preference."};
+  for (const locale of ["en", "zh"]) {
+    const text = positionFactText(fact, entry, locale);
+    assert.ok(text.includes(entry.actual_move));
+    const played = entry.comparisons.find((item) => item.coordinate === entry.actual_move);
+    assert.ok(text.includes(String(played.opponent_moves)));
+    assert.match(text, /corner or create a capture line|占角或形成夹击/);
+    assert.doesNotMatch(text, /alone does not explain|不能单独解释/);
+  }
+});

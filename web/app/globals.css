@@ -49,6 +49,7 @@ p { line-height: 1.7; }
 .teaching-panel { padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); min-width: 0; }
 .teaching-empty { margin: 0; color: var(--muted); font-size: 14px; }
 .position-coach { font-size: 14px; }
+.teaching-note { margin: 18px 0 0; padding-top: 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; line-height: 1.6; }
 .position-coach .teaching-choices { margin-top: 0; }
 .position-coach .teaching-choices button { flex: 1; min-width: 100px; }
 .position-coach .concrete-lesson { font-size: 14px; }

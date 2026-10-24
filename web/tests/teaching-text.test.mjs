@@ -5,11 +5,24 @@ import ts from "typescript";
 
 const source = readFileSync(new URL("../lib/teaching-text.ts", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, {compilerOptions: {module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022}}).outputText;
-const {lessonText, lessonPrompt, defenseFeedback, comparisonTakeaway, stepText, captureLineText, teachingChoiceLabel, teachingFactText, continuationText} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const {lessonText, lessonPrompt, defenseFeedback, comparisonTakeaway, stepText, captureLineText, teachingChoiceLabel, teachingFactText, continuationText, teachingNote} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const cases = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/teaching-native-cases.json", import.meta.url), "utf8"));
 const {review} = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/review-native-positions.json", import.meta.url), "utf8"));
 const forced = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/forced-move-native.json", import.meta.url), "utf8"));
 const ordinary = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/ordinary-move-native.json", import.meta.url), "utf8"));
+
+test("analysis limits have one shared note while lessons retain concrete move explanations", () => {
+  for (const locale of ["en", "zh"]) {
+    assert.match(teachingNote(locale), /before your move|落子前/);
+    assert.match(teachingNote(locale), /not win probabilities|不代表胜率/);
+    assert.match(teachingNote(locale), /every score difference|全部评分差距/);
+    for (const comparison of [...Object.values(cases), ordinary.comparison]) {
+      const body = comparison.choices.flatMap((choice) => lessonText(comparison, choice, locale)).join(" ")
+        + (comparisonTakeaway(comparison, locale) ?? "");
+      assert.doesNotMatch(body, /This covers that short sequence|available evidence does not explain|do not explain the full score gap|结论只覆盖|不代表这个角以后|现有证据还不足以|不能单独解释完整评分差距/);
+    }
+  }
+});
 
 test("both languages teach the verified corner threat with the actual response", () => {
   const item = cases["16"], choice = item.choices[0];
@@ -89,7 +102,7 @@ test("decision explanations include both the reply removed and the reply opened,
       const text = comparisonTakeaway(comparison, locale);
       for (const coordinate of ["b6", "e6", "b5", "c5", "f5"]) assert.ok(text.includes(coordinate));
       assert.match(text, /also opens|也开放/);
-      assert.match(text, /do not explain the full score gap|不能单独解释完整评分差距/);
+      assert.doesNotMatch(text, /do not explain the full score gap|不能单独解释完整评分差距/);
       assert.doesNotMatch(text, /fewer.*better|少.*所以.*更好|wins|必胜/);
       assert.equal(teachingFactText(comparison, "p2:decision_contrast", locale), text);
       for (const choice of comparison.choices) {
@@ -164,14 +177,14 @@ test("defense feedback names the root and attempted move without requiring anoth
   }
   assert.match(comparisonTakeaway(cases["16"], "zh"), /全部合法回应/);
   assert.match(comparisonTakeaway(cases["16"], "zh"), /e1.*b1 防守/);
-  assert.match(comparisonTakeaway(cases["16"], "en"), /not the rest of the game/);
+  assert.doesNotMatch(comparisonTakeaway(cases["16"], "en"), /not the rest of the game/);
 });
 
 test("verified proof facts keep their scope and coordinates in both languages", () => {
   for (const locale of ["en", "zh"]) {
     const proof = teachingFactText(cases["16"], "p16:proof_b1", locale);
     for (const coordinate of ["b1", "e1", "a1"]) assert.ok(proof.includes(coordinate));
-    assert.match(proof, /three plies|三步/);
+    assert.match(proof, /on their next turn|再下一手/);
     const defense = teachingFactText(cases["16"], "p16:defense", locale);
     assert.match(defense, /every legal next reply|全部合法回应/);
   }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocale } from "@/lib/locale";
-import { captureLineText, comparisonTakeaway, cornerName, defenseFeedback, lessonText, stepText, teachingChoiceLabel, teachingFactText } from "@/lib/teaching-text";
+import { captureLineText, comparisonTakeaway, cornerName, defenseFeedback, lessonText, stepText, teachingChoiceLabel, teachingFactText, teachingNote } from "@/lib/teaching-text";
 import { coachFocus, comparisonRay, sameTeachingView, teachingView } from "@/lib/lesson-view";
 import { positionFactText } from "@/lib/review-text";
 import { earlierDecisionText } from "@/lib/earlier-decision";
@@ -47,7 +47,8 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
     recommended_move: referenceChoice?.coordinate ?? activeMove.coordinate,
     score_loss: Math.abs(activeMove.score - (referenceChoice?.score ?? activeMove.score))};
   const takeaway = comparisonTakeaway(comparison, locale);
-  const answerFacts = [...(currentAnswer?.answer_facts ?? []), ...(currentAnswer?.coaching ?? []).flatMap((card) => card.facts)];
+  const answerFacts = [...(currentAnswer?.answer_facts ?? []), ...(currentAnswer?.coaching ?? []).flatMap((card) => card.facts)]
+    .filter((fact) => fact.id !== "outcome_limit");
   const answerIncludesEarlier = answerFacts.some((fact) => fact.id.endsWith(':earlier_decision'));
   const earlier = currentAnswer?.earlier_decision ?? lesson.earlier_decision;
   const earlierMoveNumber = earlier?.link ? game.history.filter((event) => event.kind === 'move' && event.revision <= earlier.link!.revision).length + 1 : 0;
@@ -101,7 +102,7 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
     {lesson.earlier_eligible && !answerIncludesEarlier && <div className="earlier-choice">
       {!earlier ? <button disabled={busy} onClick={findEarlier}>{busy ? t('Checking earlier choices…', '正在核验更早的选择…') : t('Could I have defended this corner earlier?', '更早能守住这个角吗？')}</button>
         : earlier.link ? <><p>{earlierDecisionText(earlier.link, earlierMoveNumber, locale)}</p><button disabled={busy} onClick={() => revisit(earlier.link!.revision)}>{t('Inspect that decision', '查看那次选择')}</button></>
-          : <p className="muted">{t('No earlier recommendation was verified to defend against this continuing threat.', '还没有核验出可防住同一抢角威胁的更早推荐走法。')}</p>}
+          : <p className="muted">{t('No earlier recommendation was found that stops this corner threat.', '没有找到能防住这次抢角的更早推荐走法。')}</p>}
     </div>}
     {!forcedMove && activeMove.kind === "corner_forced" && activeMove.defense_lines.length > 0 && <button disabled={busy} onClick={() => showVariation({
       revision: lesson.revision, coordinate: activeMove.coordinate, frame: 2, lesson_frames: activeMove.frames,
@@ -112,15 +113,19 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
     {pending && <p className="muted" role="status">{t("The coach is choosing what to focus on…", "正在为这个局面选择讲解重点…")}</p>}
     {comparison.choices.length > 1 && <details className="lesson-tools"><summary>{t("Scores", "评分")}</summary>
       <table><thead><tr><th>{t("Move", "落点")}</th><th>{t("Search score", "搜索评分")}</th></tr></thead><tbody>{comparison.choices.map((choice) => <tr key={choice.coordinate}><td>{choice.coordinate}</td><td>{choice.score}</td></tr>)}</tbody></table>
-      <p className="muted">{t("Scores favor the player to move. Estimates are not win probabilities.", "评分从当前行动方的视角计算，估计值不代表胜率。")}</p>
     </details>}
     <form className="question-form" onSubmit={(event) => {event.preventDefault(); if (question.trim()) {ask(question.trim(), view); setQuestion("");}}}>
       <div><input aria-label={t("Ask about this position", "询问这个局面")} value={question} maxLength={1800} onChange={(event) => setQuestion(event.target.value)} placeholder={t("Why this move? Ask a question…", "对这一步有疑问？继续提问…")} /><button disabled={busy || questionPending || !question.trim()}>{questionPending ? t("Answering…", "回答中…") : t("Ask", "提问")}</button></div>
     </form>
-    {currentAnswer && <div className="position-answer" role="status">{currentAnswer.topic === "unsupported" ? t("The saved evidence cannot answer that question. Ask about this position or its moves.", "已保存的证据无法回答这个问题，可以询问当前局面和落点。") : locale === "en" ? currentAnswer.answer : [...new Map(answerFacts.map((fact) => [fact.id, fact])).values()].map((fact) => <p key={fact.id}>{
-      fact.id.endsWith(":earlier_decision") && earlier?.link ? earlierDecisionText(earlier.link, earlierMoveNumber, locale) : fact.id.endsWith(":view") ? `${view.selected_move} 走法，${view.line.length ? stepText(frames[view.line.length], locale) : "落子前的局面"}。评分针对起点的选择。` : fact.id === "outcome_limit" ? "更高的搜索评分不保证获胜，分支对局的结果只适用于那一次对弈。" : fact.id === "result" && game.result ? `终局：黑方 ${game.result.black_count}，白方 ${game.result.white_count}。` : fact.id === "adoption" ? `显示过提示的 ${lesson.hint_adoption.shown_turns} 个回合中，你采用了 ${lesson.hint_adoption.adopted_turns} 次提示。` : teachingFactText(comparison, fact.id, locale) ?? positionFactText(fact, answerEntry, locale, activeMove.assessment)
+    {currentAnswer && <div className="position-answer" role="status">{currentAnswer.topic === "unsupported" ? t("The saved evidence cannot answer that question. Ask about this position or its moves.", "已保存的证据无法回答这个问题，可以询问当前局面和落点。") : !answerFacts.length ? t("Play this position to the end in a branch, then compare the results.", "从这个局面创建分支，下到终局后再比较结果。") : [...new Map(answerFacts.map((fact) => [fact.id, fact])).values()].map((fact) => <p key={fact.id}>{
+      fact.id.endsWith(":earlier_decision") && earlier?.link ? earlierDecisionText(earlier.link, earlierMoveNumber, locale)
+        : fact.id.endsWith(":view") ? t(`${view.selected_move} continuation: ${view.line.length ? stepText(frames[view.line.length], locale) : "before the move"}`, `${view.selected_move} 走法：${view.line.length ? stepText(frames[view.line.length], locale) : "落子前的局面"}`)
+        : fact.id === "result" && game.result ? t(`Final: Black ${game.result.black_count}, White ${game.result.white_count}.`, `终局：黑方 ${game.result.black_count}，白方 ${game.result.white_count}。`)
+        : fact.id === "adoption" ? t(`You followed ${lesson.hint_adoption.adopted_turns} of ${lesson.hint_adoption.shown_turns} displayed hints.`, `显示过提示的 ${lesson.hint_adoption.shown_turns} 个回合中，你采用了 ${lesson.hint_adoption.adopted_turns} 次提示。`)
+        : teachingFactText(comparison, fact.id, locale) ?? positionFactText(fact, answerEntry, locale, activeMove.assessment)
     }</p>)}</div>}
     {answerIncludesEarlier && earlier?.link && <button disabled={busy} onClick={() => revisit(earlier.link!.revision)}>{t('Inspect that decision', '查看那次选择')}</button>}
     <details className="lesson-tools"><summary>{t("Play from this position", "从这个局面继续")}</summary><div className="branch-actions"><button disabled={busy} onClick={() => continueGame(lesson.revision)}>{t("Play a new branch", "创建对局分支")}</button><button disabled={busy} onClick={() => replay(lesson.revision)}>{t("Replay with hints", "按提示回放")}</button></div></details>
+    <p className="teaching-note">{teachingNote(locale)}</p>
   </div>;
 }

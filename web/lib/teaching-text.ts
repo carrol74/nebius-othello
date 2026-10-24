@@ -1,6 +1,12 @@
 import type { Locale } from "./locale";
 import type { ReplyOpportunity, TeachingComparison, TeachingFrame, TeachingMove } from "./types";
 
+export function teachingNote(locale: Locale): string {
+  return locale === "zh"
+    ? "评分针对落子前的局面，搜索估计不代表胜率。局部推演不保证整盘结果，也不一定解释全部评分差距。"
+    : "Scores refer to the position before your move; estimates are not win probabilities. Local continuations do not guarantee a game result or explain every score difference.";
+}
+
 export function teachingChoiceLabel(move: TeachingMove, locale: Locale): string {
   return move.assessment.is_played ? locale === "zh" ? "你当时下的" : "Your game move"
     : locale === "zh" ? "推荐走法" : "Recommended move";
@@ -66,10 +72,7 @@ export function lessonText(comparison: TeachingComparison, move: TeachingMove, l
       : zh ? `${basis}对 ${comparison.recommended_move} 的评分高于 ${move.coordinate}。`
         : `${basis} rates ${comparison.recommended_move} above ${move.coordinate}.`;
   const comparedTactic = !!comparison.decision_contrast || ["corner_defense", "corner_access", "shared_corner"].includes(comparison.insight.kind);
-  const unresolved = comparison.choices.length > 1 && comparison.insight.kind === "search" && !comparison.decision_contrast
-    ? [zh ? "这段续着展示了可能发生的变化，但现有证据还不足以解释两手的评分差距。"
-      : "This continuation shows a possible outcome, but the available evidence does not explain the score gap between the moves."] : [];
-  return [context, ...(comparedTactic ? [] : moveConsequence(comparison, move, locale)), ...unresolved];
+  return [context, ...(comparedTactic ? [] : moveConsequence(comparison, move, locale))];
 }
 
 export function continuationText(move: TeachingMove, locale: Locale): string | null {
@@ -143,9 +146,7 @@ export function comparisonTakeaway(comparison: TeachingComparison, locale: Local
     const tradeoff = removed && added ? zh
       ? `不过，${contrast.recommended_move} 也开放了 ${added.coordinate}：${actor}在 ${contrast.actual_move} 后原本不能下这里。`
       : `However, ${contrast.recommended_move} also opens ${added.coordinate}, which ${actor} cannot play after ${contrast.actual_move}.` : "";
-    const scope = zh ? "比较时要同时检查关掉和开放的回应；这些变化还不能单独解释完整评分差距。"
-      : "Check both the replies you close and those you open. These changes alone do not explain the full score gap.";
-    return [difference, tradeoff, scope].filter(Boolean).join(" ");
+    return [difference, tradeoff].filter(Boolean).join(" ");
   }
   if (insight.kind === "forced" || insight.kind === "best" || insight.kind === "search") return null;
   if (insight.kind === "equal") return comparison.choices[0].assessment.status === "tied_best" ? null
@@ -171,12 +172,12 @@ export function comparisonTakeaway(comparison: TeachingComparison, locale: Local
       ? zh ? '每种回应后，要么对局已经结束，要么存在防守，能阻止它再下一手占这个角。' : 'each either ends the game or permits a defense against the corner capture on the following turn.'
       : zh ? '每种回应下都有防守，能阻止它再下一手占这个角。' : 'each has a defense that prevents the corner capture on the following turn.';
     return zh
-      ? `下 ${insight.worse_move}，对手有办法抢到 ${insight.target}。改走 ${insight.better_move}，已检查对手下一步的全部合法回应，${response}${cornerWitnessText(comparison, locale) ?? ''}${example}${otherCornerText(comparison, locale) ?? ''}结论只覆盖这段变化，不代表这个角以后一直安全。`
-      : `After ${insight.worse_move}, the opponent has a way to take ${insight.target}. After ${insight.better_move}, every legal next reply was checked: ${response} ${cornerWitnessText(comparison, locale) ?? ''} ${example} ${otherCornerText(comparison, locale) ?? ''} This covers that short sequence, not the rest of the game.`;
+      ? `下 ${insight.worse_move}，对手有办法抢到 ${insight.target}。改走 ${insight.better_move}，面对对手下一步的全部合法回应，${response}${cornerWitnessText(comparison, locale) ?? ''}${example}${otherCornerText(comparison, locale) ?? ''}`
+      : `After ${insight.worse_move}, the opponent has a way to take ${insight.target}. After ${insight.better_move}, consider every legal next reply: ${response} ${cornerWitnessText(comparison, locale) ?? ''} ${example} ${otherCornerText(comparison, locale) ?? ''}`;
   }
   if (insight.kind === "corner_access") return zh
-    ? `下 ${insight.worse_move} 后，对手下一步就能下 ${insight.target}；下 ${insight.better_move} 后，${insight.target} 暂时不是它的合法落点。这是两种走法已核实的一处差别。`
-    : `After ${insight.worse_move}, the opponent can play ${insight.target} immediately. After ${insight.better_move}, ${insight.target} is not a legal reply on the next turn. This is one verified difference between the moves.`;
+    ? `下 ${insight.worse_move} 后，对手下一步就能下 ${insight.target}；下 ${insight.better_move} 后，对手这一回合无法占 ${insight.target}。`
+    : `After ${insight.worse_move}, the opponent can play ${insight.target} immediately. After ${insight.better_move}, ${insight.target} is not a legal reply on the next turn.`;
   if (insight.kind === "illustrated_corner") {
     const reply = best.frames[2].coordinate;
     const difference = insight.gap ? zh ? `${insight.gap} 仍然空着，这条夹击线没有连起来。` : `${insight.gap} stays empty, so the same capture line is broken.` : zh ? `对手还不能下 ${insight.target}。` : `the opponent cannot yet play ${insight.target}.`;
@@ -229,8 +230,8 @@ export function teachingFactText(comparison: TeachingComparison, id: string, loc
   const zh = locale === "zh";
   const actor = proof.attacker === "X" ? zh ? "黑方" : "Black" : zh ? "白方" : "White";
   const action = proof.attack === proof.target ? zh ? `可以直接占 ${proof.target}` : `can take ${proof.target} immediately`
-    : zh ? `可以先下 ${proof.attack}，随后无论怎样合法防守，仍能下 ${proof.target}`
-      : `can play ${proof.attack}, after which every legal defense still permits ${proof.target}`;
-  return zh ? `下 ${coordinate} 后，${actor}${action}。已按棋规核验落子后的三步以内变化，这不能单独解释全部评分差距。`
-    : `After ${coordinate}, ${actor} ${action}. This is verified within three plies after the root move and does not explain the full score gap.`;
+    : zh ? `可以先下 ${proof.attack}；无论你随后怎样应对，它再下一手都能占 ${proof.target}`
+      : `can play ${proof.attack}, after which every legal defense still permits ${proof.target} on their next turn`;
+  return zh ? `下 ${coordinate} 后，${actor}${action}。`
+    : `After ${coordinate}, ${actor} ${action}.`;
 }
