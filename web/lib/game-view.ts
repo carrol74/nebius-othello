@@ -8,8 +8,20 @@ export function savedPosition(game: GameState, revision: number) {
 }
 
 export function canTeachPosition(game: GameState, revision: number): boolean {
+  const move = game.history.find((event) => event.revision === revision + 1);
   return savedPosition(game, revision).turn === game.human_color
-    && game.history.find((event) => event.revision === revision + 1)?.kind !== "pass";
+    && move?.kind === "move" && move.actor === game.human_color;
+}
+
+export function reviewRevisions(game: GameState): number[] {
+  return game.history.filter((event) => event.kind === "move" && event.actor === game.human_color)
+    .map((event) => event.revision - 1);
+}
+
+export function reviewPosition(game: GameState, revision: number) {
+  const move = game.history.find((event) => event.revision === revision + 1
+    && event.kind === "move" && event.actor === game.human_color);
+  return savedPosition(game, move?.revision ?? revision);
 }
 
 export function moveFlips(before: string[], event: HistoryEvent): string[] {

@@ -45,8 +45,7 @@ p { line-height: 1.7; }
 .timeline-buttons { display: flex; align-items: center; gap: 8px; }
 .timeline-buttons button { padding: 8px 11px; font-size: 18px; }
 .timeline-buttons input { flex: 1; min-width: 40px; accent-color: var(--accent); cursor: pointer; }
-.timeline-caption { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; font-size: 13px; color: var(--muted); }
-.timeline-caption button { font-size: 13px; }
+.line-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 16px 0; font-size: 13px; }
 .teaching-panel { padding: 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); min-width: 0; }
 .teaching-empty { margin: 0; color: var(--muted); font-size: 14px; }
 .position-coach { font-size: 14px; }
@@ -107,9 +106,7 @@ p { line-height: 1.7; }
 .lesson-ray { background: #6b7545 !important; }
 .lesson-target { box-shadow: inset 0 0 0 3px #f3c66e; }
 .lesson-coordinate { position: absolute; left: 3px; bottom: 2px; font-size: clamp(9px, 1.2vw, 12px); color: #fff5d6; background: #19221ce8; border-radius: 3px; padding: 1px 3px; }
-.board-teaching-text { flex-basis: 100%; margin: 4px 0; font-size: 14px; color: #f0f3e9; }
 .capture-explanation { display: block; font-size: 14px; line-height: 1.7; margin-top: 8px; }
-.board-teaching-text small { display: block; color: var(--muted); margin-top: 6px; font-size: 11px; }
 .branch-options { margin-top: 20px; }
 .branch-options .branch-panel { border: 0; margin-top: 12px; padding: 0; background: transparent; }
 .game-toolbar { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; margin: 30px 0; }

@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useLocale } from "@/lib/locale";
-import { comparisonTakeaway, lessonText, stepText, teachingChoiceLabel, teachingFactText } from "@/lib/teaching-text";
+import { captureLineText, comparisonTakeaway, cornerName, defenseFeedback, lessonText, stepText, teachingChoiceLabel, teachingFactText } from "@/lib/teaching-text";
 import { coachFocus, comparisonRay, sameTeachingView, teachingView } from "@/lib/lesson-view";
 import { positionFactText } from "@/lib/review-text";
 import { earlierDecisionText } from "@/lib/earlier-decision";
@@ -33,9 +33,6 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
 }) {
   const {locale, t} = useLocale();
   const comparison = lesson.comparison;
-  const initialComparison = useRef(lesson.comparison);
-  const automaticView = useRef<Variation | null>(null);
-  const focusApplied = useRef(false);
   const [question, setQuestion] = useState("");
   const item = lesson.evidence;
   const forcedMove = comparison.insight.kind === "forced";
@@ -43,7 +40,7 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
     ?? comparison.choices.find((choice) => choice.coordinate === comparison.selected_move) ?? comparison.choices[0];
   const activeVariation = variation?.coordinate === activeMove.coordinate ? variation : null;
   const frames = activeVariation?.lesson_frames ?? activeMove.frames;
-  const view = teachingView(activeMove.coordinate, frames, activeVariation?.frame ?? 0);
+  const view = teachingView(activeMove.coordinate, frames, activeVariation?.frame ?? 1);
   const currentAnswer = sameTeachingView(answer?.view, view) ? answer : null;
   const referenceChoice = comparison.choices.find((choice) => choice.coordinate !== activeMove.coordinate);
   const answerEntry = {...item, actual_move: activeMove.coordinate, is_played: activeMove.assessment.is_played,
@@ -54,45 +51,45 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
   const answerIncludesEarlier = answerFacts.some((fact) => fact.id.endsWith(':earlier_decision'));
   const earlier = currentAnswer?.earlier_decision ?? lesson.earlier_decision;
   const earlierMoveNumber = earlier?.link ? game.history.filter((event) => event.kind === 'move' && event.revision <= earlier.link!.revision).length + 1 : 0;
+  const canDefend = !!variation?.exercise && variation.frame === 2 && !variation.exercise.attempt && !busy;
+  const captureFrame = variation?.capture_frame ?? (variation ? variation.lesson_frames.length - 2 : -1);
+  const capturePreview = variation && !canDefend && variation.frame === captureFrame && !!variation.capture_lines?.length;
 
-  useEffect(() => {
-    const initial = initialComparison.current;
-    const first = initial.choices.find((choice) => choice.coordinate === initial.selected_move)!;
-    const initialView = {revision: initial.revision, coordinate: first.coordinate, frame: 1,
-      assessment: first.assessment,
-      lesson_frames: first.frames, focus_square: first.target,
-      comparison_ray: comparisonRay(initial),
-      capture_lines: first.continuation_lesson ? [first.continuation_lesson.capture_line] : first.capture_lines,
-      capture_frame: first.continuation_lesson ? first.continuation_lesson.frame_index - 1 : undefined};
-    automaticView.current = initialView;
-    showVariation(initialView);
-  }, [showVariation]);
-
-  useEffect(() => {
-    if (focusApplied.current || lesson.coaching_status !== "ready" || variation !== automaticView.current) return;
-    focusApplied.current = true;
-    const focus = coachFocus(lesson);
-    if (!focus) return;
-    const {choice, frame} = focus;
+  function explore(choice: TeachingMove, frame = 1) {
     showVariation({revision: lesson.revision, coordinate: choice.coordinate, frame,
       comparison_ray: comparisonRay(comparison),
       assessment: choice.assessment, lesson_frames: choice.frames, focus_square: choice.target,
       capture_lines: choice.continuation_lesson ? [choice.continuation_lesson.capture_line] : choice.capture_lines,
       capture_frame: choice.continuation_lesson ? choice.continuation_lesson.frame_index - 1 : undefined});
-  }, [lesson, variation, showVariation]);
+  }
 
   return <div className="position-coach">
     {item.is_played === false && <p>{t("You have not played this turn yet.", "你在这一回合还没有落子。")}</p>}
     <div className="teaching-choices" role="group" aria-label={t("Choose a line to explore", "选择要演示的走法")}>
-      {[...comparison.choices].sort((a, b) => Number(b.assessment.is_played) - Number(a.assessment.is_played)).map((choice) => <button key={choice.coordinate} aria-pressed={choice.coordinate === activeMove.coordinate} onClick={() => showVariation({revision: lesson.revision, coordinate: choice.coordinate, frame: 1, assessment: choice.assessment, lesson_frames: choice.frames, focus_square: choice.target,
-        comparison_ray: comparisonRay(comparison),
-        capture_lines: choice.continuation_lesson ? [choice.continuation_lesson.capture_line] : choice.capture_lines,
-        capture_frame: choice.continuation_lesson ? choice.continuation_lesson.frame_index - 1 : undefined})}>
+      {[...comparison.choices].sort((a, b) => Number(b.assessment.is_played) - Number(a.assessment.is_played)).map((choice) => <button key={choice.coordinate} aria-pressed={choice.coordinate === activeMove.coordinate} onClick={() => explore(choice)}>
         {choice.coordinate}<span>{teachingChoiceLabel(choice, locale)}</span>
       </button>)}
     </div>
     <div className="concrete-lesson">{lessonText(comparison, activeMove, locale).map((text) => <p key={text}>{text}</p>)}</div>
     {takeaway && <p className="concrete-takeaway">{takeaway}</p>}
+    {!variation && <button onClick={() => {
+      const focus = coachFocus(lesson);
+      explore(focus?.choice ?? activeMove, focus?.frame ?? Math.min(2, activeMove.frames.length - 1));
+    }}>{t("Explore continuation", "查看推演")}</button>}
+    {variation && <>
+      {canDefend && variation.exercise && <p role="status">{t(`Choose a defense against the ${cornerName(variation.exercise.target, locale)} capture.`, `选择一步，试着守住${cornerName(variation.exercise.target, locale)}。`)}</p>}
+      {capturePreview && variation.capture_lines && <p className="capture-explanation">{captureLineText(variation.capture_lines, variation.lesson_frames[captureFrame + 1].actor!, locale)}</p>}
+      <div className="line-controls" role="group" aria-label={t("Teaching continuation", "教学推演")}>
+        <button disabled={canDefend || variation.frame === 0} onClick={() => showVariation({...variation, frame: variation.frame - 1})}>{t("Previous step", "上一步")}</button>
+        <span>{variation.frame}/{variation.lesson_frames.length - 1}</span>
+        <button disabled={canDefend || variation.frame === variation.lesson_frames.length - 1} onClick={() => showVariation({...variation, frame: variation.frame + 1})}>{variation.exercise?.attempt && variation.frame === 3 ? t("See the reply", "看对手应对") : t("Next step", "下一步")}</button>
+        <button onClick={() => showVariation(null)}>{t("Back to your move", "返回你的落子")}</button>
+      </div>
+      {variation.exercise?.attempt && variation.frame >= 3 && <>
+        <p className="defense-feedback">{defenseFeedback(variation.coordinate, variation.exercise.attempt, variation.exercise.target, locale)}</p>
+        <button onClick={() => showVariation({...variation, frame: 2, exercise: {...variation.exercise!, attempt: null}})}>{t("Try another defense", "换一步试试")}</button>
+      </>}
+    </>}
     {!takeaway && activeMove.continuation_lesson && <button onClick={() => showVariation({
       revision: lesson.revision, coordinate: activeMove.coordinate,
       frame: activeMove.continuation_lesson!.frame_index - 1, assessment: activeMove.assessment,

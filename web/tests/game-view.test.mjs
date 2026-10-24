@@ -5,7 +5,7 @@ import ts from "typescript";
 
 const source = readFileSync(new URL("../lib/game-view.ts", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, {compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
-const {canTeachPosition, savedPosition, placedBoard, moveFlips} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const {canTeachPosition, savedPosition, placedBoard, moveFlips, reviewRevisions, reviewPosition} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const native = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/teaching-native-cases.json", import.meta.url), "utf8"));
 const frames = native["16"].choices[0].defense_lines.find((item) => item.coordinate === "g6").frames;
 const history = frames.slice(1).map((frame, index) => ({...frame, revision:index+1, kind:"move"}));
@@ -40,4 +40,47 @@ test("teaching follows the player's color while both sides and passes remain vis
       assert.equal(canTeachPosition(game, revision), next?.actor === human_color && next.kind === "move");
     }
   }
+});
+
+test("review navigation visits only recorded player decisions in either color, across passes", () => {
+  const {review} = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/review-native-positions.json", import.meta.url), "utf8"));
+  const history = review.history.map((event, index) => ({...event, turn:review.history[index+1]?.actor ?? null}));
+  assert.ok(history.some((event) => event.kind === "pass"));
+  for (const human_color of ["X", "O"]) {
+    const game = {...review, human_color, history};
+    const revisions = reviewRevisions(game);
+    assert.equal(revisions.length, history.filter((event) => event.kind === "move" && event.actor === human_color).length);
+    assert.ok(revisions.at(-1) < history.at(-1).revision);
+    assert.equal(new Set(revisions).size, revisions.length);
+    for (const revision of revisions) assert.equal(canTeachPosition(game, revision), true);
+    const visited = new Set(revisions.map((revision) => revision + 1));
+    for (const event of history) {
+      if (event.kind === "pass" || event.actor !== human_color) assert.equal(visited.has(event.revision), false);
+    }
+  }
+});
+
+test("each review snapshot shows the player's disc after placement and keeps intervening replies", () => {
+  for (const human_color of ["X", "O"]) {
+    const game = {initial_board:frames[0].board, initial_turn:frames[0].turn, human_color, history};
+    const original = JSON.stringify(game);
+    for (const revision of reviewRevisions(game)) {
+      const event = history.find((event) => event.revision === revision + 1);
+      const position = reviewPosition(game, revision);
+      assert.deepEqual(position.board, event.board);
+      const column = event.coordinate.charCodeAt(0) - 97, row = Number(event.coordinate[1]) - 1;
+      assert.equal(position.board[row][column], human_color);
+      assert.equal(savedPosition(game, revision).board[row][column], ".");
+    }
+    assert.equal(JSON.stringify(game), original);
+  }
+});
+
+test("an unplayed turn and a new game have no historical teaching step", () => {
+  const game = {initial_board:frames[0].board, initial_turn:frames[0].turn, human_color:frames[0].turn, history:[]};
+  assert.deepEqual(reviewRevisions(game), []);
+  assert.equal(canTeachPosition(game, 0), false);
+  const firstMove = {...game, history:history.slice(0, 1)};
+  assert.deepEqual(reviewRevisions(firstMove), [0]);
+  assert.equal(canTeachPosition(firstMove, 0), true);
 });
