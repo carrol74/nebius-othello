@@ -11,11 +11,8 @@ import { ReviewCoach } from "@/components/review-coach";
 import { ReviewNavigation } from "@/components/review-navigation";
 import { LessonStart } from "@/components/lesson-start";
 import { GameRules } from "@/components/game-rules";
-import { PracticePanel } from "@/components/practice-panel";
-import { practiceFeedbackFrame, practiceSelection } from "@/lib/practice-view";
-import type { PracticeState } from "@/components/practice-panel";
 import type { Variation } from "@/components/review-coach";
-import type { EarlierDecisionResult, Color, Difficulty, GameState, Hint, HistoryEvent, LessonView, PositionLesson, PracticeFeedback, PracticeQuestion, QuestionResult, Task, TrackedTask } from "@/lib/types";
+import type { EarlierDecisionResult, Color, Difficulty, GameState, Hint, HistoryEvent, LessonView, PositionLesson, QuestionResult, Task, TrackedTask } from "@/lib/types";
 
 type Mode = "play" | "review";
 type Speed = "normal" | "slow";
@@ -48,8 +45,6 @@ export default function Home() {
   const [hintRetry, setHintRetry] = useState(0);
   const [historyRevision, setHistoryRevision] = useState(0);
   const [variation, setVariation] = useState<Variation | null>(null);
-  const [practice, setPractice] = useState<PracticeState | null>(null);
-  const practiceOrigin = useRef<string | null>(null);
   const [lessons, setLessons] = useState<Record<string, PositionLesson | null>>({});
   const [tasks, setTasks] = useState<TrackedTask[]>([]);
   const [taskPollRetry, setTaskPollRetry] = useState(0);
@@ -62,7 +57,6 @@ export default function Home() {
   const bootStarted = useRef(false);
 
   const acceptGame = useCallback((next: GameState) => {
-    practiceOrigin.current = null; setPractice(null);
     const previous = gameRef.current;
     const isNew = previous?.game_id !== next.game_id;
     if (isNew) {
@@ -244,14 +238,12 @@ export default function Home() {
   }, [mode, game?.game_id, historyRevision, loadLesson, trackTask]);
 
   const position = game && mode === "review" ? reviewPosition(game, historyRevision) : game;
-  const teachingFrame = practice ? null : variation?.lesson_frames[variation.frame];
-  const replyFeedback = practice?.feedback && "witness" in practice.feedback ? practice.feedback : null;
-  const practiceFrame = practiceFeedbackFrame(practice);
-  const board = practiceFrame?.board ?? practice?.question.board ?? teachingFrame?.board ?? (mode === "play" ? playback?.board : null) ?? position?.board;
-  const turn = practiceFrame ? practiceFrame.turn : practice?.question.turn ?? (teachingFrame ? teachingFrame.turn : position?.turn);
+  const teachingFrame = variation?.lesson_frames[variation.frame];
+  const board = teachingFrame?.board ?? (mode === "play" ? playback?.board : null) ?? position?.board;
+  const turn = teachingFrame ? teachingFrame.turn : position?.turn;
   const nextEvent = game?.history.find((item) => item.revision === historyRevision + 1);
   const canTeach = mode === "review" && !!game && canTeachPosition(game, historyRevision);
-  const canDefend = !practice && mode === "review" && !!variation?.exercise && variation.frame === 2 && !variation.exercise.attempt && !busy;
+  const canDefend = mode === "review" && !!variation?.exercise && variation.frame === 2 && !variation.exercise.attempt && !busy;
   const captureFrame = variation?.capture_frame ?? (variation ? variation.lesson_frames.length - 2 : -1);
   const capturePreview = !!variation && !canDefend && variation.frame === captureFrame && !!variation.capture_lines?.length;
   const comparisonRay = !canDefend && variation?.comparison_ray?.frame === variation?.frame ? variation?.comparison_ray?.squares : null;
@@ -267,9 +259,8 @@ export default function Home() {
   const branchTask = tasks.find((entry) => entry.purpose === "branch" && entry.game_id === game?.game_id);
   const canChangeOpening = !!game && !game.parent_game_id && !game.auto_play && game.status === "active" && !game.history.some((item) => item.kind === "move" && item.actor === game.human_color);
 
-  function selectPosition(revision: number) {practiceOrigin.current = null; setPractice(null); setHistoryRevision(revision); setVariation(null); setError(null);}
+  function selectPosition(revision: number) {setHistoryRevision(revision); setVariation(null); setError(null);}
   function switchMode(value: Mode) {
-    practiceOrigin.current = null; setPractice(null);
     modeRef.current = value; setMode(value); setVariation(null); setPlayback(null); setError(null);
     if (value === "review" && game) setHistoryRevision(reviewRevisions(game).at(-1) ?? 0);
   }
@@ -282,37 +273,12 @@ export default function Home() {
     const id = game.game_id, revision = historyRevision;
     void perform(async () => trackTask({task: await api<Task>(`/games/${id}/lessons`, {revision, question, view, reflection: question ? undefined : reflection ?? currentLesson?.reflection?.text, request_id: requestId()}), game_id: id, revision, purpose: question ? "question" : "lesson", question}));
   }
-  function beginPractice(move: string) {
-    if (!game) return;
-    const id = game.game_id, revision = historyRevision, origin = lessonKey(id, revision);
-    practiceOrigin.current = origin;
-    void perform(async () => {
-      const question = await api<PracticeQuestion | null>(`/games/${id}/lessons/practice?revision=${revision}&move=${move}`);
-      if (practiceOrigin.current !== origin) return;
-      if (!question) throw new Error(t("No unused exercise is available for this lesson.", "这项教学暂时没有未做过的练习。"));
-      setVariation(null);
-      setPractice({question, lesson_move:move, move:null, anchor:null, alternative:null, feedback_line:"blocking", reason:"", feedback:null});
-    });
-  }
   function findEarlier() {
     if (!game || !currentLesson) return;
     const id = game.game_id, revision = historyRevision, key = lessonKey(id, revision);
     void perform(async () => {
       const earlier = await api<EarlierDecisionResult>(`/games/${id}/lessons/earlier?revision=${revision}`);
       setLessons((current) => current[key] ? {...current, [key]: {...current[key], earlier_decision:earlier}} : current);
-    });
-  }
-  function checkPractice() {
-    if (!practice || !game || !practice.move || !practice.reason.trim()
-      || (practice.question.objective === "reply_access" ? !practice.alternative : !practice.anchor)) return;
-    const current = practice;
-    void perform(async () => {
-      const feedback = await api<PracticeFeedback>(`/games/${game.game_id}/lessons/practice`, {
-        revision:historyRevision, lesson_move:current.lesson_move, question_id:current.question.question_id,
-        move:current.move, anchor:current.anchor, alternative:current.alternative,
-        reason:current.reason, request_id:requestId(),
-      });
-      setPractice((latest) => latest?.question.question_id === current.question.question_id ? {...latest, feedback} : latest);
     });
   }
   function continueGame(revision: number, replay: boolean) {
@@ -335,27 +301,26 @@ export default function Home() {
     {!loaded && !busy && <button onClick={() => {bootStarted.current = false; setBootRetry((n) => n + 1);}}>{t("Reconnect", "重新连接")}</button>}
     <div className={`play-layout ${mode === "review" ? "review-layout" : ""}`}>
       <section className="board-panel" id="game-board" aria-label={t("Othello board", "翻转棋棋盘")}>
-        <div className="board-topline"><span className="turn-label">{practice ? t("Practice", "练习") : variation ? t("Analysis line", "分析演示") : mode === "review" ? t("Game history", "对局记录") : game?.difficulty ? ({easy: t("Beginner", "初级"), medium: t("Intermediate", "中级"), hard: t("Advanced", "高级")})[game.difficulty] : ""}</span><span className="turn-label" aria-live="polite">{practice ? practiceFrame ? turn ? t(`${colorName(turn)} to move`, `轮到${colorName(turn)}`) : t("Game over", "对局结束") : t(`You play ${colorName(practice.question.turn)}`, `你执${colorName(practice.question.turn)}`) : mode === "review" ? null : playback ? t(`${colorName(playback.event.actor)} plays ${playback.event.coordinate}`, `${colorName(playback.event.actor)}下 ${playback.event.coordinate}`) : !loaded ? t("Preparing game…", "正在准备对局…") : turn ? mode === "play" ? turn === game?.human_color ? t("Your turn", "轮到你") : t("AI's turn", "轮到 AI") : t(`${colorName(turn)} to move`, `轮到${colorName(turn)}`) : t("Game over", "对局结束")}</span></div>
+        <div className="board-topline"><span className="turn-label">{variation ? t("Analysis line", "分析演示") : mode === "review" ? t("Game history", "对局记录") : game?.difficulty ? ({easy: t("Beginner", "初级"), medium: t("Intermediate", "中级"), hard: t("Advanced", "高级")})[game.difficulty] : ""}</span><span className="turn-label" aria-live="polite">{mode === "review" ? null : playback ? t(`${colorName(playback.event.actor)} plays ${playback.event.coordinate}`, `${colorName(playback.event.actor)}下 ${playback.event.coordinate}`) : !loaded ? t("Preparing game…", "正在准备对局…") : turn ? mode === "play" ? turn === game?.human_color ? t("Your turn", "轮到你") : t("AI's turn", "轮到 AI") : t(`${colorName(turn)} to move`, `轮到${colorName(turn)}`) : t("Game over", "对局结束")}</span></div>
         <div className="board-with-labels"><div className="column-labels" aria-hidden="true">{"abcdefgh".split("").map((column) => <span key={column}>{column}</span>)}</div><div className="board-rows"><div className="row-labels" aria-hidden="true">{Array.from({length: 8}, (_, row) => <span key={row}>{row + 1}</span>)}</div><div className="board" role="group" aria-label={t("Board, a1 is at the top left", "棋盘，左上角为 a1")}>{Array.from({length: 64}, (_, index) => {
           const row = Math.floor(index / 8), column = index % 8, coordinate = `${"abcdefgh"[column]}${row + 1}`, cell = board?.[row]?.[column] ?? ".";
-          const legal = practice ? !busy && !practice.feedback && (cell === "." || (practice.question.objective !== "reply_access" && !!practice.move && cell === practice.question.turn)) : canDefend ? !!variation?.exercise?.defenses.some((item) => item.coordinate === coordinate) : canMove && !!game?.legal_moves.includes(coordinate);
+          const legal = canDefend ? !!variation?.exercise?.defenses.some((item) => item.coordinate === coordinate) : canMove && !!game?.legal_moves.includes(coordinate);
           const recommended = mode === "play" && visibleHint?.recommended_move === coordinate;
-          const placed = practice ? (practiceFrame ? practiceFrame.coordinate === coordinate : practice.move === coordinate) : teachingFrame?.coordinate === coordinate || (!teachingFrame && lastMove?.coordinate === coordinate);
-          const flipped = practiceFrame?.flipped.includes(coordinate) || teachingFrame?.flipped.includes(coordinate) || (mode === "play" && playback?.phase === "flipped" && playback.flipped.includes(coordinate));
-          const target = practice ? (replyFeedback ? replyFeedback.witness.coordinate === coordinate : practice.question.objective === "reply_access" ? practice.alternative === coordinate : practice.anchor === coordinate) : !!teachingFrame && variation?.focus_square === coordinate;
-          const ray = practice ? (replyFeedback ? replyFeedback.witness.capture_line.includes(coordinate) : practice.feedback && "capture_line" in practice.feedback && practice.feedback.capture_line.includes(coordinate)) : comparisonRay?.includes(coordinate) || capturePreview && variation?.capture_lines?.some((line) => line.includes(coordinate));
-          return <button key={coordinate} className={`square ${recommended ? "recommended" : ""} ${placed ? "lesson-placed" : ""} ${flipped ? "lesson-flipped" : ""} ${target ? "lesson-target" : ""} ${ray ? "lesson-ray" : ""} ${flipped && playback ? "slow-flip" : ""}`} disabled={!legal} aria-label={`${coordinate}, ${cell === "X" ? t("black disc", "黑棋") : cell === "O" ? t("white disc", "白棋") : t("empty", "空位")}${legal ? practice ? t(", select square", "，选择格子") : t(", legal move", "，合法落点") : ""}${recommended ? t(", recommended move", "，推荐落点") : ""}${placed ? practice ? practiceFrame ? t(", displayed comparison move", "，当前对照走法") : t(", your selected move", "，你选择的落点") : t(", last move", "，最近落子") : ""}${target && practice ? replyFeedback ? t(", target reply", "，指定回应") : practice.question.objective === "reply_access" ? t(", your comparison move", "，你选择作对照的走法") : t(", your selected anchor", "，你选择的夹击另一端") : ""}${flipped ? t(", flipped this step", "，本步翻转") : ""}`} onClick={() => {
-            if (practice) {setPractice(practiceSelection(practice, coordinate, cell));}
-            else if (canDefend && variation?.exercise) {const defense = variation.exercise.defenses.find((item) => item.coordinate === coordinate); if (defense) setVariation({...variation, frame: 3, lesson_frames: defense.frames, capture_lines: defense.capture_lines, exercise: {...variation.exercise, attempt: coordinate}});}
+          const placed = teachingFrame?.coordinate === coordinate || (!teachingFrame && lastMove?.coordinate === coordinate);
+          const flipped = teachingFrame?.flipped.includes(coordinate) || (mode === "play" && playback?.phase === "flipped" && playback.flipped.includes(coordinate));
+          const target = !!teachingFrame && variation?.focus_square === coordinate;
+          const ray = comparisonRay?.includes(coordinate) || capturePreview && variation?.capture_lines?.some((line) => line.includes(coordinate));
+          return <button key={coordinate} className={`square ${recommended ? "recommended" : ""} ${placed ? "lesson-placed" : ""} ${flipped ? "lesson-flipped" : ""} ${target ? "lesson-target" : ""} ${ray ? "lesson-ray" : ""} ${flipped && playback ? "slow-flip" : ""}`} disabled={!legal} aria-label={`${coordinate}, ${cell === "X" ? t("black disc", "黑棋") : cell === "O" ? t("white disc", "白棋") : t("empty", "空位")}${legal ? t(", legal move", "，合法落点") : ""}${recommended ? t(", recommended move", "，推荐落点") : ""}${placed ? t(", last move", "，最近落子") : ""}${flipped ? t(", flipped this step", "，本步翻转") : ""}`} onClick={() => {
+            if (canDefend && variation?.exercise) {const defense = variation.exercise.defenses.find((item) => item.coordinate === coordinate); if (defense) setVariation({...variation, frame: 3, lesson_frames: defense.frames, capture_lines: defense.capture_lines, exercise: {...variation.exercise, attempt: coordinate}});}
             else if (game && canMove) void perform(async () => acceptGame(await api<GameState>(`/games/${game.game_id}/moves`, {coordinate, expected_revision: game.revision, request_id: requestId()})));
-          }}>{cell !== "." && <span className={`disc ${cell === "X" ? "black" : "white"}`} />}{cell === "." && legal && !practice && (canDefend || showLegalMoves) && <span className="legal-marker" />}{recommended && <span className="hint-ring" />}{mode === "play" && (placed || target || ray || recommended) && <span className="lesson-coordinate">{coordinate}</span>}</button>;
+          }}>{cell !== "." && <span className={`disc ${cell === "X" ? "black" : "white"}`} />}{cell === "." && legal && (canDefend || showLegalMoves) && <span className="legal-marker" />}{recommended && <span className="hint-ring" />}{mode === "play" && (placed || target || ray || recommended) && <span className="lesson-coordinate">{coordinate}</span>}</button>;
         })}</div></div></div>
-        {mode === "review" && game && !practice && <ReviewNavigation game={game} revision={historyRevision} select={selectPosition} />}
+        {mode === "review" && game && <ReviewNavigation game={game} revision={historyRevision} select={selectPosition} />}
       </section>
       <aside className="side-panel">
         <section className="score-card" aria-label={t("Disc count", "棋子数量")}><div className="score-line">{(["X", "O"] as Color[]).map((color) => <div key={color}><i className={`mini-disc ${color === "X" ? "black" : "white"}`} /><span>{colorName(color)}</span><strong>{board ? [...board.join("")].filter((cell) => cell === color).length : "—"}</strong></div>)}</div>{mode === "play" && game?.result && <p className="result-label">{game.result.winner === "draw" ? t("Draw", "和棋") : game.result.winner === game.human_color ? t("You win", "你获胜") : t("AI wins", "AI 获胜")}</p>}</section>
         {mode === "play" ? <section className="tips-card"><label className="speed-picker">{t("Move speed", "落子速度")}<select aria-label={t("Move speed", "落子速度")} value={speed} onChange={(event) => {const value = event.target.value as Speed; speedRef.current = value; setSpeed(value); localStorage.setItem("nemothello_speed", value);}}><option value="normal">{t("Normal", "普通")}</option><option value="slow">{t("Slow", "慢速")}</option></select></label>{game?.status === "active" && <><div className="card-heading"><span>{t("Legal moves", "可落子点")}</span><button className={`toggle ${showLegalMoves ? "on" : ""}`} role="switch" aria-checked={showLegalMoves} aria-label={t("Legal moves", "可落子点")} onClick={() => {const next = !showLegalMoves; setShowLegalMoves(next); localStorage.setItem("nemothello_legal_moves", String(next));}}><span /></button></div><div className="card-heading"><span>{t("Recommended move", "推荐点")}</span><button className={`toggle ${tips ? "on" : ""}`} role="switch" aria-checked={tips} aria-label={t("Move hints", "落点提示")} disabled={game.auto_play} onClick={() => {tipsRef.current = !tips; setTips(!tips);}}><span /></button></div></>}{hintError && <p role="alert">{hintError}<button onClick={() => setHintRetry((n) => n + 1)}>{t("Retry hint", "重试提示")}</button></p>}</section> : <section className="teaching-panel" aria-label={t("Teaching", "教学")}>
-          {practice ? <PracticePanel practice={practice} busy={busy} change={setPractice} check={checkPractice} close={() => {practiceOrigin.current = null; setPractice(null);}} /> : currentLesson && game ? <>{currentLesson.coaching_status !== "ready" && <button className="primary" disabled={busy || pendingLesson} onClick={() => teach()}>{pendingLesson ? t("Analyzing…", "分析中…") : currentLesson.coaching_status === "failed" || latestLessonTask?.task.status === "failed" ? t("Retry teaching", "重试教学") : t("Get coaching", "请教教练")}</button>}<ReviewCoach key={lessonKey(game.game_id, historyRevision)} game={game} lesson={currentLesson} variation={variation} pending={pendingLesson} busy={busy} showVariation={setVariation} ask={(text, view) => teach(text, view)} answer={questionAnswer} questionPending={!!latestQuestion && ["queued", "running"].includes(latestQuestion.task.status)} continueGame={(revision) => continueGame(revision, false)} replay={(revision) => continueGame(revision, true)} practice={beginPractice} findEarlier={findEarlier} revisit={selectPosition} />{currentLesson.coaching_status === "failed" && <p className="inline-error" role="alert">{currentLesson.coaching_error}</p>}</> : canTeach && game ? <LessonStart key={lessonKey(game.game_id, historyRevision)} played={nextEvent?.kind === "move"} busy={busy || pendingLesson} retry={latestLessonTask?.task.status === "failed"} start={(reflection) => teach(undefined, undefined, reflection)} /> : <p className="teaching-empty" role="status">{t("You have no played moves to review in this game yet.", "你在这盘对局中还没有落子可供复盘。")}</p>}
+          {currentLesson && game ? <>{currentLesson.coaching_status !== "ready" && <button className="primary" disabled={busy || pendingLesson} onClick={() => teach()}>{pendingLesson ? t("Analyzing…", "分析中…") : currentLesson.coaching_status === "failed" || latestLessonTask?.task.status === "failed" ? t("Retry teaching", "重试教学") : t("Get coaching", "请教教练")}</button>}<ReviewCoach key={lessonKey(game.game_id, historyRevision)} game={game} lesson={currentLesson} variation={variation} pending={pendingLesson} busy={busy} showVariation={setVariation} ask={(text, view) => teach(text, view)} answer={questionAnswer} questionPending={!!latestQuestion && ["queued", "running"].includes(latestQuestion.task.status)} continueGame={(revision) => continueGame(revision, false)} replay={(revision) => continueGame(revision, true)} findEarlier={findEarlier} revisit={selectPosition} />{currentLesson.coaching_status === "failed" && <p className="inline-error" role="alert">{currentLesson.coaching_error}</p>}</> : canTeach && game ? <LessonStart key={lessonKey(game.game_id, historyRevision)} played={nextEvent?.kind === "move"} busy={busy || pendingLesson} retry={latestLessonTask?.task.status === "failed"} start={(reflection) => teach(undefined, undefined, reflection)} /> : <p className="teaching-empty" role="status">{t("You have no played moves to review in this game yet.", "你在这盘对局中还没有落子可供复盘。")}</p>}
           {canTeach && currentLesson?.coaching_status !== "failed" && latestLessonTask?.task.error && <p role="alert" className="inline-error">{latestLessonTask.task.error.message}</p>}
           {canTeach && latestQuestion?.task.error && <p role="alert" className="inline-error">{latestQuestion.task.error.message}</p>}
           {branchTask && <div className="branch-status" role="status">{["queued", "running"].includes(branchTask.task.status) ? t("Replaying with hints…", "正在按提示回放…") : branchTask.task.error?.message}<button disabled={busy} onClick={() => void perform(async () => acceptGame(await api<GameState>(`/games/${branchTask.task.game_id}`)))}>{t("Open replay", "查看回放")}</button></div>}

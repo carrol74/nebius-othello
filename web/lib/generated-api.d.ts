@@ -244,24 +244,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/games/{game_id}/lessons/practice": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Practice */
-        get: operations["get_practice_games__game_id__lessons_practice_get"];
-        put?: never;
-        /** Answer Practice */
-        post: operations["answer_practice_games__game_id__lessons_practice_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/games/{game_id}/lessons/earlier": {
         parameters: {
             query?: never;
@@ -849,76 +831,6 @@ export interface components {
             /** Reflection */
             reflection?: string | null;
         };
-        /** PracticeAnswer */
-        PracticeAnswer: {
-            /** Request Id */
-            request_id: string;
-            /** Revision */
-            revision: number;
-            /** Lesson Move */
-            lesson_move: string;
-            /** Question Id */
-            question_id: string;
-            /** Move */
-            move: string;
-            /** Anchor */
-            anchor?: string | null;
-            /** Alternative */
-            alternative?: string | null;
-            /** Reason */
-            reason: string;
-        };
-        /** PracticeContext */
-        PracticeContext: {
-            /**
-             * Actor
-             * @enum {string}
-             */
-            actor: "X" | "O";
-            /** Coordinate */
-            coordinate: string;
-            /** Flipped */
-            flipped: string[];
-        };
-        /** PracticeFeedback */
-        PracticeFeedback: {
-            /** Legal */
-            legal: boolean;
-            /** Move Matches Goal */
-            move_matches_goal: boolean;
-            /** Anchor Matches */
-            anchor_matches: boolean;
-            /** Capture Line */
-            capture_line: string[];
-            /**
-             * Reason Reviewed
-             * @constant
-             */
-            reason_reviewed: false;
-            /** Rubric Version */
-            rubric_version: string;
-        };
-        /** PracticeQuestion */
-        PracticeQuestion: {
-            /** Question Id */
-            question_id: string;
-            /**
-             * Objective
-             * @enum {string}
-             */
-            objective: "anchor" | "recapture" | "reply";
-            /** Board */
-            board: string[];
-            /**
-             * Turn
-             * @enum {string}
-             */
-            turn: "X" | "O";
-            /** Context */
-            context: components["schemas"]["PracticeContext"][];
-            /** Rubric Version */
-            rubric_version: string;
-        };
         /** QuestionRequest */
         QuestionRequest: {
             /** Request Id */
@@ -964,60 +876,6 @@ export interface components {
             capture_line: string[];
             /** Changes */
             changes: components["schemas"]["ContrastSquare"][];
-        };
-        /** ReplyPracticeFeedback */
-        ReplyPracticeFeedback: {
-            /**
-             * Objective
-             * @constant
-             */
-            objective: "reply_access";
-            /** Legal */
-            legal: boolean;
-            /** Move Matches Goal */
-            move_matches_goal: boolean;
-            /** Alternative Legal */
-            alternative_legal: boolean;
-            /** Alternative Matches */
-            alternative_matches: boolean;
-            witness: components["schemas"]["ReplyOpportunity"];
-            added_reply: components["schemas"]["ReplyOpportunity"] | null;
-            blocking_frame: components["schemas"]["TeachingFrame"];
-            allowing_frame: components["schemas"]["TeachingFrame"];
-            /** Replies After Blocking */
-            replies_after_blocking: string[];
-            /** Replies After Allowing */
-            replies_after_allowing: string[];
-            /**
-             * Reason Reviewed
-             * @constant
-             */
-            reason_reviewed: false;
-            /** Rubric Version */
-            rubric_version: string;
-        };
-        /** ReplyPracticeQuestion */
-        ReplyPracticeQuestion: {
-            /** Question Id */
-            question_id: string;
-            /**
-             * Objective
-             * @constant
-             */
-            objective: "reply_access";
-            /** Board */
-            board: string[];
-            /**
-             * Turn
-             * @enum {string}
-             */
-            turn: "X" | "O";
-            /** Context */
-            context: components["schemas"]["PracticeContext"][];
-            /** Target */
-            target: string;
-            /** Rubric Version */
-            rubric_version: string;
         };
         /** Review */
         Review: {
@@ -1921,81 +1779,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TeachingComparison"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_practice_games__game_id__lessons_practice_get: {
-        parameters: {
-            query: {
-                revision: number;
-                move: string;
-            };
-            header: {
-                authorization: string;
-                "x-session-id": string;
-            };
-            path: {
-                game_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PracticeQuestion"] | components["schemas"]["ReplyPracticeQuestion"] | null;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    answer_practice_games__game_id__lessons_practice_post: {
-        parameters: {
-            query?: never;
-            header: {
-                authorization: string;
-                "x-session-id": string;
-            };
-            path: {
-                game_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PracticeAnswer"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PracticeFeedback"] | components["schemas"]["ReplyPracticeFeedback"];
                 };
             };
             /** @description Validation Error */

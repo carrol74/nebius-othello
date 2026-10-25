@@ -30,12 +30,7 @@ from nemothello.schemas import (
     MoveRequest,
     PositionLesson,
     PositionLessonRequest,
-    PracticeAnswer,
-    PracticeFeedback,
-    PracticeQuestion,
     QuestionRequest,
-    ReplyPracticeFeedback,
-    ReplyPracticeQuestion,
     Review,
     ReviewLookup,
     RevisionRequest,
@@ -244,24 +239,10 @@ def compare_position_lesson(game_id: str, owner: Owner, request: Request,
     return compare_lesson({"evidence": [saved["evidence"]]}, revision, move)
 
 
-@app.get("/games/{game_id}/lessons/practice", response_model=PracticeQuestion | ReplyPracticeQuestion | None)
-def get_practice(game_id: str, owner: Owner, request: Request,
-                 revision: Annotated[int, Query(ge=0)],
-                 move: Annotated[str, Query(pattern=r"^[a-h][1-8]$")]):
-    return request.app.state.games.practice_question(owner, game_id, revision, move)
-
-
 @app.get('/games/{game_id}/lessons/earlier', response_model=EarlierDecisionResult)
 def earlier_decision(game_id: str, owner: Owner, request: Request,
                      revision: Annotated[int, Query(ge=0)]):
     return request.app.state.games.earlier_decision(owner, game_id, revision)
-
-
-@app.post("/games/{game_id}/lessons/practice", response_model=PracticeFeedback | ReplyPracticeFeedback)
-def answer_practice(game_id: str, body: PracticeAnswer, owner: Owner, request: Request):
-    return request.app.state.games.answer_practice(owner, game_id, body.request_id, body.revision,
-                                                  body.lesson_move, body.question_id, body.move, body.anchor,
-                                                  body.reason, body.alternative)
 
 
 @app.post("/games/{game_id}/branches", response_model=GameState | Task)

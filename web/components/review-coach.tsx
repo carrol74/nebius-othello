@@ -15,7 +15,7 @@ export type Variation = {
   exercise?: {defenses: TeachingDefense[]; target: string; attempt: string | null};
 };
 
-export function ReviewCoach({game, lesson, variation, pending, busy, showVariation, ask, answer, questionPending, continueGame, replay, practice, findEarlier, revisit}: {
+export function ReviewCoach({game, lesson, variation, pending, busy, showVariation, ask, answer, questionPending, continueGame, replay, findEarlier, revisit}: {
   game: GameState;
   lesson: PositionLesson;
   variation: Variation | null;
@@ -27,7 +27,6 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
   questionPending: boolean;
   continueGame: (revision: number) => void;
   replay: (revision: number) => void;
-  practice: (move: string) => void;
   findEarlier: () => void;
   revisit: (revision: number) => void;
 }) {
@@ -91,8 +90,6 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
         <button onClick={() => showVariation({...variation, frame: 2, exercise: {...variation.exercise!, attempt: null}})}>{t("Try another defense", "换一步试试")}</button>
       </>}
     </>}
-    {!comparison.decision_contrast && activeMove.continuation_lesson && <button disabled={busy} onClick={() => practice(activeMove.coordinate)}>{t("Try this idea in another position", "换个局面试试")}</button>}
-    {comparison.decision_contrast && <button disabled={busy} onClick={() => practice(activeMove.coordinate)}>{t("Compare replies in another position", "换个局面对比回应")}</button>}
     {lesson.earlier_eligible && !answerIncludesEarlier && <div className="earlier-choice">
       {!earlier ? <button disabled={busy} onClick={findEarlier}>{busy ? t('Checking earlier choices…', '正在核验更早的选择…') : t('Could I have defended this corner earlier?', '更早能守住这个角吗？')}</button>
         : earlier.link ? <><p>{earlierDecisionText(earlier.link, earlierMoveNumber, locale)}</p><button disabled={busy} onClick={() => revisit(earlier.link!.revision)}>{t('Inspect that decision', '查看那次选择')}</button></>

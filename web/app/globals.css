@@ -60,9 +60,6 @@ p { line-height: 1.7; }
 .lesson-tools { margin-top: 16px; padding: 12px 0; border: 0; border-top: 1px solid var(--border); border-radius: 0; }
 .lesson-tools[open] summary { margin-bottom: 14px; }
 .position-coach .question-form { margin-top: 20px; }
-.practice-panel { font-size: 14px; }
-.practice-panel textarea { width: 100%; padding: 12px; margin-bottom: 12px; color: inherit; background: var(--background); border: 1px solid var(--border); border-radius: 8px; resize: vertical; }
-.practice-panel > button { margin-top: 18px; }
 .position-coach .question-form > div { gap: 8px; }
 .question-form input { min-width: 0; flex: 1; color: inherit; background: var(--background); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font: inherit; font-size: 13px; }
 .question-form input:focus-visible { outline: 2px solid var(--accent); }
@@ -192,11 +189,8 @@ select { max-width: 250px; padding: 10px; color: #e9eee4; background: var(--back
 .move-comparison strong { font-size: 15px; font-weight: 500; }
 .comparison-label { display: block; color: var(--muted); margin-top: 4px; font-size: 11px; }
 .coach-lesson { max-width: 72ch; margin: 24px 0; }
-.coach-lesson p, .practice-feedback p { font-size: 14px; }
+.coach-lesson p { font-size: 14px; }
 .coach-lesson .reflection-question { color: var(--accent); margin-top: 18px; }
-.practice-instruction { color: var(--accent); }
-.practice-feedback { padding: 14px 0; }
-.practice-feedback button { margin-top: 6px; }
 .variation-inspector { margin: 18px 0; }
 .variation-moves { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .variation-moves button[aria-pressed="true"] { border-color: var(--accent); }
@@ -225,7 +219,6 @@ textarea::placeholder { color: #7b8b7c; }
 .lesson-start { display: grid; gap: 16px; justify-items: start; }
 .lesson-start details { width: 100%; }
 .lesson-start textarea { margin-top: 12px; }
-.practice-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .branch-panel { display: flex; align-items: center; justify-content: flex-end; gap: 22px; background: #1c271b; }
 .branch-panel p { color: var(--muted); font-size: 13px; margin: 0 auto 0 0; }
 .branch-actions { display: flex; flex-wrap: wrap; gap: 10px; flex-shrink: 0; }

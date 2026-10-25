@@ -53,22 +53,6 @@ def case_position(case, bank):
     return position, context
 
 
-def select_practice(objective, game, used):
-    bank = practice_bank()
-    excluded = {position_key(game["initial_board"]), *(position_key(event["board"]) for event in game["history"])}
-    for case in bank["cases"]:
-        if case["objective"] != objective or case["id"] in used:
-            continue
-        position, context = case_position(case, bank)
-        if position_key(position.board) in excluded:
-            continue
-        return {"question_id": case["id"], "objective": objective, "board": list(position.board),
-                "turn": position.turn, "context": context,
-                "rubric_version": "reply-access-v1" if objective == "reply_access" else bank["rubric_version"],
-                **({"target": case["target"]} if objective == "reply_access" else {})}
-    return None
-
-
 def grade_practice(question, move, anchor, alternative=None):
     if question["objective"] == "reply_access":
         if alternative is None or anchor is not None:
