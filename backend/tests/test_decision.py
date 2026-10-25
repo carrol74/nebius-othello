@@ -81,8 +81,8 @@ def test_ties_and_unfavorable_best_moves_are_never_turned_into_mistakes(evidence
     opening = evidence[0]
     assessment = assess_decision(opening, opening["actual_move"])
     assert assessment["status"] == "tied_best" and assessment["position"] == "behind"
-    facts, _ = position_facts(enrich_evidence(opening))
-    assert "equally highest-rated" in facts[0]["text"]
+    facts, _, _ = position_facts(enrich_evidence(opening))
+    assert "equally good move" in facts[0]["text"]
     assert not any("mistake" in fact["text"] for fact in facts)
     context = review_context({"evidence": [opening], "key_moves": [opening], "human_color": opening["actor"],
                               "result": None, "hint_adoption": {"shown_turns": 0, "adopted_turns": 0}, "hints": []}, None, revision=0)
@@ -104,7 +104,7 @@ def test_a_best_game_move_has_single_move_facts_without_self_comparisons(evidenc
         assessment = assess_decision(item, item["actual_move"])
         if assessment["status"] not in ("best", "tied_best"):
             continue
-        facts, _ = position_facts(enrich_evidence(item))
+        facts, _, _ = position_facts(enrich_evidence(item))
         comparison = compare_lesson({"evidence": [item]}, item["revision"], item["actual_move"])
         assert comparison["reference_move"] is None
         assert comparison["recommended_move"] == item["actual_move"]

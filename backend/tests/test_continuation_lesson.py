@@ -1,14 +1,14 @@
 import json
+from itertools import pairwise
 from pathlib import Path
 
 import pytest
 
 from nemothello.coaching import review_context, verified_teaching_facts
-from nemothello.edax import Edax, PV_MOVE, RESULT_LINE
+from nemothello.edax import PV_MOVE, RESULT_LINE, Edax
 from nemothello.rules import apply_move, legal_moves, opponent, square
 from nemothello.schemas import TeachingMove
 from nemothello.teaching import compare_lesson, teach_move
-
 
 DIRECTORY = Path(__file__).parent / 'fixtures'
 
@@ -28,10 +28,10 @@ def test_native_ordinary_lesson_explains_a_disc_gained_as_a_later_capture_anchor
     assert choice['continuation_lesson'] == {
         'kind': 'anchor', 'frame_index': 3, 'capture_line': ['e2', 'e3', 'e4', 'e5'], 'recaptured': []}
     assert choice['frames'][2]['coordinate'] == 'c6'
-    fact = verified_teaching_facts(comparison, 8)[0]
+    fact = verified_teaching_facts(comparison, 8, comparison['actor'])[0]
     assert fact['id'] == 'p8:continuation_f5'
     assert 'disc gained at e5' in fact['text'] and 'later capture from e2' in fact['text']
-    assert 'not the reason for the full search evaluation' in fact['text']
+    assert 'one local mechanism' in fact['text']
 
 
 def test_all_native_continuation_lessons_use_verified_capture_lines_and_root_gains():
@@ -86,7 +86,7 @@ def test_native_edax_independently_accepts_the_ordinary_teaching_continuation():
     engine = Edax(executable, weights, '4.6', 1)
     try:
         engine._start()
-        for before, after in zip(frames, frames[1:]):
+        for before, after in pairwise(frames):
             engine._exchange(f"setboard {''.join(before['board'])} {before['turn']}")
             output = engine._exchange('hint 64')
             moves = set()

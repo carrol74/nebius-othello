@@ -156,7 +156,7 @@ def test_defensive_demonstrations_keep_the_comparison_goal_and_retain_other_corn
             assert len(better['frames']) <= 4
             last = better['frames'][-1]
             assert insight['target'] not in legal_moves(tuple(last['board']), opponent(item['actor']))
-        facts = verified_teaching_facts(comparison, item['revision'])
+        facts = verified_teaching_facts(comparison, item['revision'], comparison['actor'])
         assert not any(fact['id'] == f"p{item['revision']}:proof_{better['coordinate']}" for fact in facts)
         board = tuple(better['frames'][1]['board'])
         for threat in insight['other_threats']:
@@ -201,7 +201,7 @@ def test_corner_comparison_witnesses_replay_the_same_legal_sequence_on_both_boar
             if available[row][col] != blocked[row][col]:
                 expected.append({'coordinate': coordinate, 'available': available[row][col], 'blocked': blocked[row][col]})
         assert expected == opportunity['changes']
-        facts = verified_teaching_facts(comparison, comparison['revision'])
+        facts = verified_teaching_facts(comparison, comparison['revision'], comparison['actor'])
         assert any(fact['id'].endswith(':corner_contrast') and 'out of turn' in fact['text'] for fact in facts)
     assert checked >= 4
 
@@ -235,7 +235,7 @@ def test_real_api_verifies_and_caches_the_forced_history_link_without_a_model(tm
         assert task['status'] == 'succeeded', task
         assert task['result']['model_id'] is None and task['result']['usage'] is None
         lesson = connection.get(path, params={'revision': 58}).json()
-        assert lesson['earlier_eligible'] and 'previous_decision_revision' not in lesson
+        assert lesson['earlier_eligible']
         question = connection.post(path, json={'request_id': str(uuid4()), 'revision': 58,
                                                'question': 'Could I have defended this corner earlier?'}).json()
         deadline = time.monotonic() + 10
@@ -243,17 +243,15 @@ def test_real_api_verifies_and_caches_the_forced_history_link_without_a_model(tm
             time.sleep(0.1)
             question = connection.get(f"/tasks/{question['task_id']}").json()
         assert question['status'] == 'failed' and question['error']['code'] == 'REVIEW_NOT_CONFIGURED'
-        cached = connection.get(path, params={'revision': 58}).json()['earlier_decision']
-        assert cached['status'] == 'verified'
-        engine = app.state.games.review_engine_of(game)
-        engine.close()
+        assert connection.get(path, params={'revision': 58}).json()['earlier_decision'] is None
         response = connection.get(path + '/earlier', params={'revision': 58})
         assert response.status_code == 200, response.text
         result = response.json()
         assert result['status'] == 'verified' and result['link']['revision'] == 12
         assert [result['link'][key] for key in ('recorded_move', 'recommended_move', 'target')] == ['g7', 'd7', 'h8']
         assert len(result['link']['continuity']) == 47
-        assert engine.process is None
+        engine = app.state.games.review_engine_of(game)
+        engine.close()
         assert connection.get(path + '/earlier', params={'revision': 58}).json() == result
         assert engine.process is None
         assert connection.get(path, params={'revision': 58}).json()['earlier_decision'] == result

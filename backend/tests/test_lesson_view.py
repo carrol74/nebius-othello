@@ -43,7 +43,7 @@ def test_question_uses_alternative_root_and_the_selected_opponent_reply(review):
     assert "b3 line" in facts["p16:view"]["text"]
     assert "not this later board" in facts["p16:view"]["text"]
     plan = CoachingPlan(topic="comparison", selections=[Selection(
-        revision=16, fact_ids=["p16:score"], lesson_id="comparison")])
+        revision=16, fact_ids=["p16:mobility"], lesson_id="mobility")])
     rendered = render_plan(plan, context)
     assert any(fact["id"] == "p16:view" for fact in rendered["coaching"][0]["facts"])
 

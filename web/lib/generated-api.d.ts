@@ -416,6 +416,19 @@ export interface components {
              */
             score_kind: "estimate" | "exact";
         };
+        /** CoachToolCall */
+        CoachToolCall: {
+            /** Name */
+            name: string;
+            /** Arguments */
+            arguments: {
+                [key: string]: unknown;
+            } | string;
+            /** Fact Id */
+            fact_id: string | null;
+            /** Error */
+            error: string | null;
+        };
         /** CoachingCard */
         CoachingCard: {
             /** Revision */
@@ -425,6 +438,8 @@ export interface components {
             /** Lesson Id */
             lesson_id: string;
             lesson: components["schemas"]["Lesson"];
+            /** Text */
+            text?: string | null;
         };
         /** ContinuationLesson */
         ContinuationLesson: {
@@ -804,6 +819,10 @@ export interface components {
             hint_adoption: components["schemas"]["HintAdoption"];
             /** Coaching */
             coaching?: components["schemas"]["CoachingCard"][];
+            /** Answer */
+            answer?: string | null;
+            /** Tool Calls */
+            tool_calls?: components["schemas"]["CoachToolCall"][];
             /**
              * Coaching Status
              * @enum {string}
@@ -830,6 +849,12 @@ export interface components {
             view?: components["schemas"]["LessonView"] | null;
             /** Reflection */
             reflection?: string | null;
+            /**
+             * Language
+             * @default en
+             * @enum {string}
+             */
+            language: "en" | "zh";
         };
         /** QuestionRequest */
         QuestionRequest: {
@@ -837,6 +862,12 @@ export interface components {
             request_id: string;
             /** Question */
             question: string;
+            /**
+             * Language
+             * @default en
+             * @enum {string}
+             */
+            language: "en" | "zh";
         };
         /** QuestionResult */
         QuestionResult: {
@@ -856,6 +887,8 @@ export interface components {
             answer_facts?: components["schemas"]["ReviewFact"][];
             /** Topic */
             topic?: string | null;
+            /** Tool Calls */
+            tool_calls?: components["schemas"]["CoachToolCall"][];
             view?: components["schemas"]["LessonView"] | null;
             earlier_decision?: components["schemas"]["EarlierDecisionResult"] | null;
         };

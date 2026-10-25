@@ -1,4 +1,12 @@
-from nemothello.rules import DIRECTIONS, apply_move, coordinate, flips, legal_moves, opponent, square
+from nemothello.rules import (
+    DIRECTIONS,
+    apply_move,
+    coordinate,
+    flips,
+    legal_moves,
+    opponent,
+    square,
+)
 
 CORNERS = ("a1", "h1", "a8", "h8")
 

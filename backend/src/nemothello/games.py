@@ -291,10 +291,11 @@ class Games:
         return {key: value for key, value in task.items() if key != "inputs"}
 
     def create_review_task(
-        self, owner: str, game_id: str, request_id: str, question: str | None = None
+        self, owner: str, game_id: str, request_id: str, question: str | None = None,
+        language: str = "en",
     ) -> dict[str, Any]:
         kind = "question" if question else "review"
-        payload = {"operation": kind, "game_id": game_id, "question": question}
+        payload = {"operation": kind, "game_id": game_id, "question": question, "language": language}
 
         def operation(db: Connection) -> dict[str, Any]:
             game = self.store.get("game", game_id, owner, db)
@@ -313,7 +314,7 @@ class Games:
                                      and saved.get("coaching_status") == "ready"))]
                 if existing:
                     return self.public_task(existing[-1])
-            task = self.make_task(db, owner, game_id, kind, {"question": question})
+            task = self.make_task(db, owner, game_id, kind, {"question": question, "language": language})
             return self.public_task(task)
 
         return self.store.mutate(owner, request_id, payload, operation)
@@ -342,7 +343,6 @@ class Games:
         saved = next((item for item in self.store.list_records('lesson', owner, db)
                       if item['game_id'] == game['game_id'] and item['revision'] == revision), None)
         if saved:
-            saved.pop('previous_decision_revision', None)
             evidence = bind_recorded_move(game, saved['evidence'])
             if evidence != saved['evidence']:
                 context = lesson_context(game, evidence, self.store.list_records('hint', owner, db))
@@ -398,13 +398,15 @@ class Games:
         question: str | None = None,
         view: dict[str, Any] | None = None,
         reflection: str | None = None,
+        language: str = "en",
     ) -> dict[str, Any]:
         if reflection is not None:
             reflection = reflection.strip()
             if not reflection or len(reflection) > 1000 or question is not None:
                 raise AppError("LESSON_REFLECTION", "Include a short recollection with the initial lesson request", 422)
         payload = {"operation": "position_lesson", "game_id": game_id,
-                   "revision": revision, "question": question, "view": view, "reflection": reflection}
+                   "revision": revision, "question": question, "view": view, "reflection": reflection,
+                   "language": language}
 
         def operation(db: Connection) -> dict[str, Any]:
             game = self.store.get("game", game_id, owner, db)
@@ -442,7 +444,7 @@ class Games:
                 if existing:
                     return self.public_task(existing[-1])
             task = self.make_task(db, owner, game_id, "question" if question else "lesson",
-                                  {"revision": revision, "question": question,
+                                  {"revision": revision, "question": question, "language": language,
                                    "view": question_view if question else None,
                                    "reflection": saved.get("reflection") if question else recollection})
             return self.public_task(task)

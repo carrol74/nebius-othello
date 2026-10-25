@@ -40,8 +40,12 @@ class HintDisplay(RevisionRequest):
     hint_id: str
 
 
+Language = Literal["en", "zh"]
+
+
 class QuestionRequest(WriteRequest):
     question: str = Field(min_length=1, max_length=2000)
+    language: Language = "en"
 
 
 class LessonView(RequestModel):
@@ -54,6 +58,7 @@ class PositionLessonRequest(WriteRequest):
     question: str | None = Field(default=None, min_length=1, max_length=2000)
     view: LessonView | None = None
     reflection: str | None = Field(default=None, min_length=1, max_length=1000)
+    language: Language = "en"
 
     @model_validator(mode="after")
     def view_requires_question(self):
@@ -319,6 +324,14 @@ class CoachingCard(BaseModel):
     facts: list[ReviewFact]
     lesson_id: str
     lesson: Lesson
+    text: str | None = None
+
+
+class CoachToolCall(BaseModel):
+    name: str
+    arguments: dict[str, Any] | str
+    fact_id: str | None
+    error: str | None
 
 
 class ReviewEvidence(BaseModel):
@@ -432,6 +445,7 @@ class QuestionResult(BaseModel):
     format_version: str | None = None
     answer_facts: list[ReviewFact] = Field(default_factory=list)
     topic: str | None = None
+    tool_calls: list[CoachToolCall] = Field(default_factory=list)
     view: LessonView | None = None
     earlier_decision: EarlierDecisionResult | None = None
 
@@ -454,6 +468,8 @@ class PositionLesson(BaseModel):
     comparison: TeachingComparison
     hint_adoption: HintAdoption
     coaching: list[CoachingCard] = Field(default_factory=list)
+    answer: str | None = None
+    tool_calls: list[CoachToolCall] = Field(default_factory=list)
     coaching_status: Literal["not_requested", "pending", "ready", "failed"]
     coaching_error: str | None = None
     model_id: str | None = None

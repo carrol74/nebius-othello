@@ -1,4 +1,5 @@
 import json
+import re
 from functools import cache
 from pathlib import Path
 
@@ -132,10 +133,10 @@ def test_exact_native_scores_match_an_independent_complete_solver_and_keep_actua
     assert checked >= 12 and passes > 0 and actors == {'X', 'O'}
 
 
-def test_exact_review_facts_state_the_engine_terminal_convention():
+def test_exact_review_facts_describe_the_searched_finish_in_words():
     review = json.loads((FIXTURES / 'review-native-positions.json').read_text())['review']
     item = enrich_evidence(next(item for item in review['evidence'] if item['revision'] == 47))
-    facts, _ = position_facts(item)
-    for kind in ('score', 'endgame'):
-        text = next(fact['text'] for fact in facts if fact['id'] == f'p47:{kind}')
-        assert 'unfilled squares' in text and 'winner' in text
+    facts, _, _ = position_facts(item)
+    text = next(fact['text'] for fact in facts if fact['id'] == 'p47:endgame')
+    assert 'searched to the end of the game' in text and re.search(r'you finish (ahead|behind|level)', text)
+    assert not re.search(r'\d', re.sub(r'[a-h][1-8]', '', text))

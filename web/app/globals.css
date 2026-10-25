@@ -64,6 +64,10 @@ p { line-height: 1.7; }
 .question-form input { min-width: 0; flex: 1; color: inherit; background: var(--background); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font: inherit; font-size: 13px; }
 .question-form input:focus-visible { outline: 2px solid var(--accent); }
 .position-answer { white-space: pre-wrap; line-height: 1.8; border-left: 2px solid var(--accent); padding-left: 12px; margin-top: 16px; }
+.coach-note { max-width: 66ch; margin: 14px 0; line-height: 1.7; }
+.coach-note p { margin: 6px 0; }
+.coach-note .coach-meta { color: var(--muted); font-size: 12px; }
+.position-answer .asked { color: var(--muted); font-size: 13px; margin: 0; }
 .speed-picker { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 13px; }
 .tips-card .card-heading { margin-top: 20px; }
 .slow-flip .disc { animation: flip-disc 600ms ease-in-out; }

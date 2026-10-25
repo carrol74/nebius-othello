@@ -5,7 +5,11 @@ from pathlib import Path
 import pytest
 
 from nemothello.coaching import (
+    COORDINATE,
+    CoachingPlan,
+    Selection,
     enrich_evidence,
+    known_coordinates,
     plan_schema,
     render_plan,
     review_context,
@@ -32,7 +36,7 @@ def test_key_decisions_only_belong_to_human_and_tied_moves_are_not_losses(native
     initial = next(item for item in native_review["evidence"] if item["revision"] == 0)
     assert initial["score_loss"] == 0
     tied_context = review_context({**native_review, "evidence": [initial]}, None)
-    assert "equally highest-rated" in tied_context["positions"][0]["facts"][0]["text"]
+    assert "equally good move" in tied_context["positions"][0]["facts"][0]["text"]
 
 
 @pytest.mark.parametrize("index", range(22))
@@ -58,9 +62,11 @@ def test_question_only_retrieves_requested_position_and_discards_old_prose(nativ
     assert [position["revision"] for position in after["positions"]] == [16]
     assert "history" not in after
     facts = {item["id"]: item["text"] for item in after["positions"][0]["facts"]}
-    assert "Black played b1" in facts["p16:decision"]
-    assert "b1 scores -30 and b3 scores -10" in facts["p16:score"]
-    assert "9 legal replies; after b3, 10" in facts["p16:mobility"]
+    assert "you played b1" in facts["p16:decision"]
+    assert "Edax recommends b3 instead" in facts["p16:decision"] and "p16:score" not in facts
+    assert not any(key.endswith((".score", ".behind_best", ".frontier", ".discs")) for key in after["positions"][0]["values"])
+    assert "After b1, the opponent has 9 legal replies" in facts["p16:mobility"]
+    assert "After b3, the opponent has 10 legal replies" in facts["p16:mobility"]
 
 
 def test_displayed_hints_are_distinct_from_postgame_analysis(native_review):
@@ -73,33 +79,112 @@ def test_displayed_hints_are_distinct_from_postgame_analysis(native_review):
     assert not any(item["revision"] == 11 for item in facts)
 
 
-def test_coaching_plan_can_only_render_supplied_facts_and_supported_lessons(native_review):
+def question_plan(text, fact_ids, selections=()):
+    return json.dumps({"topic": "comparison", "answer": {"text": text, "fact_ids": fact_ids},
+                       "selections": list(selections)})
+
+
+def test_coach_text_is_filled_from_cited_evidence_values(native_review):
     context = review_context(native_review, "For position 16: explain mobility. Does it guarantee a win?")
-    raw = json.dumps({"topic": "comparison", "selections": [
-        {"revision": 16, "fact_ids": ["p16:mobility"], "lesson_id": "mobility"},
-    ]})
+    raw = question_plan(
+        "After b1 your opponent has {p16.b1.replies} replies; after b3, {p16.b3.replies}. "
+        "Following the recommendation still does not guarantee a win.", ["p16:mobility", "outcome_limit"],
+        [{"revision": 16, "fact_ids": ["p16:mobility"], "lesson_id": "mobility",
+          "text": "b1 leaves {p16.b1.replies} replies."}])
     response = render_plan(validate_plan(raw, context), context)
-    assert "9 legal replies; after b3, 10" in response["text"]
-    assert "does not guarantee a win" in response["text"]
-    assert "At position 16, Black played b1" in response["text"]
+    assert response["answer"] == ("After b1 your opponent has 9 replies; after b3, 10. "
+                                  "Following the recommendation still does not guarantee a win.")
+    assert response["coaching"][0]["text"] == "b1 leaves 9 replies."
+    assert response["text"].startswith(response["answer"])
     assert response["coaching"][0]["lesson_id"] == "mobility"
+    assert "At position 16, you played b1" in response["coaching"][0]["facts"][0]["text"]
+    assert {item["id"] for item in response["answer_facts"]} == {"p16:mobility", "outcome_limit"}
 
 
-@pytest.mark.parametrize("mutation", ["unknown_position", "unknown_fact", "unsupported_lesson", "new_prose", "duplicate_fact"])
+def test_dotted_inline_citations_are_recognized(native_review):
+    context = review_context(native_review, "局面16：b1 好吗？")
+    raw = question_plan("b1 之后对手有 {p16.b1.replies} 种应对（p16.mobility）。", [])
+    response = render_plan(validate_plan(raw, context), context)
+    assert response["answer"] == "b1 之后对手有 9 种应对。"
+    assert [item["id"] for item in response["answer_facts"]] == ["p16:mobility"]
+
+
+def test_chinese_text_may_use_ordinary_words_that_contain_numerals_or_corner_characters(native_review):
+    context = review_context(native_review, "局面16：b1 好吗？")
+    raw = question_plan("从你的视角看，这一步 b1 之后对手有 {p16.b1.replies} 种应对。", ["p16:mobility"])
+    assert render_plan(validate_plan(raw, context), context)["answer"] == "从你的视角看，这一步 b1 之后对手有 9 种应对。"
+
+
+def test_values_from_other_moves_add_their_source_fact(native_review):
+    context = review_context(native_review, "For position 16: what about g4?")
+    raw = question_plan("g4 leaves {p16.g4.replies} replies.", ["p16:mobility"])
+    facts = render_plan(validate_plan(raw, context), context)["answer_facts"]
+    assert any(item["id"] == "p16:g4" and "g4 is legal" in item["text"] for item in facts)
+
+
+@pytest.mark.parametrize("text,fact_ids", [
+    ("b1 leaves 9 replies.", ["p16:mobility"]),
+    ("b1 leaves nine replies.", ["p16:mobility"]),
+    ("b1 之后对手有九种应对。", ["p16:mobility"]),
+    ("b1 leaves {p16.b1.missing} replies.", ["p16:mobility"]),
+    ("b1 leaves {p16.b1.replies} replies.", ["adoption"]),
+    ("You ignored the hint here.", ["p16:mobility"]),
+    ("b1 gives away a corner.", ["p16:mobility"]),
+    ("按这个走法你一定能赢。", ["p16:mobility"]),
+    ("b1 的评分更低。", ["p16:mobility"]),
+    ("b3 is rated higher than b1.", ["p16:mobility"]),
+    ("After b1 White has more replies.", ["p16:mobility"]),
+    ("b1 之后白方的应对更多。", ["p16:mobility"]),
+    ("b1 之后白棋的应对更多。", ["p16:mobility"]),
+    ("玩家想用 b1 限制对手。", ["p16:mobility"]),
+    ("你的想法（review_recollection）没有实现。", ["p16:mobility"]),
+    ("Within three plies nothing changes.", ["p16:mobility"]),
+])
+def test_uncited_values_and_claims_are_rejected(native_review, text, fact_ids):
+    context = review_context(native_review, "For position 16: explain")
+    with pytest.raises(AppError) as error:
+        validate_plan(question_plan(text, fact_ids), context)
+    assert error.value.code == "COACH_UNGROUNDED"
+
+
+def test_long_square_lists_and_long_text_are_returned_for_rewriting(native_review):
+    context = review_context(native_review, "局面16：b1 好吗？", language="zh")
+    squares = "、".join(sorted(known_coordinates(context))[:4])
+    with pytest.raises(AppError, match="lists too many squares"):
+        validate_plan(question_plan(f"对手可以下 {squares}。", ["p16:mobility"]), context)
+    validate_plan(question_plan("对手可以下 b1、e1 或 a1。", ["p16:mobility"]), context)
+    with pytest.raises(AppError, match="keep it under 160"):
+        validate_plan(question_plan("这一步之后对手的应对更多。" * 14, ["p16:mobility"]), context)
+
+
+def test_coordinates_outside_the_evidence_are_rejected(native_review):
+    context = review_context(native_review, "For position 16: explain")
+    known = known_coordinates(context)
+    absent = next(f"{column}{row}" for column in "abcdefgh" for row in "12345678" if f"{column}{row}" not in known)
+    assert COORDINATE.fullmatch(absent)
+    with pytest.raises(AppError, match=absent):
+        validate_plan(question_plan(f"{absent} would be better.", ["p16:mobility"]), context)
+
+
+@pytest.mark.parametrize("mutation", ["unknown_position", "unknown_fact", "unsupported_lesson", "extra_key", "duplicate_fact", "empty_answer"])
 def test_invalid_plan_is_rejected_without_rendering_model_claims(native_review, mutation):
     context = review_context(native_review, "For position 16: explain")
-    selection = {"revision": 16, "fact_ids": ["p16:mobility"], "lesson_id": "mobility"}
-    plan = {"topic": "comparison", "selections": [selection]}
+    selection = {"revision": 16, "fact_ids": ["p16:mobility"], "lesson_id": "mobility",
+                 "text": "b1 leaves {p16.b1.replies} replies."}
+    plan = {"topic": "comparison", "answer": {"text": "Compare the replies.", "fact_ids": ["p16:mobility"]},
+            "selections": [selection]}
     if mutation == "unknown_position":
         selection["revision"] = 999
     elif mutation == "unknown_fact":
         selection["fact_ids"] = ["p16:guaranteed_win"]
     elif mutation == "unsupported_lesson":
         selection["lesson_id"] = "endgame"
-    elif mutation == "new_prose":
-        selection["text"] = "b3 was played and lost"
-    else:
+    elif mutation == "extra_key":
+        selection["claim"] = "b3 was played and lost"
+    elif mutation == "duplicate_fact":
         selection["fact_ids"] *= 2
+    else:
+        plan["answer"]["text"] = " "
     with pytest.raises(AppError) as error:
         validate_plan(json.dumps(plan), context)
     assert error.value.code == "REVIEW_PLAN_INVALID"
@@ -111,90 +196,77 @@ def test_missing_position_fails_before_model_request(native_review):
     assert error.value.code == "REVIEW_POSITION"
 
 
-def test_question_about_recorded_pass_uses_rules_without_inventing_scores(native_review):
+def test_recorded_pass_position_has_rule_facts_without_scores(native_review):
     event = next(item for item in native_review["history"] if item["kind"] == "pass")
     revision = event["revision"] - 1
     context = review_context(native_review, f"For position {revision}: why did I pass?")
-    plan = {"topic": "strategy", "selections": [{"revision": revision,
-            "fact_ids": [f"p{revision}:pass"], "lesson_id": "pass"}]}
-    response = render_plan(validate_plan(json.dumps(plan), context), context)
+    assert context["positions"][0]["values"] == {}
+    plan = CoachingPlan(topic="strategy", selections=[Selection(
+        revision=revision, fact_ids=[f"p{revision}:pass"], lesson_id="pass")])
+    response = render_plan(plan, context)
     assert "had no legal move and passed" in response["text"]
     assert not any(item["id"].endswith(":score") for item in response["coaching"][0]["facts"])
+
+
+@pytest.mark.parametrize("question", ["局面30：为什么黑方必须跳过回合？", "我采用过哪些提示？", "按照提示一定能赢吗？"])
+def test_every_question_requires_a_configured_model_before_any_request(native_review, question):
     model = Nemotron("", "https://unused.invalid/v1", "")
     try:
-        answer = model.explain(native_review, f"For position {revision}: why did I pass?")
-        assert answer["model_id"] is None and answer["usage"] is None
-        assert answer["text"].count("had no legal move and passed") == 1
+        with pytest.raises(AppError) as error:
+            model.explain(native_review, question)
+        assert error.value.code == "REVIEW_NOT_CONFIGURED"
     finally:
         model.close()
-
-
-@pytest.mark.parametrize("question,topic", [
-    ("局面30：为什么黑方必须跳过回合？", "strategy"),
-    ("我采用过哪些提示？", "hints"),
-    ("按照提示一定能赢吗？", "outcome"),
-])
-def test_chinese_factual_questions_need_no_model_call(native_review, question, topic):
-    model = Nemotron("", "https://unused.invalid/v1", "")
-    try:
-        response = model.explain(native_review, question)
-        assert response["model_id"] is None and response["usage"] is None
-        assert response["topic"] == topic
-        assert response["coaching"] or response["answer_facts"]
-    finally:
-        model.close()
-
-
-def test_chinese_question_extracts_adjacent_move_coordinates(native_review):
-    context = review_context(native_review, "局面16：为什么g4比b3差？")
-    assert len(context["positions"]) == 1 and context["positions"][0]["revision"] == 16
-    assert any(fact["id"] == "p16:g4" for fact in context["positions"][0]["facts"])
 
 
 def test_full_review_must_cover_all_selected_human_decisions(native_review):
     context = review_context(native_review, None)
-    selections = [{"revision": item["revision"], "fact_ids": [f"p{item['revision']}:score"],
-                   "lesson_id": "comparison"} for item in context["positions"]]
-    plan = {"topic": "review", "selections": selections}
+    selections = [{"revision": item["revision"], "fact_ids": [item["facts"][0]["id"]],
+                   "lesson_id": item["facts"][0]["topic"], "text": "Look at what this move changes."}
+                  for item in context["positions"]]
+    plan = {"topic": "review", "answer": {"text": "", "fact_ids": []}, "selections": selections}
     assert len(render_plan(validate_plan(json.dumps(plan), context), context)["coaching"]) == len(selections)
     incomplete = deepcopy(plan)
     incomplete["selections"].pop()
     with pytest.raises(AppError):
         validate_plan(json.dumps(incomplete), context)
+    silent = deepcopy(plan)
+    silent["selections"][0]["text"] = ""
+    with pytest.raises(AppError, match="no explanation"):
+        validate_plan(json.dumps(silent), context)
 
 
 def test_response_schema_limits_question_to_available_position_and_identifiers(native_review):
     context = review_context(native_review, "For position 16: compare b1 and b3")
     schema = plan_schema(context)
     assert "review" not in schema["properties"]["topic"]["enum"]
-    assert schema["properties"]["selections"]["maxItems"] == 1
-    properties = schema["$defs"]["Selection"]["properties"]
+    selections = schema["properties"]["selections"]
+    assert selections["maxItems"] == 1
+    properties = selections["items"]["properties"]
     assert properties["revision"]["enum"] == [16]
-    assert set(properties["fact_ids"]["items"]["enum"]) == {item["id"] for item in context["positions"][0]["facts"]}
-    plan = {"topic": "comparison", "selections": [
-        {"revision": 16, "fact_ids": ["p16:score"], "lesson_id": "comparison"},
-        {"revision": 16, "fact_ids": ["p16:mobility"], "lesson_id": "mobility"},
+    expected = {item["id"] for item in [*context["summary_facts"], *context["positions"][0]["facts"]]}
+    assert set(properties["fact_ids"]["items"]["enum"]) == expected
+    assert set(schema["properties"]["answer"]["properties"]["fact_ids"]["items"]["enum"]) == expected
+    plan = {"topic": "comparison", "answer": {"text": "Compare them.", "fact_ids": ["p16:decision"]}, "selections": [
+        {"revision": 16, "fact_ids": ["p16:decision"], "lesson_id": "comparison", "text": "Look at both moves."},
+        {"revision": 16, "fact_ids": ["p16:mobility"], "lesson_id": "mobility", "text": "Replies differ."},
     ]}
     with pytest.raises(AppError, match="repeated position"):
         validate_plan(json.dumps(plan), context)
 
 
 def test_opponent_questions_fail_before_model_requests(native_review):
-    model = Nemotron("", "https://unused.invalid/v1", "")
-    try:
-        with pytest.raises(AppError) as error:
-            model.explain(native_review, "For position 11: explain this move")
-        assert error.value.code == "REVIEW_OPPONENT"
-    finally:
-        model.close()
+    with pytest.raises(AppError) as error:
+        review_context(native_review, "For position 11: explain this move")
+    assert error.value.code == "REVIEW_OPPONENT"
 
 
-def test_saved_hint_facts_need_no_credentials_or_model_request(native_review):
-    model = Nemotron("", "https://unused.invalid/v1", "")
-    try:
-        response = model.explain(native_review, "Which displayed hints did I follow?")
-        assert response["model_id"] is None and response["usage"] is None
-        assert "played d3 and followed it" in response["text"]
-        assert "played b6 and chose a different move" in response["text"]
-    finally:
-        model.close()
+def test_one_rejection_lists_every_problem_with_its_text(native_review):
+    context = review_context(native_review, "For position 16: explain")
+    raw = question_plan("At position 16, b1 leaves 9 replies and {t9.text}.", ["p16:mobility"])
+    with pytest.raises(AppError) as error:
+        validate_plan(raw, context)
+    message = error.value.message
+    assert "unknown placeholder {t9.text}" in message
+    assert "writes 16 directly in 'At position 16, b1 leaves'" in message
+    assert "writes 9 directly" in message

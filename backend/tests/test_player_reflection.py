@@ -69,5 +69,6 @@ def test_player_claims_are_not_selectable_facts_or_truth_about_intent():
     assert position["player_reflection"] == reflection
     assert all(reflection["text"] not in fact["text"] for fact in position["facts"])
     with pytest.raises(AppError):
-        validate_plan(json.dumps({"topic": "review", "selections": [{"revision": 2,
-            "fact_ids": ["player_reflection"], "lesson_id": "comparison"}]}), context)
+        validate_plan(json.dumps({"topic": "review", "answer": {"text": "", "fact_ids": []}, "selections": [
+            {"revision": 2, "fact_ids": ["player_reflection"], "lesson_id": "comparison",
+             "text": "You owned that corner."}]}), context)

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useLocale } from "@/lib/locale";
-import { captureLineText, cornerName, defenseFeedback, lessonText, otherCornerText, stepText, teachingChoiceLabel, teachingFactText, teachingNote } from "@/lib/teaching-text";
+import { captureLineText, cornerName, defenseFeedback, lessonText, otherCornerText, stepText, teachingChoiceLabel, teachingNote } from "@/lib/teaching-text";
 import { comparisonRay, sameTeachingView, teachingView } from "@/lib/lesson-view";
-import { positionFactText } from "@/lib/review-text";
+import { toolCallText } from "@/lib/review-text";
 import { earlierDecisionText } from "@/lib/earlier-decision";
-import type { GameState, LessonView, PositionLesson, QuestionResult, TeachingDefense, TeachingFrame, TeachingMove } from "@/lib/types";
+import type { CoachToolCall, GameState, LessonView, PositionLesson, QuestionResult, TeachingDefense, TeachingFrame, TeachingMove } from "@/lib/types";
 
 export type Variation = {
   revision: number; coordinate: string; frame: number; lesson_frames: TeachingFrame[];
@@ -15,7 +15,16 @@ export type Variation = {
   exercise?: {defenses: TeachingDefense[]; target: string; attempt: string | null};
 };
 
-export function ReviewCoach({game, lesson, variation, pending, busy, showVariation, ask, answer, questionPending, continueGame, replay, findEarlier, revisit}: {
+function CoachNote({texts, calls}: {texts: string[]; calls: CoachToolCall[]}) {
+  const {locale, t} = useLocale();
+  const steps = calls.map((call) => toolCallText(call, locale)).filter((step): step is string => !!step);
+  return <div className="coach-note">
+    {texts.map((text) => <p key={text}>{text}</p>)}
+    {steps.length > 0 && <p className="coach-meta">{t("Checked with the rules engine: ", "用规则引擎核验：")}{steps.join(t("; ", "；"))}</p>}
+  </div>;
+}
+
+export function ReviewCoach({game, lesson, variation, pending, busy, showVariation, ask, answer, asked, questionPending, continueGame, replay, findEarlier, revisit}: {
   game: GameState;
   lesson: PositionLesson;
   variation: Variation | null;
@@ -24,6 +33,7 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
   showVariation: (value: Variation | null) => void;
   ask: (question: string, view: LessonView) => void;
   answer: QuestionResult | null;
+  asked: string | undefined;
   questionPending: boolean;
   continueGame: (revision: number) => void;
   replay: (revision: number) => void;
@@ -41,14 +51,10 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
   const frames = activeVariation?.lesson_frames ?? activeMove.frames;
   const view = teachingView(activeMove.coordinate, frames, activeVariation?.frame ?? 1);
   const currentAnswer = sameTeachingView(answer?.view, view) ? answer : null;
-  const referenceChoice = comparison.choices.find((choice) => choice.coordinate !== activeMove.coordinate);
-  const answerEntry = {...item, actual_move: activeMove.coordinate, is_played: activeMove.assessment.is_played,
-    recommended_move: referenceChoice?.coordinate ?? activeMove.coordinate,
-    score_loss: Math.abs(activeMove.score - (referenceChoice?.score ?? activeMove.score))};
-  const answerFacts = [...(currentAnswer?.answer_facts ?? []), ...(currentAnswer?.coaching ?? []).flatMap((card) => card.facts)]
-    .filter((fact) => fact.id !== "outcome_limit" && !["score", "endgame"].includes(fact.id.split(":")[1]));
-  const answerIncludesEarlier = answerFacts.some((fact) => fact.id.endsWith(':earlier_decision'));
+  const answerIncludesEarlier = [...(currentAnswer?.answer_facts ?? []), ...(currentAnswer?.coaching ?? []).flatMap((card) => card.facts)]
+    .some((fact) => fact.id.endsWith(':earlier_decision'));
   const earlier = currentAnswer?.earlier_decision ?? lesson.earlier_decision;
+  const coachTexts = [lesson.answer, ...(lesson.coaching ?? []).map((card) => card.text)].filter((text): text is string => !!text);
   const earlierMoveNumber = earlier?.link ? game.history.filter((event) => event.kind === 'move' && event.revision <= earlier.link!.revision).length + 1 : 0;
   const canDefend = !!variation?.exercise && variation.frame === 2 && !variation.exercise.attempt && !busy;
   const captureFrame = variation?.capture_frame ?? (variation ? variation.lesson_frames.length - 2 : -1);
@@ -69,6 +75,7 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
         {choice.coordinate}<span>{teachingChoiceLabel(choice, locale)}</span>
       </button>)}
     </div>
+    {coachTexts.length > 0 && <CoachNote texts={coachTexts} calls={lesson.tool_calls ?? []} />}
     <div className="concrete-lesson">{lessonText(comparison, activeMove, locale).map((text, index) => <p key={text} className={index === 0 ? "lesson-question" : undefined}>{text}</p>)}</div>
     {!variation && <button onClick={() => {
       const frame = comparison.insight.witness ? comparison.insight.witness.prefix.length + 1
@@ -101,17 +108,14 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
       focus_square: activeMove.target, capture_lines: activeMove.capture_lines,
       exercise: {defenses: activeMove.defense_lines, target: activeMove.target!, attempt: null},
     })}>{t("Try defending", "试着防守")}</button>}
-    {pending && <p className="muted" role="status">{t("The coach is choosing what to focus on…", "正在为这个局面选择讲解重点…")}</p>}
+    {pending && <p className="muted" role="status">{t("Nemotron is checking this position…", "Nemotron 正在核验这个局面…")}</p>}
+    {currentAnswer && <div className="position-answer" role="status">
+      {asked && <p className="asked">{t("You asked: ", "你问：")}{asked}</p>}
+      <CoachNote texts={[currentAnswer.answer]} calls={currentAnswer.tool_calls ?? []} />
+    </div>}
     <form className="question-form" onSubmit={(event) => {event.preventDefault(); if (question.trim()) {ask(question.trim(), view); setQuestion("");}}}>
       <div><input aria-label={t("Ask about this position", "询问这个局面")} value={question} maxLength={1800} onChange={(event) => setQuestion(event.target.value)} placeholder={t("Why this move? Ask a question…", "对这一步有疑问？继续提问…")} /><button disabled={busy || questionPending || !question.trim()}>{questionPending ? t("Answering…", "回答中…") : t("Ask", "提问")}</button></div>
     </form>
-    {currentAnswer && <div className="position-answer" role="status">{currentAnswer.topic === "unsupported" ? t("The saved evidence cannot answer that question. Ask about this position or its moves.", "已保存的证据无法回答这个问题，可以询问当前局面和落点。") : !answerFacts.length ? t("Play this position to the end in a branch, then compare the results.", "从这个局面创建分支，下到终局后再比较结果。") : [...new Map(answerFacts.map((fact) => [fact.id, fact])).values()].map((fact) => <p key={fact.id}>{
-      fact.id.endsWith(":earlier_decision") && earlier?.link ? earlierDecisionText(earlier.link, earlierMoveNumber, locale)
-        : fact.id.endsWith(":view") ? t(`${view.selected_move} continuation: ${view.line.length ? stepText(frames[view.line.length], locale) : "before the move"}`, `${view.selected_move} 走法：${view.line.length ? stepText(frames[view.line.length], locale) : "落子前的局面"}`)
-        : fact.id === "result" && game.result ? t(`Final: Black ${game.result.black_count}, White ${game.result.white_count}.`, `终局：黑方 ${game.result.black_count}，白方 ${game.result.white_count}。`)
-        : fact.id === "adoption" ? t(`You followed ${lesson.hint_adoption.adopted_turns} of ${lesson.hint_adoption.shown_turns} displayed hints.`, `显示过提示的 ${lesson.hint_adoption.shown_turns} 个回合中，你采用了 ${lesson.hint_adoption.adopted_turns} 次提示。`)
-        : teachingFactText(comparison, fact.id, locale) ?? positionFactText(fact, answerEntry, locale, activeMove.assessment)
-    }</p>)}</div>}
     {answerIncludesEarlier && earlier?.link && <button disabled={busy} onClick={() => revisit(earlier.link!.revision)}>{t('Inspect that decision', '查看那次选择')}</button>}
     <details className="lesson-tools"><summary>{t("Play from this position", "从这个局面继续")}</summary><div className="branch-actions"><button disabled={busy} onClick={() => continueGame(lesson.revision)}>{t("Play a new branch", "创建对局分支")}</button><button disabled={busy} onClick={() => replay(lesson.revision)}>{t("Replay with hints", "按提示回放")}</button></div></details>
     <p className="teaching-note">{teachingNote(locale)}</p>

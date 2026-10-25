@@ -4,11 +4,10 @@ from pathlib import Path
 import pytest
 
 from nemothello.coaching import verified_teaching_facts
-from nemothello.edax import Edax, PV_MOVE, RESULT_LINE
+from nemothello.edax import PV_MOVE, RESULT_LINE, Edax
 from nemothello.rules import apply_move, legal_moves, opponent, square
 from nemothello.schemas import TeachingComparison
 from nemothello.teaching import compare_lesson
-
 
 DIRECTORY = Path(__file__).parent / 'fixtures'
 
@@ -29,7 +28,7 @@ def test_equal_reply_counts_do_not_hide_the_actual_opportunity_tradeoff(review):
     assert contrast['added_reply']['capture_line'] == ['f5', 'e5', 'd5']
     assert [frame['coordinate'] for frame in comparison['choices'][0]['frames']] == [None, 'b6', 'b5']
     assert [frame['coordinate'] for frame in comparison['choices'][1]['frames']] == [None, 'e6', 'f5']
-    facts = verified_teaching_facts(comparison, 2)
+    facts = verified_teaching_facts(comparison, 2, comparison['actor'])
     fact = next(fact for fact in facts if fact['id'] == 'p2:decision_contrast')
     assert 'illegal after e6' in fact['text'] and 'illegal after b6' in fact['text']
     assert 'fewer replies alone do not imply a better move' in fact['text']

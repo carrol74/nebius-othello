@@ -1541,6 +1541,56 @@
         ],
         "title": "Candidate"
       },
+      "CoachToolCall": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "arguments": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Arguments"
+          },
+          "fact_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fact Id"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "arguments",
+          "fact_id",
+          "error"
+        ],
+        "title": "CoachToolCall"
+      },
       "CoachingCard": {
         "properties": {
           "revision": {
@@ -1560,6 +1610,17 @@
           },
           "lesson": {
             "$ref": "#/components/schemas/Lesson"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
           }
         },
         "type": "object",
@@ -2724,6 +2785,24 @@
             "type": "array",
             "title": "Coaching"
           },
+          "answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer"
+          },
+          "tool_calls": {
+            "items": {
+              "$ref": "#/components/schemas/CoachToolCall"
+            },
+            "type": "array",
+            "title": "Tool Calls"
+          },
           "coaching_status": {
             "type": "string",
             "enum": [
@@ -2838,6 +2917,15 @@
               }
             ],
             "title": "Reflection"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "zh"
+            ],
+            "title": "Language",
+            "default": "en"
           }
         },
         "additionalProperties": false,
@@ -2861,6 +2949,15 @@
             "maxLength": 2000,
             "minLength": 1,
             "title": "Question"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "zh"
+            ],
+            "title": "Language",
+            "default": "en"
           }
         },
         "additionalProperties": false,
@@ -2935,6 +3032,13 @@
               }
             ],
             "title": "Topic"
+          },
+          "tool_calls": {
+            "items": {
+              "$ref": "#/components/schemas/CoachToolCall"
+            },
+            "type": "array",
+            "title": "Tool Calls"
           },
           "view": {
             "anyOf": [

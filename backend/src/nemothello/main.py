@@ -200,7 +200,8 @@ def get_review(game_id: str, owner: Owner, request: Request):
 
 @app.post("/games/{game_id}/review/questions", response_model=Task)
 def question(game_id: str, body: QuestionRequest, owner: Owner, request: Request):
-    return request.app.state.games.create_review_task(owner, game_id, body.request_id, body.question)
+    return request.app.state.games.create_review_task(owner, game_id, body.request_id, body.question,
+                                                      body.language)
 
 
 @app.get("/games/{game_id}/review/lesson", response_model=TeachingComparison)
@@ -219,7 +220,7 @@ def create_position_lesson(game_id: str, body: PositionLessonRequest, owner: Own
     return request.app.state.games.create_position_lesson_task(
         owner, game_id, body.request_id, body.revision, body.question,
         body.view.model_dump() if body.view is not None else None,
-        body.reflection,
+        body.reflection, body.language,
     )
 
 

@@ -6,7 +6,7 @@ import pytest
 from nemothello.board_features import CORNERS
 from nemothello.coaching import verified_teaching_facts
 from nemothello.corner_proof import prove_corner
-from nemothello.edax import Edax, PV_MOVE, RESULT_LINE
+from nemothello.edax import PV_MOVE, RESULT_LINE, Edax
 from nemothello.rules import apply_move, legal_moves, opponent
 from nemothello.schemas import CornerProof
 from nemothello.teaching import compare_lesson
@@ -68,10 +68,10 @@ def test_contrast_uses_the_same_attack_and_gives_model_bounded_evidence():
     worse, better = comparison["choices"]
     assert worse["opponent_reply"] == better["frames"][2]["coordinate"] == "e1"
     assert better["frames"][3]["coordinate"] == "b1"
-    facts = verified_teaching_facts(comparison, 16)
+    facts = verified_teaching_facts(comparison, 16, comparison['actor'])
     assert any("every legal first reply" in fact["text"] for fact in facts)
     assert any("not permanent corner safety" in fact["text"] for fact in facts)
-    assert all("full search-score difference" in fact["text"] for fact in facts if ":proof_" in fact["id"])
+    assert all("within three plies" in fact["text"] for fact in facts if ":proof_" in fact["id"])
 
 
 def test_native_edax_independently_checks_forcing_and_defending_certificates():

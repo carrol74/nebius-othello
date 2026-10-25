@@ -12,6 +12,7 @@ export type LessonView = components["schemas"]["LessonView"];
 export type ReplyOpportunity = components["schemas"]["ReplyOpportunity"];
 export type EarlierDecisionResult = components["schemas"]["EarlierDecisionResult"];
 export type EarlierDecisionLink = components["schemas"]["EarlierDecisionLink"];
+export type CoachToolCall = components["schemas"]["CoachToolCall"];
 
 export type Color = "X" | "O";
 export type Difficulty = "easy" | "medium" | "hard";

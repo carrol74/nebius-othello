@@ -189,7 +189,6 @@ def test_real_forced_lesson_task_succeeds_without_model_and_avoids_an_unverified
         result = store.get("task", task["task_id"], "owner")
         assert result["status"] == "succeeded", result["error"]
         assert result["result"]["model_id"] is None and result["result"]["usage"] is None
-        assert 'previous_decision_revision' not in result['result']
         assert games.position_lesson("owner", game["game_id"], 58)['earlier_eligible']
         cached = store.get("lesson", f"{game['game_id']}:58", "owner")
         assert cached["reflection"] == recollection
@@ -217,9 +216,8 @@ def test_real_forced_lesson_task_succeeds_without_model_and_avoids_an_unverified
         assert queued["inputs"]["reflection"] == recollection
         tasks.process("owner", queued)
         answered = store.get("task", question["task_id"], "owner")
-        assert answered["status"] == "succeeded", answered["error"]
-        assert answered["result"]["view"] == view
-        assert answered["result"]["model_id"] is None
+        assert answered["status"] == "failed"
+        assert answered["error"]["code"] == "REVIEW_NOT_CONFIGURED"
         assert engine.process is None
         independent, evidence = tmp_path / "independent.json", tmp_path / "evidence.json"
         subprocess.run([sys.executable, str(root / "scripts/export_teaching_cases.py"),
