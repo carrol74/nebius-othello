@@ -1,8 +1,19 @@
-import type { LessonView, PositionLesson, TeachingComparison, TeachingFrame } from "./types";
+import type { LessonView, PositionLesson, TeachingComparison, TeachingFrame, TeachingMove } from "./types";
 
-export function comparisonRay(comparison: TeachingComparison) {
+export function comparisonRay(comparison: TeachingComparison, choice: TeachingMove) {
   const witness = comparison.insight.witness;
-  return witness ? {frame: witness.prefix.length + 1, squares: witness.opportunity.capture_line} : undefined;
+  if (witness) return {frame: witness.prefix.length + 1, squares: witness.opportunity.capture_line};
+  // Ordinary moves highlight their flipped discs that touch an empty square
+  const plain = choice.kind === "line" && !comparison.decision_contrast && !choice.continuation_lesson;
+  return plain && choice.concepts.exposed.length ? {frame: 1, squares: choice.concepts.exposed} : undefined;
+}
+
+export function keyFrame(comparison: TeachingComparison, choice: TeachingMove): number | null {
+  const last = choice.frames.length - 1;
+  const frame = comparison.insight.witness ? comparison.insight.witness.prefix.length + 1
+    : choice.continuation_lesson ? choice.continuation_lesson.frame_index - 1
+    : choice.capture_lines?.length ? last - 1 : null;
+  return frame === null ? null : Math.min(frame, last);
 }
 
 export function coachFocus(lesson: PositionLesson) {

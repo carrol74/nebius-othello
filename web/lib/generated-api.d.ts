@@ -445,14 +445,14 @@ export interface components {
         ContinuationLesson: {
             /**
              * Kind
-             * @enum {string}
+             * @constant
              */
-            kind: "anchor" | "recapture" | "reply";
+            kind: "recapture";
             /**
              * Frame Index
-             * @enum {integer}
+             * @constant
              */
-            frame_index: 2 | 3;
+            frame_index: 2;
             /** Capture Line */
             capture_line: string[];
             /** Recaptured */
@@ -1116,6 +1116,19 @@ export interface components {
             choices: components["schemas"]["TeachingMove"][];
             decision_contrast?: components["schemas"]["DecisionContrast"] | null;
         };
+        /** TeachingConcepts */
+        TeachingConcepts: {
+            /** Exposed */
+            exposed: string[];
+            /** Inner Flips */
+            inner_flips: number;
+            /** Stable Gained */
+            stable_gained: string[];
+            /** Safe Replies */
+            safe_replies: number;
+            /** Unsafe Replies */
+            unsafe_replies: string[];
+        };
         /** TeachingDefense */
         TeachingDefense: {
             /** Coordinate */
@@ -1203,6 +1216,7 @@ export interface components {
             assessment: components["schemas"]["DecisionAssessment"];
             corner_proof?: components["schemas"]["CornerProof"] | null;
             continuation_lesson?: components["schemas"]["ContinuationLesson"] | null;
+            concepts: components["schemas"]["TeachingConcepts"];
         };
         /** ThreatObservation */
         ThreatObservation: {

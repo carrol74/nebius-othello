@@ -1636,19 +1636,12 @@
         "properties": {
           "kind": {
             "type": "string",
-            "enum": [
-              "anchor",
-              "recapture",
-              "reply"
-            ],
+            "const": "recapture",
             "title": "Kind"
           },
           "frame_index": {
             "type": "integer",
-            "enum": [
-              2,
-              3
-            ],
+            "const": 2,
             "title": "Frame Index"
           },
           "capture_line": {
@@ -3788,6 +3781,53 @@
         ],
         "title": "TeachingComparison"
       },
+      "TeachingConcepts": {
+        "properties": {
+          "exposed": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Exposed"
+          },
+          "inner_flips": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Inner Flips"
+          },
+          "stable_gained": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Stable Gained"
+          },
+          "safe_replies": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Safe Replies"
+          },
+          "unsafe_replies": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Unsafe Replies"
+          }
+        },
+        "type": "object",
+        "required": [
+          "exposed",
+          "inner_flips",
+          "stable_gained",
+          "safe_replies",
+          "unsafe_replies"
+        ],
+        "title": "TeachingConcepts"
+      },
       "TeachingDefense": {
         "properties": {
           "coordinate": {
@@ -4146,6 +4186,9 @@
                 "type": "null"
               }
             ]
+          },
+          "concepts": {
+            "$ref": "#/components/schemas/TeachingConcepts"
           }
         },
         "type": "object",
@@ -4162,7 +4205,8 @@
           "opponent_corner_moves_after_reply",
           "line_source",
           "frames",
-          "assessment"
+          "assessment",
+          "concepts"
         ],
         "title": "TeachingMove"
       },

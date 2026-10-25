@@ -1188,16 +1188,15 @@
         "capture_lines": [],
         "line_source": "engine",
         "corner_proof": null,
-        "continuation_lesson": {
-          "kind": "anchor",
-          "frame_index": 3,
-          "capture_line": [
-            "e2",
-            "e3",
-            "e4",
+        "continuation_lesson": null,
+        "concepts": {
+          "exposed": [
             "e5"
           ],
-          "recaptured": []
+          "inner_flips": 1,
+          "stable_gained": [],
+          "safe_replies": 10,
+          "unsafe_replies": []
         },
         "frames": [
           {
@@ -1250,25 +1249,6 @@
             "actor": "O",
             "flipped": [
               "d5"
-            ]
-          },
-          {
-            "board": [
-              "........",
-              "..OXX...",
-              "..XOX...",
-              ".X.XX...",
-              "..XOXX..",
-              "..OX....",
-              "........",
-              "........"
-            ],
-            "turn": "O",
-            "coordinate": "e2",
-            "actor": "X",
-            "flipped": [
-              "e3",
-              "e4"
             ]
           }
         ],

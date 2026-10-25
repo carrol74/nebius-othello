@@ -94,6 +94,15 @@ def test_a_corner_proof_shared_by_both_moves_is_not_the_focus():
     assert not any(key.startswith("p20:proof_") for key in position["focus"])
 
 
+def test_lesson_positions_rank_verified_board_reasons():
+    focus = {revision: review_context(lesson_input(revision), None, revision)["positions"][0]["focus"]
+             for revision in (2, 16, 24, 26)}
+    assert focus[2][0] == "p2:decision_contrast"
+    assert focus[16][0] == "p16:corner_contrast"
+    assert focus[24] == ["p24:decision_contrast", "p24:continuation_g3", "p24:quiet"]
+    assert focus[26] == ["p26:decision_contrast"]
+
+
 def test_coaching_must_build_on_the_first_focus_fact():
     context = review_context(lesson_input(24), None, 24)
     plan = {"topic": "review", "answer": {"text": "", "fact_ids": []}, "selections": [

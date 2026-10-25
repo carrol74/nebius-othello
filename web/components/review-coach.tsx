@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocale } from "@/lib/locale";
-import { captureLineText, cornerName, defenseFeedback, lessonText, otherCornerText, stepText, teachingChoiceLabel, teachingNote } from "@/lib/teaching-text";
-import { comparisonRay, sameTeachingView, teachingView } from "@/lib/lesson-view";
+import { captureLineText, cornerName, defenseFeedback, lessonText, stepText, teachingChoiceLabel, teachingNote } from "@/lib/teaching-text";
+import { coachFocus, comparisonRay, keyFrame, sameTeachingView, teachingView } from "@/lib/lesson-view";
 import { toolCallText } from "@/lib/review-text";
 import { earlierDecisionText } from "@/lib/earlier-decision";
 import type { CoachToolCall, GameState, LessonView, PositionLesson, QuestionResult, TeachingDefense, TeachingFrame, TeachingMove } from "@/lib/types";
@@ -12,6 +12,7 @@ export type Variation = {
   focus_square?: string | null; capture_lines?: string[][];
   capture_frame?: number;
   comparison_ray?: {frame: number; squares: string[]};
+  key_frame?: number | null;
   exercise?: {defenses: TeachingDefense[]; target: string; attempt: string | null};
 };
 
@@ -55,6 +56,9 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
     .some((fact) => fact.id.endsWith(':earlier_decision'));
   const earlier = currentAnswer?.earlier_decision ?? lesson.earlier_decision;
   const coachTexts = [lesson.answer, ...(lesson.coaching ?? []).map((card) => card.text)].filter((text): text is string => !!text);
+  // The fixed lesson only shows until Nemotron's explanation is ready
+  const coached = lesson.coaching_status === "ready" && coachTexts.length > 0;
+  const focus = coached ? coachFocus(lesson) : null;
   const earlierMoveNumber = earlier?.link ? game.history.filter((event) => event.kind === 'move' && event.revision <= earlier.link!.revision).length + 1 : 0;
   const canDefend = !!variation?.exercise && variation.frame === 2 && !variation.exercise.attempt && !busy;
   const captureFrame = variation?.capture_frame ?? (variation ? variation.lesson_frames.length - 2 : -1);
@@ -62,7 +66,7 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
 
   function explore(choice: TeachingMove, frame = 1) {
     showVariation({revision: lesson.revision, coordinate: choice.coordinate, frame,
-      comparison_ray: comparisonRay(comparison),
+      comparison_ray: comparisonRay(comparison, choice), key_frame: keyFrame(comparison, choice),
       assessment: choice.assessment, lesson_frames: choice.frames, focus_square: choice.target,
       capture_lines: choice.continuation_lesson ? [choice.continuation_lesson.capture_line] : choice.capture_lines,
       capture_frame: choice.continuation_lesson ? choice.continuation_lesson.frame_index - 1 : undefined});
@@ -76,19 +80,16 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
       </button>)}
     </div>
     {coachTexts.length > 0 && <CoachNote texts={coachTexts} calls={lesson.tool_calls ?? []} />}
-    <div className="concrete-lesson">{lessonText(comparison, activeMove, locale).map((text, index) => <p key={text} className={index === 0 ? "lesson-question" : undefined}>{text}</p>)}</div>
-    {!variation && <button onClick={() => {
-      const frame = comparison.insight.witness ? comparison.insight.witness.prefix.length + 1
-        : activeMove.continuation_lesson ? activeMove.continuation_lesson.frame_index - 1 : 2;
-      explore(activeMove, Math.min(frame, activeMove.frames.length - 1));
-    }}>{t("Explore continuation", "查看推演")}</button>}
+    {!coached && <div className="concrete-lesson">{lessonText(comparison, activeMove, locale).map((text, index) => <p key={text} className={index === 0 ? "lesson-question" : undefined}>{text}</p>)}</div>}
+    {!variation && <button onClick={() => focus ? explore(focus.choice, focus.frame) : explore(activeMove)}>{(focus?.choice ?? activeMove).frames.length > 2 ? t("Explore continuation", "查看推演") : t("Show on the board", "在棋盘上看")}</button>}
     {variation && <>
       {canDefend && variation.exercise && <p role="status">{t(`Choose a defense against the ${cornerName(variation.exercise.target, locale)} capture.`, `选择一步，试着守住${cornerName(variation.exercise.target, locale)}。`)}</p>}
-      {capturePreview && variation.capture_lines && <p className="capture-explanation">{captureLineText(variation.capture_lines, variation.lesson_frames[captureFrame + 1].actor!, locale)}</p>}
-      {otherCornerText(comparison, locale) && <p className="other-corner">{otherCornerText(comparison, locale)}</p>}
+      <p className="step-text">{stepText(variation.lesson_frames[variation.frame], comparison.actor, locale)}</p>
+      {capturePreview && variation.exercise?.attempt && variation.capture_lines && <p className="capture-explanation">{captureLineText(variation.capture_lines, variation.lesson_frames[captureFrame + 1].actor!, comparison.actor, locale)}</p>}
       <div className="line-controls" role="group" aria-label={t("Teaching continuation", "教学推演")}>
-        <button disabled={canDefend || variation.frame === 0} onClick={() => showVariation({...variation, frame: variation.frame - 1})}>{t("Previous step", "上一步")}</button>
-        <span>{variation.frame}/{variation.lesson_frames.length - 1}</span>
+        <button disabled={canDefend || variation.frame === 1} onClick={() => showVariation({...variation, frame: variation.frame - 1})}>{t("Previous step", "上一步")}</button>
+        <span>{variation.frame}/{variation.lesson_frames.length - 1}{variation.key_frame === variation.frame ? t(" · key step", " · 关键一步")
+          : variation.frame === 1 && variation.key_frame ? t(` · key step: ${variation.key_frame}`, ` · 关键在第 ${variation.key_frame} 步`) : ""}</span>
         <button disabled={canDefend || variation.frame === variation.lesson_frames.length - 1} onClick={() => showVariation({...variation, frame: variation.frame + 1})}>{variation.exercise?.attempt && variation.frame === 3 ? t("See the reply", "看对手应对") : t("Next step", "下一步")}</button>
         <button onClick={() => showVariation(null)}>{t("Back to your move", "返回你的落子")}</button>
       </div>

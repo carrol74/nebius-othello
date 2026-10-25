@@ -10,6 +10,7 @@ export type PositionLesson = components["schemas"]["PositionLesson"];
 export type QuestionResult = components["schemas"]["QuestionResult"];
 export type LessonView = components["schemas"]["LessonView"];
 export type ReplyOpportunity = components["schemas"]["ReplyOpportunity"];
+export type CornerWitness = components["schemas"]["CornerComparisonWitness"];
 export type EarlierDecisionResult = components["schemas"]["EarlierDecisionResult"];
 export type EarlierDecisionLink = components["schemas"]["EarlierDecisionLink"];
 export type CoachToolCall = components["schemas"]["CoachToolCall"];

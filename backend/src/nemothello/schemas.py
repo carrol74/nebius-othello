@@ -216,10 +216,18 @@ class CornerProof(BaseModel):
 
 
 class ContinuationLesson(BaseModel):
-    kind: Literal["anchor", "recapture", "reply"]
-    frame_index: Literal[2, 3]
+    kind: Literal["recapture"]
+    frame_index: Literal[2]
     capture_line: list[Coordinate] = Field(min_length=3)
     recaptured: list[Coordinate]
+
+
+class TeachingConcepts(BaseModel):
+    exposed: list[Coordinate]
+    inner_flips: int = Field(ge=0)
+    stable_gained: list[Coordinate]
+    safe_replies: int = Field(ge=0)
+    unsafe_replies: list[Coordinate]
 
 
 class TeachingMove(BaseModel):
@@ -238,6 +246,7 @@ class TeachingMove(BaseModel):
     assessment: DecisionAssessment
     corner_proof: CornerProof | None = None
     continuation_lesson: ContinuationLesson | None = None
+    concepts: TeachingConcepts
 
 
 class ContrastSquare(BaseModel):

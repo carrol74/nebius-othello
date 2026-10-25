@@ -45,15 +45,15 @@
         "capture_lines": [],
         "line_source": "engine",
         "corner_proof": null,
-        "continuation_lesson": {
-          "kind": "anchor",
-          "frame_index": 3,
-          "capture_line": [
-            "f3",
-            "e3",
-            "d3"
+        "continuation_lesson": null,
+        "concepts": {
+          "exposed": [
+            "d4"
           ],
-          "recaptured": []
+          "inner_flips": 1,
+          "stable_gained": [],
+          "safe_replies": 3,
+          "unsafe_replies": []
         },
         "frames": [
           {
@@ -105,25 +105,6 @@
             "coordinate": "e3",
             "actor": "O",
             "flipped": [
-              "e4"
-            ]
-          },
-          {
-            "board": [
-              "........",
-              "........",
-              "...XXX..",
-              "...XX...",
-              "...XO...",
-              "........",
-              "........",
-              "........"
-            ],
-            "turn": "O",
-            "coordinate": "f3",
-            "actor": "X",
-            "flipped": [
-              "e3",
               "e4"
             ]
           }
@@ -1269,6 +1250,15 @@
           "refutations": []
         },
         "continuation_lesson": null,
+        "concepts": {
+          "exposed": [],
+          "inner_flips": 0,
+          "stable_gained": [],
+          "safe_replies": 8,
+          "unsafe_replies": [
+            "g1"
+          ]
+        },
         "frames": [
           {
             "board": [
@@ -1440,6 +1430,18 @@
           ]
         },
         "continuation_lesson": null,
+        "concepts": {
+          "exposed": [
+            "c2"
+          ],
+          "inner_flips": 1,
+          "stable_gained": [],
+          "safe_replies": 8,
+          "unsafe_replies": [
+            "b1",
+            "g1"
+          ]
+        },
         "frames": [
           {
             "board": [
@@ -1699,6 +1701,18 @@
           ]
         },
         "continuation_lesson": null,
+        "concepts": {
+          "exposed": [
+            "c2"
+          ],
+          "inner_flips": 1,
+          "stable_gained": [],
+          "safe_replies": 8,
+          "unsafe_replies": [
+            "b1",
+            "g1"
+          ]
+        },
         "frames": [
           {
             "board": [
@@ -2806,6 +2820,15 @@
           "refutations": []
         },
         "continuation_lesson": null,
+        "concepts": {
+          "exposed": [],
+          "inner_flips": 0,
+          "stable_gained": [],
+          "safe_replies": 8,
+          "unsafe_replies": [
+            "g1"
+          ]
+        },
         "frames": [
           {
             "board": [
@@ -2971,6 +2994,17 @@
           "refutations": []
         },
         "continuation_lesson": null,
+        "concepts": {
+          "exposed": [
+            "b2"
+          ],
+          "inner_flips": 1,
+          "stable_gained": [],
+          "safe_replies": 7,
+          "unsafe_replies": [
+            "g1"
+          ]
+        },
         "frames": [
           {
             "board": [
@@ -3070,6 +3104,18 @@
           "refutations": []
         },
         "continuation_lesson": null,
+        "concepts": {
+          "exposed": [
+            "f5"
+          ],
+          "inner_flips": 4,
+          "stable_gained": [],
+          "safe_replies": 7,
+          "unsafe_replies": [
+            "g1",
+            "g2"
+          ]
+        },
         "frames": [
           {
             "board": [
@@ -3191,6 +3237,23 @@
             "d5"
           ]
         },
+        "concepts": {
+          "exposed": [
+            "b7",
+            "c5",
+            "d5"
+          ],
+          "inner_flips": 3,
+          "stable_gained": [
+            "b7",
+            "c5",
+            "c6",
+            "f3",
+            "g2"
+          ],
+          "safe_replies": 1,
+          "unsafe_replies": []
+        },
         "frames": [
           {
             "board": [
@@ -3245,29 +3308,6 @@
             "flipped": [
               "d5",
               "d4"
-            ]
-          },
-          {
-            "board": [
-              "OOOOOOOX",
-              "OOOOOOOX",
-              "OOOOOOOX",
-              "OOOOOOO.",
-              "OOOOXXXX",
-              "OOOO...X",
-              "OOOO...X",
-              "O..O...."
-            ],
-            "turn": "X",
-            "coordinate": "d8",
-            "actor": "O",
-            "flipped": [
-              "c7",
-              "d7",
-              "d6",
-              "d5",
-              "d4",
-              "d3"
             ]
           }
         ],
@@ -3390,6 +3430,15 @@
             "c5"
           ]
         },
+        "concepts": {
+          "exposed": [
+            "c5"
+          ],
+          "inner_flips": 1,
+          "stable_gained": [],
+          "safe_replies": 5,
+          "unsafe_replies": []
+        },
         "frames": [
           {
             "board": [
@@ -3487,6 +3536,15 @@
           "recaptured": [
             "e5"
           ]
+        },
+        "concepts": {
+          "exposed": [
+            "e5"
+          ],
+          "inner_flips": 1,
+          "stable_gained": [],
+          "safe_replies": 5,
+          "unsafe_replies": []
         },
         "frames": [
           {
@@ -3661,6 +3719,15 @@
             "e5"
           ]
         },
+        "concepts": {
+          "exposed": [
+            "e5"
+          ],
+          "inner_flips": 1,
+          "stable_gained": [],
+          "safe_replies": 5,
+          "unsafe_replies": []
+        },
         "frames": [
           {
             "board": [
@@ -3758,6 +3825,15 @@
           "recaptured": [
             "c5"
           ]
+        },
+        "concepts": {
+          "exposed": [
+            "c5"
+          ],
+          "inner_flips": 1,
+          "stable_gained": [],
+          "safe_replies": 5,
+          "unsafe_replies": []
         },
         "frames": [
           {
@@ -4852,6 +4928,15 @@
           "refutations": []
         },
         "continuation_lesson": null,
+        "concepts": {
+          "exposed": [
+            "f6"
+          ],
+          "inner_flips": 2,
+          "stable_gained": [],
+          "safe_replies": 9,
+          "unsafe_replies": []
+        },
         "frames": [
           {
             "board": [
@@ -5026,6 +5111,15 @@
           ]
         },
         "continuation_lesson": null,
+        "concepts": {
+          "exposed": [
+            "d6"
+          ],
+          "inner_flips": 1,
+          "stable_gained": [],
+          "safe_replies": 11,
+          "unsafe_replies": []
+        },
         "frames": [
           {
             "board": [
@@ -5302,6 +5396,15 @@
           ]
         },
         "continuation_lesson": null,
+        "concepts": {
+          "exposed": [
+            "d6"
+          ],
+          "inner_flips": 1,
+          "stable_gained": [],
+          "safe_replies": 11,
+          "unsafe_replies": []
+        },
         "frames": [
           {
             "board": [
@@ -6293,6 +6396,15 @@
           "refutations": []
         },
         "continuation_lesson": null,
+        "concepts": {
+          "exposed": [
+            "f6"
+          ],
+          "inner_flips": 2,
+          "stable_gained": [],
+          "safe_replies": 9,
+          "unsafe_replies": []
+        },
         "frames": [
           {
             "board": [

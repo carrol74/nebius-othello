@@ -2,6 +2,7 @@ from itertools import pairwise
 
 from nemothello.board_features import CORNERS, capture_lines
 from nemothello.coaching import variation_frames
+from nemothello.concepts import concept_profile
 from nemothello.corner_proof import prove_corner
 from nemothello.decision import assess_decision, lesson_moves, reference_move
 from nemothello.decision_contrast import decision_contrast, reply_opportunity
@@ -35,16 +36,19 @@ def continuation_lesson(frames):
     if len(frames) < 3 or frames[2]["coordinate"] == "pass":
         return None
     gains = {frames[1]["coordinate"], *frames[1]["flipped"]}
-    if len(frames) > 3 and frames[3]["coordinate"] != "pass":
-        rays = capture_lines(tuple(frames[2]["board"]), frames[3]["actor"], frames[3]["coordinate"])
-        anchor = next((ray for ray in rays if ray[-1] in gains), None)
-        if anchor:
-            return {"kind": "anchor", "frame_index": 3, "capture_line": anchor, "recaptured": []}
-    rays = capture_lines(tuple(frames[1]["board"]), frames[2]["actor"], frames[2]["coordinate"])
     recaptured = [move for move in frames[2]["flipped"] if move in gains]
-    ray = next((ray for ray in rays if set(ray[1:-1]) & set(recaptured)), rays[0])
-    return {"kind": "recapture" if recaptured else "reply", "frame_index": 2,
-            "capture_line": ray, "recaptured": recaptured}
+    if not recaptured:
+        return None
+    rays = capture_lines(tuple(frames[1]["board"]), frames[2]["actor"], frames[2]["coordinate"])
+    ray = next(ray for ray in rays if set(ray[1:-1]) & set(recaptured))
+    return {"kind": "recapture", "frame_index": 2, "capture_line": ray, "recaptured": recaptured}
+
+
+def move_concepts(board, actor, move):
+    profile = concept_profile(board, actor, move)
+    return {"exposed": profile["exposed"], "inner_flips": profile["inner_flips"],
+            "stable_gained": profile["stable_gained"], "safe_replies": len(profile["safe_replies"]),
+            "unsafe_replies": profile["unsafe_replies"]}
 
 
 def teach_move(item, move):
@@ -59,10 +63,13 @@ def teach_move(item, move):
               "assessment": assess_decision(item, move),
               "kind": "line", "target": None, "opponent_reply": None,
               "checked_defenses": [], "defense_lines": [], "capture_lines": [], "line_source": "engine",
-              "corner_proof": None, "continuation_lesson": None}
-    demonstration = pv[:3]
+              "corner_proof": None, "continuation_lesson": None,
+              "concepts": move_concepts(board, actor, move)}
+    # Show your move and the opponent's best reply; corner cases replace this line
+    demonstration = pv[:2]
     if move in CORNERS:
         lesson.update(kind="corner_taken", target=move)
+        demonstration = [move]
     elif corner_access(after, other):
         target = corner_access(after, other)[0]
         lesson.update(kind="corner_given", target=target, opponent_reply=target, line_source="rules")

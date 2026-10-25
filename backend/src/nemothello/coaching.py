@@ -310,11 +310,7 @@ def verified_teaching_facts(teaching, revision, human):
         continuation = choice.get("continuation_lesson")
         if continuation:
             ray = continuation["capture_line"]
-            mechanism = (f"The disc gained at {ray[-1]} by the root move anchors the later capture from {ray[0]}."
-                         if continuation["kind"] == "anchor" else
-                         f"The opponent can flip back newly gained discs: {', '.join(continuation['recaptured'])}."
-                         if continuation["kind"] == "recapture" else
-                         f"The opponent can use the disc at {ray[-1]} to capture from {ray[0]}.")
+            mechanism = f"The opponent can flip back newly gained discs: {', '.join(continuation['recaptured'])}."
             facts.append(fact(f"p{revision}:continuation_{choice['coordinate']}",
                               f"In the displayed {choice['coordinate']} continuation: {mechanism} "
                               f"Verified capture line: {' → '.join(ray)}. This shows one local mechanism, "

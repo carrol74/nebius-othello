@@ -5,7 +5,7 @@ import ts from "typescript";
 
 const source = readFileSync(new URL("../lib/lesson-view.ts", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, {compilerOptions: {module: ts.ModuleKind.ESNext}}).outputText;
-const {teachingView, sameTeachingView, coachFocus, comparisonRay} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const {teachingView, sameTeachingView, coachFocus, comparisonRay, keyFrame} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const cases = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/teaching-native-cases.json", import.meta.url), "utf8"));
 
 test("question context follows the selected move, frame and defense attempt", () => {
@@ -55,8 +55,8 @@ test("a selected defense fact focuses its own defensive line before the response
 test('corner comparison overlays and coach focus use the exact shared-prefix board', () => {
   for (const comparison of Object.values(cases)) {
     const witness = comparison.insight.witness;
-    if (!witness) {assert.equal(comparisonRay(comparison), undefined); continue;}
-    const ray = comparisonRay(comparison);
+    if (!witness) continue;
+    const ray = comparisonRay(comparison, comparison.choices[0]);
     assert.equal(ray.frame, witness.prefix.length + 1);
     assert.deepEqual(ray.squares, witness.opportunity.capture_line);
     for (const choice of comparison.choices) {
@@ -67,4 +67,17 @@ test('corner comparison overlays and coach focus use the exact shared-prefix boa
     assert.equal(focus.frame, ray.frame);
     assert.equal(focus.choice.coordinate, witness.opportunity.available_after);
   }
+});
+
+
+test("the key step is where the lesson's board highlight appears", () => {
+  const corner = cases["earlier-h8"];
+  const g7 = corner.choices.find((choice) => choice.coordinate === "g7");
+  assert.equal(keyFrame(corner, g7), comparisonRay(corner, g7).frame);
+  assert.equal(keyFrame(corner, g7), 3);
+  assert.equal(keyFrame(cases["0"], cases["0"].choices[0]), null);
+  assert.deepEqual(comparisonRay(cases["0"], cases["0"].choices[0]), {frame: 1, squares: ["d4"]});
+  assert.equal(keyFrame(cases["47"], cases["47"].choices[0]), 1);
+  const capture = cases["22"].choices.find((choice) => choice.coordinate === "a3");
+  assert.equal(keyFrame(cases["22"], capture), capture.frames.length - 2);
 });

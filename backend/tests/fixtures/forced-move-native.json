@@ -1486,6 +1486,13 @@
           "refutations": []
         },
         "continuation_lesson": null,
+        "concepts": {
+          "exposed": [],
+          "inner_flips": 0,
+          "stable_gained": [],
+          "safe_replies": 5,
+          "unsafe_replies": []
+        },
         "frames": [
           {
             "board": [
@@ -1545,6 +1552,5 @@
         "opponent_corner_moves_after_reply": []
       }
     ]
-  },
-  "previous_decision_revision": 42
+  }
 }
