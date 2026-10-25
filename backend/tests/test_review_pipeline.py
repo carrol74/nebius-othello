@@ -15,7 +15,7 @@ from nemothello.tasks import Tasks
 
 
 @pytest.mark.parametrize("human_color", ["X", "O"])
-def test_real_analysis_survives_coaching_failure_and_retry_reuses_saved_engine_evidence(tmp_path, human_color):
+def test_engine_review_needs_no_model_and_retry_reuses_saved_evidence(tmp_path, human_color):
     root = Path(__file__).resolve().parents[2]
     executable = Path(os.environ.get("TEST_EDAX_EXECUTABLE", root / "deploy/edax/edax"))
     weights = Path(os.environ.get("TEST_EDAX_EVAL_FILE", root / "deploy/edax/eval.dat"))
@@ -39,32 +39,19 @@ def test_real_analysis_survives_coaching_failure_and_retry_reuses_saved_engine_e
         first = games.create_review_task(owner, game["game_id"], "first")
         assert games.create_review_task(owner, game["game_id"], "same-running")["task_id"] == first["task_id"]
         tasks.process(owner, first)
-        failed = Task.model_validate(store.get("task", first["task_id"], owner))
-        assert failed.status == "failed" and failed.error["code"] == "REVIEW_NOT_CONFIGURED"
+        done = Task.model_validate(store.get("task", first["task_id"], owner))
+        assert done.status == "succeeded"
         saved = games.review(owner, game["game_id"])
         review = Review.model_validate(saved)
-        assert review.format_version == REVIEW_VERSION and review.coaching_status == "failed"
+        assert review.format_version == REVIEW_VERSION
         assert len(review.evidence) == sum(event["kind"] == "move" and event["actor"] == game["human_color"]
                                            for event in source["history"])
         assert all(item.actor == game["human_color"] for item in review.evidence)
         assert all(item.actor == human_color for item in review.key_moves)
         assert all(item["turn"] == human_color for item in engine.cache.values())
-        assert len(review.key_moves) <= 3 and review.summary_facts
+        assert 0 < len(review.key_moves) <= 3 and review.summary_facts
         assert all(item.comparisons for item in review.evidence)
-        engine.close()
-        second = games.create_review_task(owner, game["game_id"], "retry")
-        assert second["task_id"] != first["task_id"]
-        tasks.process(owner, second)
-        assert engine.process is None
-        assert games.review(owner, game["game_id"])["evidence"] == saved["evidence"]
-        with store.transaction() as db:
-            saved["coaching_status"] = "pending"
-            second["status"] = "running"
-            store.save(db, "review", game["game_id"], owner, saved)
-            store.save(db, "task", second["task_id"], owner, second)
-        store.recover_tasks()
-        assert games.review(owner, game["game_id"])["coaching_status"] == "failed"
-        assert store.get("task", second["task_id"], owner)["error"]["code"] == "SERVICE_RESTARTED"
+        assert games.create_review_task(owner, game["game_id"], "again")["task_id"] == first["task_id"]
     finally:
         engine.close()
         model.close()

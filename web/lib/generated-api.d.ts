@@ -944,26 +944,12 @@ export interface components {
             /** Hints */
             hints: components["schemas"]["ReviewHint"][];
             hint_adoption: components["schemas"]["HintAdoption"];
-            /** Explanation */
-            explanation: string;
             /** Evidence */
             evidence: components["schemas"]["ReviewEvidence"][];
-            /** Model Id */
-            model_id: string | null;
-            /** Usage */
-            usage: {
-                [key: string]: unknown;
-            } | null;
             /** Format Version */
             format_version?: string | null;
             /** Summary Facts */
             summary_facts?: components["schemas"]["ReviewFact"][];
-            /** Coaching */
-            coaching?: components["schemas"]["CoachingCard"][];
-            /** Coaching Status */
-            coaching_status?: ("pending" | "ready" | "failed") | null;
-            /** Coaching Error */
-            coaching_error?: string | null;
             /** Branch Results */
             branch_results?: {
                 [key: string]: unknown;

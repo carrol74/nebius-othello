@@ -13,7 +13,7 @@ import { LessonStart } from "@/components/lesson-start";
 import { GameRules } from "@/components/game-rules";
 import { TermHelp } from "@/components/term-help";
 import type { Variation } from "@/components/review-coach";
-import type { EarlierDecisionResult, Color, Difficulty, GameState, Hint, HistoryEvent, LessonView, PositionLesson, QuestionResult, Task, TrackedTask } from "@/lib/types";
+import type { EarlierDecisionResult, Color, Difficulty, GameState, Hint, HistoryEvent, LessonView, PositionLesson, QuestionResult, Review, Task, TrackedTask } from "@/lib/types";
 
 type Mode = "play" | "review";
 type Speed = "normal" | "slow";
@@ -47,6 +47,7 @@ export default function Home() {
   const [historyRevision, setHistoryRevision] = useState(0);
   const [variation, setVariation] = useState<Variation | null>(null);
   const [lessons, setLessons] = useState<Record<string, PositionLesson | null>>({});
+  const [keyMoves, setKeyMoves] = useState<Record<string, number[]>>({});
   const [tasks, setTasks] = useState<TrackedTask[]>([]);
   const [taskPollRetry, setTaskPollRetry] = useState(0);
   const gameRef = useRef<GameState | null>(null);
@@ -183,12 +184,17 @@ export default function Home() {
     return saved;
   }, []);
 
+  const acceptReview = useCallback((review: Review) => {
+    setKeyMoves((current) => ({...current, [review.game_id]: review.key_moves.map((item) => item.revision)}));
+  }, []);
+
   const trackTask = useCallback((entry: TrackedTask) => {
     setTasks((current) => [entry, ...current.filter((item) => item.task.task_id !== entry.task.task_id)].slice(0, 50));
     if (entry.task.kind === "lesson" && entry.revision !== undefined) {
       void loadLesson(entry.game_id, entry.revision).catch((failure) => setError(message(failure)));
     }
-  }, [loadLesson]);
+    if (entry.task.kind === "review" && entry.task.result) acceptReview(entry.task.result);
+  }, [loadLesson, acceptReview]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -223,6 +229,21 @@ export default function Home() {
     }, 1200 * 2 ** Math.min(taskPollRetry, 3));
     return () => {clearTimeout(timer); controller.abort();};
   }, [tasks, trackTask, taskPollRetry]);
+
+  // A finished game gets an engine-only review that picks the moves worth studying
+  useEffect(() => {
+    if (mode !== "review" || !game || game.status !== "finished" || keyMoves[game.game_id]) return;
+    const id = game.game_id;
+    let cancelled = false;
+    void api<Review | {task: Task | null}>(`/games/${id}/review`).then(async (saved) => {
+      if (cancelled) return;
+      if (!("task" in saved)) {acceptReview(saved); return;}
+      const running = saved.task && ["queued", "running"].includes(saved.task.status) ? saved.task : null;
+      const task = running ?? await api<Task>(`/games/${id}/reviews`, {request_id: requestId()});
+      if (!cancelled) trackTask({task, game_id: id, purpose: "review"});
+    }).catch((failure) => {if (!cancelled) setError(message(failure));});
+    return () => {cancelled = true;};
+  }, [mode, game?.game_id, game?.status, keyMoves, acceptReview, trackTask]);
 
   useEffect(() => {
     if (mode !== "review" || !game || !canTeachPosition(game, historyRevision)) return;
@@ -316,7 +337,7 @@ export default function Home() {
             else if (game && canMove) void perform(async () => acceptGame(await api<GameState>(`/games/${game.game_id}/moves`, {coordinate, expected_revision: game.revision, request_id: requestId()})));
           }}>{cell !== "." && <span className={`disc ${cell === "X" ? "black" : "white"}`} />}{cell === "." && legal && (canDefend || showLegalMoves) && <span className="legal-marker" />}{recommended && <span className="hint-ring" />}{mode === "play" && (placed || target || ray || recommended) && <span className="lesson-coordinate">{coordinate}</span>}</button>;
         })}</div></div></div>
-        {mode === "review" && game && <ReviewNavigation game={game} revision={historyRevision} select={selectPosition} />}
+        {mode === "review" && game && <ReviewNavigation game={game} revision={historyRevision} select={selectPosition} keyMoves={keyMoves[game.game_id]} reviewTask={tasks.find((entry) => entry.purpose === "review" && entry.game_id === game.game_id)?.task} />}
       </section>
       <aside className="side-panel">
         <section className="score-card" aria-label={t("Disc count", "棋子数量")}><div className="score-line">{(["X", "O"] as Color[]).map((color) => <div key={color}><i className={`mini-disc ${color === "X" ? "black" : "white"}`} /><span>{colorName(color)}</span><strong>{board ? [...board.join("")].filter((cell) => cell === color).length : "—"}</strong></div>)}</div>{mode === "play" && game?.result && <p className="result-label">{game.result.winner === "draw" ? t("Draw", "和棋") : game.result.winner === game.human_color ? t("You win", "你获胜") : t("AI wins", "AI 获胜")}</p>}</section>

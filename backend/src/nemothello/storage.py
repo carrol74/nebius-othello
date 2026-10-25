@@ -171,15 +171,4 @@ class Store:
                     game = self.get("game", task["game_id"], row["owner"], db)
                     game["auto_play"] = False
                     self.save(db, "game", task["game_id"], row["owner"], game)
-                if task["kind"] == "review":
-                    saved = db.execute(
-                        "SELECT document FROM records WHERE kind='review' AND id=? AND owner=?",
-                        (task["game_id"], row["owner"]),
-                    ).fetchone()
-                    if saved:
-                        review = json.loads(saved["document"])
-                        if review.get("coaching_status") == "pending":
-                            review.update(coaching_status="failed",
-                                          coaching_error="Service restart interrupted coaching. Retry coaching")
-                            self.save(db, "review", task["game_id"], row["owner"], review)
                 self.save(db, "task", row["id"], row["owner"], task)

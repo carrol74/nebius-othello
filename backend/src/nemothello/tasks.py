@@ -150,23 +150,12 @@ class Tasks:
         raise AppError("BRANCH_LENGTH", "Branch exceeded the legal game length. Check the rules", 500)
 
     def review(self, owner: str, game_id: str) -> dict[str, Any]:
+        # Whole-game review is engine analysis only; coaching happens per position
         existing = next((item for item in self.store.list_records("review", owner)
                          if item["game_id"] == game_id and item.get("format_version") == REVIEW_VERSION), None)
-        review = existing or self.analyze_review(owner, game_id)
-        review.update(coaching_status="pending", coaching_error=None)
-        with self.store.transaction() as db:
-            self.store.save(db, "review", game_id, owner, review)
-        try:
-            response = self.nemotron.explain(review)
-        except Exception as exc:
-            review.update(coaching_status="failed", coaching_error=(exc.message if isinstance(exc, AppError)
-                          else "Coaching request failed. Retry coaching"),
-                          usage=getattr(exc, "usage", None))
-            with self.store.transaction() as db:
-                self.store.save(db, "review", game_id, owner, review)
-            raise
-        review.update(explanation=response["text"], coaching=response["coaching"],
-                      model_id=response["model_id"], usage=response["usage"], coaching_status="ready")
+        if existing:
+            return existing
+        review = self.analyze_review(owner, game_id)
         with self.store.transaction() as db:
             self.store.save(db, "review", game_id, owner, review)
         return review
@@ -229,9 +218,7 @@ class Tasks:
                     if item.get("parent_game_id") == game_id and item["status"] == "finished"
                     and item.get("branch_mode") == "follow_hints"
                     and item["opponent_config_id"] == game["opponent_config_id"]]
-        review = {**summary, "explanation": "", "evidence": evidence, "model_id": None,
-                  "usage": None, "coaching": [], "coaching_status": "pending",
-                  "format_version": REVIEW_VERSION, "coaching_error": None,
+        review = {**summary, "evidence": evidence, "format_version": REVIEW_VERSION,
                   "branch_results": [{key: item[key] for key in ("game_id", "parent_revision", "result")}
                                      for item in branches]}
         review["summary_facts"] = summary_facts(review)

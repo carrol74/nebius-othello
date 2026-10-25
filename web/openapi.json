@@ -3221,39 +3221,12 @@
           "hint_adoption": {
             "$ref": "#/components/schemas/HintAdoption"
           },
-          "explanation": {
-            "type": "string",
-            "title": "Explanation"
-          },
           "evidence": {
             "items": {
               "$ref": "#/components/schemas/ReviewEvidence"
             },
             "type": "array",
             "title": "Evidence"
-          },
-          "model_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model Id"
-          },
-          "usage": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Usage"
           },
           "format_version": {
             "anyOf": [
@@ -3272,40 +3245,6 @@
             },
             "type": "array",
             "title": "Summary Facts"
-          },
-          "coaching": {
-            "items": {
-              "$ref": "#/components/schemas/CoachingCard"
-            },
-            "type": "array",
-            "title": "Coaching"
-          },
-          "coaching_status": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "pending",
-                  "ready",
-                  "failed"
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Coaching Status"
-          },
-          "coaching_error": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Coaching Error"
           },
           "branch_results": {
             "items": {
@@ -3332,10 +3271,7 @@
           "automatic_hint_moves",
           "hints",
           "hint_adoption",
-          "explanation",
-          "evidence",
-          "model_id",
-          "usage"
+          "evidence"
         ],
         "title": "Review"
       },

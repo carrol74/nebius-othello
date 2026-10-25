@@ -108,7 +108,7 @@ class DemoVerification:
             review_task = self.request("POST", f"games/{game_id}/reviews", {"request_id": str(uuid4())})
             self.wait_task(review_task)
             review = Review.model_validate(self.request("GET", f"games/{game_id}/review"))
-            self.check(bool(review.explanation.strip()) and bool(review.model_id), "Live review returns model identity and explanation")
+            self.check(0 < len(review.key_moves) <= 3, "Engine review selects up to three key moves")
             self.check(review.hint_adoption.shown_turns == 0, "Programmatic analysis does not claim hints were displayed")
             self.report["review"] = review.model_dump(mode="json")
             question = self.wait_task(self.request("POST", f"games/{game_id}/review/questions", {

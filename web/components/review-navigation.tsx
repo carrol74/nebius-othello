@@ -1,9 +1,10 @@
 import { useLocale } from "@/lib/locale";
 import { reviewRevisions } from "@/lib/game-view";
-import type { GameState } from "@/lib/types";
+import type { GameState, Task } from "@/lib/types";
 
-export function ReviewNavigation({game, revision, select}: {
+export function ReviewNavigation({game, revision, select, keyMoves, reviewTask}: {
   game: GameState; revision: number; select: (revision: number) => void;
+  keyMoves: number[] | undefined; reviewTask: Task | undefined;
 }) {
   const {t} = useLocale();
   const revisions = reviewRevisions(game);
@@ -23,5 +24,16 @@ export function ReviewNavigation({game, revision, select}: {
       <button aria-label={t("Your next move", "你的下一手")} disabled={index >= revisions.length - 1} onClick={() => navigate(index + 1)}>→</button>
       <button aria-label={t("Your last move", "你的最后一手")} disabled={index >= revisions.length - 1} onClick={() => navigate(revisions.length - 1)}>⇥</button>
     </div>
+    {keyMoves && keyMoves.length > 0 ? <div className="key-moves" role="group" aria-label={t("Moves worth reviewing", "值得复盘的几步")}>
+      <span>{t("Worth reviewing", "值得复盘")}</span>
+      {keyMoves.map((value) => {
+        const move = game.history.find((event) => event.revision === value + 1 && event.kind === "move");
+        return <button key={value} aria-pressed={value === revision} onClick={() => select(value)}>
+          {t(`Move ${revisions.indexOf(value) + 1}`, `你的第 ${revisions.indexOf(value) + 1} 手`)} {move?.coordinate}
+        </button>;
+      })}
+    </div>
+      : reviewTask?.status === "failed" ? <p className="inline-error" role="alert">{reviewTask.error?.message}</p>
+      : game.status === "finished" && <p className="muted key-moves-status" role="status">{t("Finding the moves worth reviewing…", "正在找出值得复盘的几步…")}</p>}
   </nav>;
 }

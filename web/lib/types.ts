@@ -94,7 +94,6 @@ export interface Review {
   initial_board: string[];
   initial_turn: Color;
   history: Pick<HistoryEvent, "event_index" | "actor" | "kind" | "coordinate" | "revision">[];
-  explanation: string;
   evidence: ReviewEvidence[];
   hints: {
     hint_id: string;
@@ -109,8 +108,6 @@ export interface Review {
   parent_revision: number | null;
   opponent_config_id: string;
   key_moves: ReviewEvidence[];
-  model_id: string | null;
-  usage: Record<string, unknown> | null;
   branch_mode: "manual" | "follow_hints" | null;
   automatic_hint_moves: {
     revision: number;
@@ -120,9 +117,6 @@ export interface Review {
   }[];
   format_version?: string | null;
   summary_facts?: ReviewFact[];
-  coaching?: CoachingCard[];
-  coaching_status?: "pending" | "ready" | "failed" | null;
-  coaching_error?: string | null;
   branch_results?: { game_id: string; parent_revision: number; result: GameResult }[];
 }
 

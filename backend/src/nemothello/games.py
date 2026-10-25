@@ -310,8 +310,7 @@ class Games:
                             if t["game_id"] == game_id and t["kind"] == "review"
                             and (t["status"] in ("queued", "running")
                                  or (t["status"] == "succeeded" and saved
-                                     and saved.get("format_version") == REVIEW_VERSION
-                                     and saved.get("coaching_status") == "ready"))]
+                                     and saved.get("format_version") == REVIEW_VERSION))]
                 if existing:
                     return self.public_task(existing[-1])
             task = self.make_task(db, owner, game_id, kind, {"question": question, "language": language})

@@ -399,15 +399,9 @@ class Review(BaseModel):
     automatic_hint_moves: list[AutomaticHintMove]
     hints: list[ReviewHint]
     hint_adoption: HintAdoption
-    explanation: str
     evidence: list[ReviewEvidence]
-    model_id: str | None
-    usage: dict[str, Any] | None
     format_version: str | None = None
     summary_facts: list[ReviewFact] = Field(default_factory=list)
-    coaching: list[CoachingCard] = Field(default_factory=list)
-    coaching_status: Literal["pending", "ready", "failed"] | None = None
-    coaching_error: str | None = None
     branch_results: list[dict[str, Any]] = Field(default_factory=list)
 
 

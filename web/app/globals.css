@@ -45,6 +45,11 @@ p { line-height: 1.7; }
 .timeline-buttons { display: flex; align-items: center; gap: 8px; }
 .timeline-buttons button { padding: 8px 11px; font-size: 18px; }
 .timeline-buttons input { flex: 1; min-width: 40px; accent-color: var(--accent); cursor: pointer; }
+.key-moves { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; }
+.key-moves span { color: var(--muted); }
+.key-moves button { padding: 6px 10px; }
+.key-moves button[aria-pressed="true"] { border-color: var(--accent); }
+.key-moves-status { margin: 12px 0 0; font-size: 13px; }
 .line-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 16px 0; font-size: 13px; }
 .teaching-panel { position: relative; padding: 32px 20px 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); min-width: 0; }
 .term-help-button { position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; padding: 0; border-radius: 50%; color: var(--muted); font-size: 12px; line-height: 1; }
