@@ -7,6 +7,11 @@ export function savedPosition(game: GameState, revision: number) {
   return {board: event.board, turn: event.turn};
 }
 
+// Move numbers count every disc placed since the opening four, so branches keep the game's numbering
+export function moveNumber(game: GameState, revision: number): number {
+  return savedPosition(game, revision).board.join("").replace(/\./g, "").length - 3;
+}
+
 export function canTeachPosition(game: GameState, revision: number): boolean {
   const move = game.history.find((event) => event.revision === revision + 1);
   return savedPosition(game, revision).turn === game.human_color

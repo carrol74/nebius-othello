@@ -5,9 +5,9 @@ import ts from "typescript";
 
 const source = readFileSync(new URL("../lib/game-view.ts", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, {compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
-const {canTeachPosition, savedPosition, placedBoard, moveFlips, reviewRevisions, reviewPosition} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const {canTeachPosition, savedPosition, placedBoard, moveFlips, reviewRevisions, reviewPosition, moveNumber} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const native = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/teaching-native-cases.json", import.meta.url), "utf8"));
-const frames = native["16"].choices[0].defense_lines.find((item) => item.coordinate === "g6").frames;
+const frames = native["16"].choices[0].frames;
 const history = frames.slice(1).map((frame, index) => ({...frame, revision:index+1, kind:"move"}));
 
 test("reviewing every native snapshot leaves the current game unchanged", () => {
@@ -83,4 +83,12 @@ test("an unplayed turn and a new game have no historical teaching step", () => {
   const firstMove = {...game, history:history.slice(0, 1)};
   assert.deepEqual(reviewRevisions(firstMove), [0]);
   assert.equal(canTeachPosition(firstMove, 0), true);
+});
+
+test("a branch that starts mid-game keeps the game's move numbers", () => {
+  const branch = {initial_board:frames[0].board, initial_turn:frames[0].turn, board:frames.at(-1).board, history};
+  // The snapshot starts after sixteen moves of the original game
+  assert.equal(native["16"].revision, 16);
+  assert.equal(moveNumber(branch, 0), 17);
+  assert.equal(moveNumber(branch, 2), 19);
 });

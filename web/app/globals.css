@@ -45,11 +45,14 @@ p { line-height: 1.7; }
 .timeline-buttons { display: flex; align-items: center; gap: 8px; }
 .timeline-buttons button { padding: 8px 11px; font-size: 18px; }
 .timeline-buttons input { flex: 1; min-width: 40px; accent-color: var(--accent); cursor: pointer; }
-.key-moves { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; font-size: 13px; }
-.key-moves span { color: var(--muted); }
-.key-moves button { padding: 6px 10px; }
-.key-moves button[aria-pressed="true"] { border-color: var(--accent); }
-.key-moves-status { margin: 12px 0 0; font-size: 13px; }
+.game-summary h2 { margin: 0 0 8px; font-size: 17px; }
+.game-summary .coach-note p + p { margin-top: 14px; }
+.summary-result { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+.summary-failure { display: grid; gap: 8px; justify-items: start; }
+.summary-moves { display: grid; gap: 8px; margin-top: 16px; }
+.summary-moves button { display: grid; gap: 2px; padding: 10px 12px; text-align: left; }
+.summary-moves span { color: var(--muted); font-size: 13px; }
+.summary-back { margin-bottom: 14px; padding: 5px 10px; color: var(--muted); font-size: 13px; }
 .line-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 16px 0; font-size: 13px; }
 .teaching-panel { position: relative; padding: 32px 20px 20px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); min-width: 0; }
 .term-help-button { position: absolute; top: 8px; right: 8px; width: 20px; height: 20px; padding: 0; border-radius: 50%; color: var(--muted); font-size: 12px; line-height: 1; }
@@ -62,9 +65,9 @@ p { line-height: 1.7; }
 .teaching-note { margin: 18px 0 0; padding-top: 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; line-height: 1.6; }
 .position-coach .teaching-choices { margin-top: 0; }
 .position-coach .teaching-choices button { flex: 1; min-width: 100px; }
-.position-coach .concrete-lesson { font-size: 14px; }
 .lesson-question { font-weight: 600; }
 .step-text { margin: 10px 0 6px; font-weight: 600; }
+.step-note { margin: 0 0 6px; color: var(--accent); }
 .position-coach .concrete-takeaway { padding-left: 12px; }
 .position-coach .teaching-steps { gap: 6px; }
 .position-coach .teaching-steps button { font-size: 12px; padding: 8px; }
@@ -77,7 +80,6 @@ p { line-height: 1.7; }
 .position-answer { white-space: pre-wrap; line-height: 1.8; border-left: 2px solid var(--accent); padding-left: 12px; margin-top: 16px; }
 .coach-note { max-width: 66ch; margin: 14px 0; line-height: 1.7; }
 .coach-note p { margin: 6px 0; }
-.coach-note .coach-meta { color: var(--muted); font-size: 12px; }
 .position-answer .asked { color: var(--muted); font-size: 13px; margin: 0; }
 .speed-picker { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 13px; }
 .tips-card .card-heading { margin-top: 20px; }
@@ -97,8 +99,6 @@ p { line-height: 1.7; }
 .teaching-choices button { text-align: left; min-width: 140px; }
 .teaching-choices button span { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
 .teaching-choices button[aria-pressed="true"] { border-color: var(--accent); background: #283425; }
-.concrete-lesson { max-width: 66ch; font-size: 15px; }
-.concrete-lesson p { margin: 10px 0; }
 .coaching-question { max-width: 66ch; margin: 20px 0; }
 .coaching-question p { font-size: 16px; line-height: 1.8; }
 .coaching-question-actions { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -203,9 +203,6 @@ select { max-width: 250px; padding: 10px; color: #e9eee4; background: var(--back
 .move-comparison { max-width: 680px; }
 .move-comparison strong { font-size: 15px; font-weight: 500; }
 .comparison-label { display: block; color: var(--muted); margin-top: 4px; font-size: 11px; }
-.coach-lesson { max-width: 72ch; margin: 24px 0; }
-.coach-lesson p { font-size: 14px; }
-.coach-lesson .reflection-question { color: var(--accent); margin-top: 18px; }
 .variation-inspector { margin: 18px 0; }
 .variation-moves { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .variation-moves button[aria-pressed="true"] { border-color: var(--accent); }
@@ -213,7 +210,6 @@ select { max-width: 250px; padding: 10px; color: #e9eee4; background: var(--back
 .variation-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .variation-controls button { padding: 8px 12px; font-size: 12px; }
 .variation-controls span { font-size: 12px; color: var(--muted); }
-.replay-comparisons { color: var(--muted); font-size: 13px; margin-top: 24px; }
 .board-panel { scroll-margin-top: 18px; }
 .review-panel { scroll-margin-top: 18px; }
 .explanation { white-space: pre-wrap; line-height: 1.9; font-size: 15px; margin: 18px 0; overflow-wrap: anywhere; }
@@ -232,8 +228,6 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-heig
 textarea { width: 100%; min-height: 80px; resize: vertical; color: inherit; background: #111913; border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
 textarea::placeholder { color: #7b8b7c; }
 .lesson-start { display: grid; gap: 16px; justify-items: start; }
-.lesson-start details { width: 100%; }
-.lesson-start textarea { margin-top: 12px; }
 .branch-panel { display: flex; align-items: center; justify-content: flex-end; gap: 22px; background: #1c271b; }
 .branch-panel p { color: var(--muted); font-size: 13px; margin: 0 auto 0 0; }
 .branch-actions { display: flex; flex-wrap: wrap; gap: 10px; flex-shrink: 0; }

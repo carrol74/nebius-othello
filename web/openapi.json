@@ -474,66 +474,6 @@
         }
       }
     },
-    "/analyze": {
-      "post": {
-        "summary": "Analyze",
-        "operationId": "analyze_analyze_post",
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "x-session-id",
-            "in": "header",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "minLength": 8,
-              "maxLength": 100,
-              "title": "X-Session-Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AnalyzeRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Analysis"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/games/{game_id}/reviews": {
       "post": {
         "summary": "Review",
@@ -646,7 +586,7 @@
                 "schema": {
                   "anyOf": [
                     {
-                      "$ref": "#/components/schemas/Review"
+                      "$ref": "#/components/schemas/ReviewSummary"
                     },
                     {
                       "$ref": "#/components/schemas/ReviewLookup"
@@ -670,10 +610,10 @@
         }
       }
     },
-    "/games/{game_id}/review/questions": {
+    "/games/{game_id}/summaries": {
       "post": {
-        "summary": "Question",
-        "operationId": "question_games__game_id__review_questions_post",
+        "summary": "Create Summary",
+        "operationId": "create_summary_games__game_id__summaries_post",
         "parameters": [
           {
             "name": "game_id",
@@ -710,7 +650,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/QuestionRequest"
+                "$ref": "#/components/schemas/LanguageRequest"
               }
             }
           }
@@ -739,10 +679,10 @@
         }
       }
     },
-    "/games/{game_id}/review/lesson": {
+    "/games/{game_id}/summary": {
       "get": {
-        "summary": "Teaching Lesson",
-        "operationId": "teaching_lesson_games__game_id__review_lesson_get",
+        "summary": "Get Summary",
+        "operationId": "get_summary_games__game_id__summary_get",
         "parameters": [
           {
             "name": "game_id",
@@ -754,23 +694,17 @@
             }
           },
           {
-            "name": "revision",
+            "name": "language",
             "in": "query",
-            "required": true,
+            "required": false,
             "schema": {
-              "type": "integer",
-              "minimum": 0,
-              "title": "Revision"
-            }
-          },
-          {
-            "name": "move",
-            "in": "query",
-            "required": true,
-            "schema": {
+              "enum": [
+                "en",
+                "zh"
+              ],
               "type": "string",
-              "pattern": "^[a-h][1-8]$",
-              "title": "Move"
+              "default": "en",
+              "title": "Language"
             }
           },
           {
@@ -800,7 +734,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TeachingComparison"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/GameSummary"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ReviewLookup"
+                    }
+                  ],
+                  "title": "Response Get Summary Games  Game Id  Summary Get"
                 }
               }
             }
@@ -910,6 +852,20 @@
             }
           },
           {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "en",
+                "zh"
+              ],
+              "type": "string",
+              "default": "en",
+              "title": "Language"
+            }
+          },
+          {
             "name": "authorization",
             "in": "header",
             "required": true,
@@ -962,10 +918,10 @@
         }
       }
     },
-    "/games/{game_id}/lessons/compare": {
+    "/games/{game_id}/lessons/corner-practice": {
       "get": {
-        "summary": "Compare Position Lesson",
-        "operationId": "compare_position_lesson_games__game_id__lessons_compare_get",
+        "summary": "Corner Practice Lesson",
+        "operationId": "corner_practice_lesson_games__game_id__lessons_corner_practice_get",
         "parameters": [
           {
             "name": "game_id",
@@ -1023,7 +979,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TeachingComparison"
+                  "$ref": "#/components/schemas/CornerPractice"
                 }
               }
             }
@@ -1063,6 +1019,20 @@
               "type": "integer",
               "minimum": 0,
               "title": "Revision"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "en",
+                "zh"
+              ],
+              "type": "string",
+              "default": "en",
+              "title": "Language"
             }
           },
           {
@@ -1161,15 +1131,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/GameState"
-                    },
-                    {
-                      "$ref": "#/components/schemas/Task"
-                    }
-                  ],
-                  "title": "Response Branch Games  Game Id  Branches Post"
+                  "$ref": "#/components/schemas/GameState"
                 }
               }
             }
@@ -1393,63 +1355,6 @@
         ],
         "title": "AnalysisSettings"
       },
-      "AnalyzeRequest": {
-        "properties": {
-          "board": {
-            "items": {
-              "type": "string",
-              "pattern": "^[.XO]{8}$"
-            },
-            "type": "array",
-            "maxItems": 8,
-            "minItems": 8,
-            "title": "Board"
-          },
-          "turn": {
-            "type": "string",
-            "enum": [
-              "X",
-              "O"
-            ],
-            "title": "Turn"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "board",
-          "turn"
-        ],
-        "title": "AnalyzeRequest"
-      },
-      "AutomaticHintMove": {
-        "properties": {
-          "revision": {
-            "type": "integer",
-            "title": "Revision"
-          },
-          "hint_id": {
-            "type": "string",
-            "title": "Hint Id"
-          },
-          "coordinate": {
-            "type": "string",
-            "pattern": "^[a-h][1-8]$",
-            "title": "Coordinate"
-          },
-          "analysis_settings": {
-            "$ref": "#/components/schemas/AnalysisSettings"
-          }
-        },
-        "type": "object",
-        "required": [
-          "revision",
-          "hint_id",
-          "coordinate",
-          "analysis_settings"
-        ],
-        "title": "AutomaticHintMove"
-      },
       "BranchRequest": {
         "properties": {
           "request_id": {
@@ -1463,40 +1368,31 @@
             "minimum": 0.0,
             "title": "Revision"
           },
-          "mode": {
-            "type": "string",
-            "enum": [
-              "manual",
-              "follow_hints"
-            ],
-            "title": "Mode"
+          "line": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-h][1-8]$"
+                },
+                {
+                  "type": "string",
+                  "const": "pass"
+                }
+              ]
+            },
+            "type": "array",
+            "maxItems": 4,
+            "title": "Line"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
           "request_id",
-          "revision",
-          "mode"
+          "revision"
         ],
         "title": "BranchRequest"
-      },
-      "BranchResult": {
-        "properties": {
-          "game_id": {
-            "type": "string",
-            "title": "Game Id"
-          },
-          "result": {
-            "$ref": "#/components/schemas/GameResult"
-          }
-        },
-        "type": "object",
-        "required": [
-          "game_id",
-          "result"
-        ],
-        "title": "BranchResult"
       },
       "Candidate": {
         "properties": {
@@ -1734,6 +1630,95 @@
           "opportunity"
         ],
         "title": "CornerComparisonWitness"
+      },
+      "CornerPractice": {
+        "properties": {
+          "target": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Target"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/CornerPracticeOption"
+            },
+            "type": "array",
+            "title": "Options"
+          }
+        },
+        "type": "object",
+        "required": [
+          "target",
+          "options"
+        ],
+        "title": "CornerPractice"
+      },
+      "CornerPracticeOption": {
+        "properties": {
+          "coordinate": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Coordinate"
+          },
+          "safe": {
+            "type": "boolean",
+            "title": "Safe"
+          },
+          "recommended": {
+            "type": "boolean",
+            "title": "Recommended"
+          },
+          "attack": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "string",
+                "const": "pass"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attack"
+          },
+          "replies": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Replies"
+          },
+          "frames": {
+            "items": {
+              "$ref": "#/components/schemas/TeachingFrame"
+            },
+            "type": "array",
+            "title": "Frames"
+          },
+          "capture_lines": {
+            "items": {
+              "items": {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Capture Lines"
+          }
+        },
+        "type": "object",
+        "required": [
+          "coordinate",
+          "safe",
+          "recommended",
+          "attack",
+          "replies",
+          "frames",
+          "capture_lines"
+        ],
+        "title": "CornerPracticeOption"
       },
       "CornerProof": {
         "properties": {
@@ -1991,6 +1976,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/ReplyOpportunity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "consequence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReplyConsequence"
               },
               {
                 "type": "null"
@@ -2296,11 +2291,6 @@
               }
             ],
             "title": "Parent Revision"
-          },
-          "auto_play": {
-            "type": "boolean",
-            "title": "Auto Play",
-            "default": false
           }
         },
         "type": "object",
@@ -2319,6 +2309,113 @@
           "result"
         ],
         "title": "GameState"
+      },
+      "GameSummary": {
+        "properties": {
+          "game_id": {
+            "type": "string",
+            "title": "Game Id"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "zh"
+            ],
+            "title": "Language"
+          },
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ready",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewFact"
+            },
+            "type": "array",
+            "title": "Facts"
+          },
+          "tool_calls": {
+            "items": {
+              "$ref": "#/components/schemas/CoachToolCall"
+            },
+            "type": "array",
+            "title": "Tool Calls"
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "game_id",
+          "language",
+          "task_id",
+          "status"
+        ],
+        "title": "GameSummary"
       },
       "HTTPValidationError": {
         "properties": {
@@ -2527,6 +2624,61 @@
         ],
         "title": "HistoryEvent"
       },
+      "KeyMove": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "actual_move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Actual Move"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LessonReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "revision",
+          "actual_move",
+          "reason"
+        ],
+        "title": "KeyMove"
+      },
+      "LanguageRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 8,
+            "title": "Request Id"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "zh"
+            ],
+            "title": "Language",
+            "default": "en"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id"
+        ],
+        "title": "LanguageRequest"
+      },
       "Lesson": {
         "properties": {
           "title": {
@@ -2549,6 +2701,91 @@
           "question"
         ],
         "title": "Lesson"
+      },
+      "LessonReason": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "forced_move",
+              "corner_contrast",
+              "corner_defense",
+              "corner_threat",
+              "corners",
+              "reply_contrast",
+              "reply_consequence",
+              "recapture",
+              "quiet",
+              "mobility",
+              "stable",
+              "parity"
+            ],
+            "title": "Kind"
+          },
+          "fact": {
+            "type": "string",
+            "title": "Fact"
+          },
+          "move": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Move"
+          },
+          "frame": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Frame"
+          },
+          "marks": {
+            "additionalProperties": {
+              "items": {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Marks"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "actor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "X",
+                  "O"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "fact",
+          "move",
+          "frame",
+          "marks",
+          "target",
+          "actor"
+        ],
+        "title": "LessonReason"
       },
       "LessonView": {
         "properties": {
@@ -2681,53 +2918,17 @@
         ],
         "title": "MoveRequest"
       },
-      "PlayerReflection": {
-        "properties": {
-          "text": {
-            "type": "string",
-            "title": "Text"
-          },
-          "source": {
-            "type": "string",
-            "enum": [
-              "review_recollection",
-              "review_plan"
-            ],
-            "title": "Source"
-          },
-          "recorded_move": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^[a-h][1-8]$"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Recorded Move"
-          },
-          "collected_at": {
-            "type": "string",
-            "title": "Collected At"
-          },
-          "prior_analysis_available": {
-            "type": "boolean",
-            "title": "Prior Analysis Available"
-          }
-        },
-        "type": "object",
-        "required": [
-          "text",
-          "source",
-          "recorded_move",
-          "collected_at",
-          "prior_analysis_available"
-        ],
-        "title": "PlayerReflection"
-      },
       "PositionLesson": {
         "properties": {
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "zh"
+            ],
+            "title": "Language",
+            "default": "en"
+          },
           "game_id": {
             "type": "string",
             "title": "Game Id"
@@ -2817,6 +3018,17 @@
             ],
             "title": "Coaching Error"
           },
+          "coaching_error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Coaching Error Code"
+          },
           "model_id": {
             "anyOf": [
               {
@@ -2839,16 +3051,6 @@
               }
             ],
             "title": "Usage"
-          },
-          "reflection": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PlayerReflection"
-              },
-              {
-                "type": "null"
-              }
-            ]
           }
         },
         "type": "object",
@@ -2898,19 +3100,6 @@
               }
             ]
           },
-          "reflection": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 1000,
-                "minLength": 1
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reflection"
-          },
           "language": {
             "type": "string",
             "enum": [
@@ -2929,20 +3118,8 @@
         ],
         "title": "PositionLessonRequest"
       },
-      "QuestionRequest": {
+      "QuestionResult": {
         "properties": {
-          "request_id": {
-            "type": "string",
-            "maxLength": 100,
-            "minLength": 8,
-            "title": "Request Id"
-          },
-          "question": {
-            "type": "string",
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Question"
-          },
           "language": {
             "type": "string",
             "enum": [
@@ -2951,18 +3128,7 @@
             ],
             "title": "Language",
             "default": "en"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "request_id",
-          "question"
-        ],
-        "title": "QuestionRequest"
-      },
-      "QuestionResult": {
-        "properties": {
+          },
           "answer": {
             "type": "string",
             "title": "Answer"
@@ -3062,6 +3228,62 @@
         ],
         "title": "QuestionResult"
       },
+      "ReplyConsequence": {
+        "properties": {
+          "reply": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Reply"
+          },
+          "axis": {
+            "type": "string",
+            "enum": [
+              "file",
+              "rank"
+            ],
+            "title": "Axis"
+          },
+          "axis_value": {
+            "type": "string",
+            "title": "Axis Value"
+          },
+          "actual_moves": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Actual Moves"
+          },
+          "alternative_moves": {
+            "items": {
+              "type": "string",
+              "pattern": "^[a-h][1-8]$"
+            },
+            "type": "array",
+            "title": "Alternative Moves"
+          },
+          "retained_disc": {
+            "type": "string",
+            "pattern": "^[a-h][1-8]$",
+            "title": "Retained Disc"
+          },
+          "opportunity": {
+            "$ref": "#/components/schemas/ReplyOpportunity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reply",
+          "axis",
+          "axis_value",
+          "actual_moves",
+          "alternative_moves",
+          "retained_disc",
+          "opportunity"
+        ],
+        "title": "ReplyConsequence"
+      },
       "ReplyOpportunity": {
         "properties": {
           "actor": {
@@ -3114,216 +3336,6 @@
         ],
         "title": "ReplyOpportunity"
       },
-      "Review": {
-        "properties": {
-          "game_id": {
-            "type": "string",
-            "title": "Game Id"
-          },
-          "result": {
-            "$ref": "#/components/schemas/GameResult"
-          },
-          "human_color": {
-            "type": "string",
-            "enum": [
-              "X",
-              "O"
-            ],
-            "title": "Human Color"
-          },
-          "initial_board": {
-            "items": {
-              "type": "string",
-              "pattern": "^[.XO]{8}$"
-            },
-            "type": "array",
-            "maxItems": 8,
-            "minItems": 8,
-            "title": "Initial Board"
-          },
-          "initial_turn": {
-            "type": "string",
-            "enum": [
-              "X",
-              "O"
-            ],
-            "title": "Initial Turn"
-          },
-          "history": {
-            "items": {
-              "$ref": "#/components/schemas/ReviewEvent"
-            },
-            "type": "array",
-            "title": "History"
-          },
-          "parent_game_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent Game Id"
-          },
-          "parent_revision": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Parent Revision"
-          },
-          "opponent_config_id": {
-            "type": "string",
-            "title": "Opponent Config Id"
-          },
-          "key_moves": {
-            "items": {
-              "$ref": "#/components/schemas/ReviewEvidence"
-            },
-            "type": "array",
-            "title": "Key Moves"
-          },
-          "branch_mode": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": [
-                  "manual",
-                  "follow_hints"
-                ]
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Branch Mode"
-          },
-          "automatic_hint_moves": {
-            "items": {
-              "$ref": "#/components/schemas/AutomaticHintMove"
-            },
-            "type": "array",
-            "title": "Automatic Hint Moves"
-          },
-          "hints": {
-            "items": {
-              "$ref": "#/components/schemas/ReviewHint"
-            },
-            "type": "array",
-            "title": "Hints"
-          },
-          "hint_adoption": {
-            "$ref": "#/components/schemas/HintAdoption"
-          },
-          "evidence": {
-            "items": {
-              "$ref": "#/components/schemas/ReviewEvidence"
-            },
-            "type": "array",
-            "title": "Evidence"
-          },
-          "format_version": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Format Version"
-          },
-          "summary_facts": {
-            "items": {
-              "$ref": "#/components/schemas/ReviewFact"
-            },
-            "type": "array",
-            "title": "Summary Facts"
-          },
-          "branch_results": {
-            "items": {
-              "additionalProperties": true,
-              "type": "object"
-            },
-            "type": "array",
-            "title": "Branch Results"
-          }
-        },
-        "type": "object",
-        "required": [
-          "game_id",
-          "result",
-          "human_color",
-          "initial_board",
-          "initial_turn",
-          "history",
-          "parent_game_id",
-          "parent_revision",
-          "opponent_config_id",
-          "key_moves",
-          "branch_mode",
-          "automatic_hint_moves",
-          "hints",
-          "hint_adoption",
-          "evidence"
-        ],
-        "title": "Review"
-      },
-      "ReviewEvent": {
-        "properties": {
-          "event_index": {
-            "type": "integer",
-            "title": "Event Index"
-          },
-          "actor": {
-            "type": "string",
-            "enum": [
-              "X",
-              "O"
-            ],
-            "title": "Actor"
-          },
-          "kind": {
-            "type": "string",
-            "enum": [
-              "move",
-              "pass"
-            ],
-            "title": "Kind"
-          },
-          "coordinate": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^[a-h][1-8]$"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Coordinate"
-          },
-          "revision": {
-            "type": "integer",
-            "title": "Revision"
-          }
-        },
-        "type": "object",
-        "required": [
-          "event_index",
-          "actor",
-          "kind",
-          "coordinate",
-          "revision"
-        ],
-        "title": "ReviewEvent"
-      },
       "ReviewEvidence": {
         "properties": {
           "revision": {
@@ -3366,10 +3378,15 @@
             "type": "boolean",
             "title": "Adopted Hint"
           },
-          "is_played": {
-            "type": "boolean",
-            "title": "Is Played",
-            "default": true
+          "opponent_replies": {
+            "patternProperties": {
+              "^[a-h][1-8]$": {
+                "type": "string",
+                "pattern": "^[a-h][1-8]$"
+              }
+            },
+            "type": "object",
+            "title": "Opponent Replies"
           },
           "stage": {
             "anyOf": [
@@ -3399,7 +3416,8 @@
           "score_loss",
           "analysis",
           "shown_hint_ids",
-          "adopted_hint"
+          "adopted_hint",
+          "opponent_replies"
         ],
         "title": "ReviewEvidence"
       },
@@ -3427,6 +3445,13 @@
               }
             ],
             "title": "Revision"
+          },
+          "frames": {
+            "items": {
+              "$ref": "#/components/schemas/TeachingFrame"
+            },
+            "type": "array",
+            "title": "Frames"
           }
         },
         "type": "object",
@@ -3436,40 +3461,6 @@
           "topic"
         ],
         "title": "ReviewFact"
-      },
-      "ReviewHint": {
-        "properties": {
-          "hint_id": {
-            "type": "string",
-            "title": "Hint Id"
-          },
-          "revision": {
-            "type": "integer",
-            "title": "Revision"
-          },
-          "recommended_move": {
-            "type": "string",
-            "pattern": "^[a-h][1-8]$",
-            "title": "Recommended Move"
-          },
-          "analysis_settings": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AnalysisSettings"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "hint_id",
-          "revision",
-          "recommended_move"
-        ],
-        "title": "ReviewHint"
       },
       "ReviewLookup": {
         "properties": {
@@ -3489,6 +3480,27 @@
           "task"
         ],
         "title": "ReviewLookup"
+      },
+      "ReviewSummary": {
+        "properties": {
+          "game_id": {
+            "type": "string",
+            "title": "Game Id"
+          },
+          "key_moves": {
+            "items": {
+              "$ref": "#/components/schemas/KeyMove"
+            },
+            "type": "array",
+            "title": "Key Moves"
+          }
+        },
+        "type": "object",
+        "required": [
+          "game_id",
+          "key_moves"
+        ],
+        "title": "ReviewSummary"
       },
       "RevisionRequest": {
         "properties": {
@@ -3564,6 +3576,15 @@
       },
       "Task": {
         "properties": {
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "zh"
+            ],
+            "title": "Language",
+            "default": "en"
+          },
           "task_id": {
             "type": "string",
             "title": "Task Id"
@@ -3573,8 +3594,8 @@
             "enum": [
               "review",
               "question",
-              "branch",
-              "lesson"
+              "lesson",
+              "summary"
             ],
             "title": "Kind"
           },
@@ -3595,16 +3616,16 @@
           "result": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/Review"
-              },
-              {
-                "$ref": "#/components/schemas/BranchResult"
+                "$ref": "#/components/schemas/ReviewSummary"
               },
               {
                 "$ref": "#/components/schemas/QuestionResult"
               },
               {
                 "$ref": "#/components/schemas/PositionLesson"
+              },
+              {
+                "$ref": "#/components/schemas/GameSummary"
               },
               {
                 "type": "null"
@@ -3703,6 +3724,23 @@
                 "type": "null"
               }
             ]
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LessonReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "focus": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Focus"
           }
         },
         "type": "object",
@@ -3713,7 +3751,9 @@
           "recommended_move",
           "reference_move",
           "insight",
-          "choices"
+          "choices",
+          "reason",
+          "focus"
         ],
         "title": "TeachingComparison"
       },
@@ -3763,39 +3803,6 @@
           "unsafe_replies"
         ],
         "title": "TeachingConcepts"
-      },
-      "TeachingDefense": {
-        "properties": {
-          "coordinate": {
-            "type": "string",
-            "pattern": "^[a-h][1-8]$",
-            "title": "Coordinate"
-          },
-          "frames": {
-            "items": {
-              "$ref": "#/components/schemas/TeachingFrame"
-            },
-            "type": "array",
-            "title": "Frames"
-          },
-          "capture_lines": {
-            "items": {
-              "items": {
-                "type": "string",
-                "pattern": "^[a-h][1-8]$"
-              },
-              "type": "array"
-            },
-            "type": "array",
-            "title": "Capture Lines"
-          }
-        },
-        "type": "object",
-        "required": [
-          "coordinate",
-          "frames"
-        ],
-        "title": "TeachingDefense"
       },
       "TeachingFrame": {
         "properties": {
@@ -4059,13 +4066,6 @@
             "type": "array",
             "title": "Checked Defenses"
           },
-          "defense_lines": {
-            "items": {
-              "$ref": "#/components/schemas/TeachingDefense"
-            },
-            "type": "array",
-            "title": "Defense Lines"
-          },
           "capture_lines": {
             "items": {
               "items": {
@@ -4125,6 +4125,17 @@
           },
           "concepts": {
             "$ref": "#/components/schemas/TeachingConcepts"
+          },
+          "defendable": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Defendable"
           }
         },
         "type": "object",
@@ -4136,7 +4147,6 @@
           "target",
           "opponent_reply",
           "checked_defenses",
-          "defense_lines",
           "capture_lines",
           "opponent_corner_moves_after_reply",
           "line_source",

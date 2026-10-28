@@ -124,23 +124,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/analyze": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Analyze */
-        post: operations["analyze_analyze_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/games/{game_id}/reviews": {
         parameters: {
             query?: never;
@@ -175,7 +158,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/games/{game_id}/review/questions": {
+    "/games/{game_id}/summaries": {
         parameters: {
             query?: never;
             header?: never;
@@ -184,23 +167,23 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Question */
-        post: operations["question_games__game_id__review_questions_post"];
+        /** Create Summary */
+        post: operations["create_summary_games__game_id__summaries_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/games/{game_id}/review/lesson": {
+    "/games/{game_id}/summary": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Teaching Lesson */
-        get: operations["teaching_lesson_games__game_id__review_lesson_get"];
+        /** Get Summary */
+        get: operations["get_summary_games__game_id__summary_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -227,15 +210,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/games/{game_id}/lessons/compare": {
+    "/games/{game_id}/lessons/corner-practice": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Compare Position Lesson */
-        get: operations["compare_position_lesson_games__game_id__lessons_compare_get"];
+        /** Corner Practice Lesson */
+        get: operations["corner_practice_lesson_games__game_id__lessons_corner_practice_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -362,43 +345,14 @@ export interface components {
              */
             selectivity: 5;
         };
-        /** AnalyzeRequest */
-        AnalyzeRequest: {
-            /** Board */
-            board: string[];
-            /**
-             * Turn
-             * @enum {string}
-             */
-            turn: "X" | "O";
-        };
-        /** AutomaticHintMove */
-        AutomaticHintMove: {
-            /** Revision */
-            revision: number;
-            /** Hint Id */
-            hint_id: string;
-            /** Coordinate */
-            coordinate: string;
-            analysis_settings: components["schemas"]["AnalysisSettings"];
-        };
         /** BranchRequest */
         BranchRequest: {
             /** Request Id */
             request_id: string;
             /** Revision */
             revision: number;
-            /**
-             * Mode
-             * @enum {string}
-             */
-            mode: "manual" | "follow_hints";
-        };
-        /** BranchResult */
-        BranchResult: {
-            /** Game Id */
-            game_id: string;
-            result: components["schemas"]["GameResult"];
+            /** Line */
+            line?: (string | "pass")[];
         };
         /** Candidate */
         Candidate: {
@@ -478,6 +432,30 @@ export interface components {
             /** Prefix */
             prefix: (string | "pass")[];
             opportunity: components["schemas"]["ReplyOpportunity"];
+        };
+        /** CornerPractice */
+        CornerPractice: {
+            /** Target */
+            target: string;
+            /** Options */
+            options: components["schemas"]["CornerPracticeOption"][];
+        };
+        /** CornerPracticeOption */
+        CornerPracticeOption: {
+            /** Coordinate */
+            coordinate: string;
+            /** Safe */
+            safe: boolean;
+            /** Recommended */
+            recommended: boolean;
+            /** Attack */
+            attack: string | "pass" | null;
+            /** Replies */
+            replies: number;
+            /** Frames */
+            frames: components["schemas"]["TeachingFrame"][];
+            /** Capture Lines */
+            capture_lines: string[][];
         };
         /** CornerProof */
         CornerProof: {
@@ -563,6 +541,7 @@ export interface components {
             replies_after_recommended: string[];
             removed_reply: components["schemas"]["ReplyOpportunity"] | null;
             added_reply: components["schemas"]["ReplyOpportunity"] | null;
+            consequence?: components["schemas"]["ReplyConsequence"] | null;
         };
         /** EarlierDecisionLink */
         EarlierDecisionLink: {
@@ -660,11 +639,39 @@ export interface components {
             parent_game_id?: string | null;
             /** Parent Revision */
             parent_revision?: number | null;
+        };
+        /** GameSummary */
+        GameSummary: {
+            /** Game Id */
+            game_id: string;
             /**
-             * Auto Play
-             * @default false
+             * Language
+             * @enum {string}
              */
-            auto_play: boolean;
+            language: "en" | "zh";
+            /** Task Id */
+            task_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "ready" | "failed";
+            /** Text */
+            text?: string | null;
+            /** Facts */
+            facts?: components["schemas"]["ReviewFact"][];
+            /** Tool Calls */
+            tool_calls?: components["schemas"]["CoachToolCall"][];
+            /** Model Id */
+            model_id?: string | null;
+            /** Usage */
+            usage?: {
+                [key: string]: unknown;
+            } | null;
+            /** Error */
+            error?: string | null;
+            /** Error Code */
+            error_code?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -736,6 +743,25 @@ export interface components {
             /** Turn */
             turn: ("X" | "O") | null;
         };
+        /** KeyMove */
+        KeyMove: {
+            /** Revision */
+            revision: number;
+            /** Actual Move */
+            actual_move: string;
+            reason: components["schemas"]["LessonReason"] | null;
+        };
+        /** LanguageRequest */
+        LanguageRequest: {
+            /** Request Id */
+            request_id: string;
+            /**
+             * Language
+             * @default en
+             * @enum {string}
+             */
+            language: "en" | "zh";
+        };
         /** Lesson */
         Lesson: {
             /** Title */
@@ -744,6 +770,28 @@ export interface components {
             text: string;
             /** Question */
             question: string;
+        };
+        /** LessonReason */
+        LessonReason: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "forced_move" | "corner_contrast" | "corner_defense" | "corner_threat" | "corners" | "reply_contrast" | "reply_consequence" | "recapture" | "quiet" | "mobility" | "stable" | "parity";
+            /** Fact */
+            fact: string;
+            /** Move */
+            move: string;
+            /** Frame */
+            frame: number;
+            /** Marks */
+            marks: {
+                [key: string]: string[];
+            };
+            /** Target */
+            target: string | null;
+            /** Actor */
+            actor: ("X" | "O") | null;
         };
         /** LessonView */
         LessonView: {
@@ -784,24 +832,14 @@ export interface components {
             /** Coordinate */
             coordinate: string;
         };
-        /** PlayerReflection */
-        PlayerReflection: {
-            /** Text */
-            text: string;
-            /**
-             * Source
-             * @enum {string}
-             */
-            source: "review_recollection" | "review_plan";
-            /** Recorded Move */
-            recorded_move: string | null;
-            /** Collected At */
-            collected_at: string;
-            /** Prior Analysis Available */
-            prior_analysis_available: boolean;
-        };
         /** PositionLesson */
         PositionLesson: {
+            /**
+             * Language
+             * @default en
+             * @enum {string}
+             */
+            language: "en" | "zh";
             /** Game Id */
             game_id: string;
             /** Revision */
@@ -830,13 +868,14 @@ export interface components {
             coaching_status: "not_requested" | "pending" | "ready" | "failed";
             /** Coaching Error */
             coaching_error?: string | null;
+            /** Coaching Error Code */
+            coaching_error_code?: string | null;
             /** Model Id */
             model_id?: string | null;
             /** Usage */
             usage?: {
                 [key: string]: unknown;
             } | null;
-            reflection?: components["schemas"]["PlayerReflection"] | null;
         };
         /** PositionLessonRequest */
         PositionLessonRequest: {
@@ -847,21 +886,6 @@ export interface components {
             /** Question */
             question?: string | null;
             view?: components["schemas"]["LessonView"] | null;
-            /** Reflection */
-            reflection?: string | null;
-            /**
-             * Language
-             * @default en
-             * @enum {string}
-             */
-            language: "en" | "zh";
-        };
-        /** QuestionRequest */
-        QuestionRequest: {
-            /** Request Id */
-            request_id: string;
-            /** Question */
-            question: string;
             /**
              * Language
              * @default en
@@ -871,6 +895,12 @@ export interface components {
         };
         /** QuestionResult */
         QuestionResult: {
+            /**
+             * Language
+             * @default en
+             * @enum {string}
+             */
+            language: "en" | "zh";
             /** Answer */
             answer: string;
             /** Model Id */
@@ -892,6 +922,25 @@ export interface components {
             view?: components["schemas"]["LessonView"] | null;
             earlier_decision?: components["schemas"]["EarlierDecisionResult"] | null;
         };
+        /** ReplyConsequence */
+        ReplyConsequence: {
+            /** Reply */
+            reply: string;
+            /**
+             * Axis
+             * @enum {string}
+             */
+            axis: "file" | "rank";
+            /** Axis Value */
+            axis_value: string;
+            /** Actual Moves */
+            actual_moves: string[];
+            /** Alternative Moves */
+            alternative_moves: string[];
+            /** Retained Disc */
+            retained_disc: string;
+            opportunity: components["schemas"]["ReplyOpportunity"];
+        };
         /** ReplyOpportunity */
         ReplyOpportunity: {
             /**
@@ -909,70 +958,6 @@ export interface components {
             capture_line: string[];
             /** Changes */
             changes: components["schemas"]["ContrastSquare"][];
-        };
-        /** Review */
-        Review: {
-            /** Game Id */
-            game_id: string;
-            result: components["schemas"]["GameResult"];
-            /**
-             * Human Color
-             * @enum {string}
-             */
-            human_color: "X" | "O";
-            /** Initial Board */
-            initial_board: string[];
-            /**
-             * Initial Turn
-             * @enum {string}
-             */
-            initial_turn: "X" | "O";
-            /** History */
-            history: components["schemas"]["ReviewEvent"][];
-            /** Parent Game Id */
-            parent_game_id: string | null;
-            /** Parent Revision */
-            parent_revision: number | null;
-            /** Opponent Config Id */
-            opponent_config_id: string;
-            /** Key Moves */
-            key_moves: components["schemas"]["ReviewEvidence"][];
-            /** Branch Mode */
-            branch_mode: ("manual" | "follow_hints") | null;
-            /** Automatic Hint Moves */
-            automatic_hint_moves: components["schemas"]["AutomaticHintMove"][];
-            /** Hints */
-            hints: components["schemas"]["ReviewHint"][];
-            hint_adoption: components["schemas"]["HintAdoption"];
-            /** Evidence */
-            evidence: components["schemas"]["ReviewEvidence"][];
-            /** Format Version */
-            format_version?: string | null;
-            /** Summary Facts */
-            summary_facts?: components["schemas"]["ReviewFact"][];
-            /** Branch Results */
-            branch_results?: {
-                [key: string]: unknown;
-            }[];
-        };
-        /** ReviewEvent */
-        ReviewEvent: {
-            /** Event Index */
-            event_index: number;
-            /**
-             * Actor
-             * @enum {string}
-             */
-            actor: "X" | "O";
-            /**
-             * Kind
-             * @enum {string}
-             */
-            kind: "move" | "pass";
-            /** Coordinate */
-            coordinate: string | null;
-            /** Revision */
-            revision: number;
         };
         /** ReviewEvidence */
         ReviewEvidence: {
@@ -994,11 +979,10 @@ export interface components {
             shown_hint_ids: string[];
             /** Adopted Hint */
             adopted_hint: boolean;
-            /**
-             * Is Played
-             * @default true
-             */
-            is_played: boolean;
+            /** Opponent Replies */
+            opponent_replies: {
+                [key: string]: string;
+            };
             /** Stage */
             stage?: string | null;
             /** Comparisons */
@@ -1014,20 +998,19 @@ export interface components {
             topic: string;
             /** Revision */
             revision?: number | null;
-        };
-        /** ReviewHint */
-        ReviewHint: {
-            /** Hint Id */
-            hint_id: string;
-            /** Revision */
-            revision: number;
-            /** Recommended Move */
-            recommended_move: string;
-            analysis_settings?: components["schemas"]["AnalysisSettings"] | null;
+            /** Frames */
+            frames?: components["schemas"]["TeachingFrame"][];
         };
         /** ReviewLookup */
         ReviewLookup: {
             task: components["schemas"]["Task"] | null;
+        };
+        /** ReviewSummary */
+        ReviewSummary: {
+            /** Game Id */
+            game_id: string;
+            /** Key Moves */
+            key_moves: components["schemas"]["KeyMove"][];
         };
         /** RevisionRequest */
         RevisionRequest: {
@@ -1057,13 +1040,19 @@ export interface components {
         };
         /** Task */
         Task: {
+            /**
+             * Language
+             * @default en
+             * @enum {string}
+             */
+            language: "en" | "zh";
             /** Task Id */
             task_id: string;
             /**
              * Kind
              * @enum {string}
              */
-            kind: "review" | "question" | "branch" | "lesson";
+            kind: "review" | "question" | "lesson" | "summary";
             /** Game Id */
             game_id: string;
             /**
@@ -1072,7 +1061,7 @@ export interface components {
              */
             status: "queued" | "running" | "succeeded" | "failed";
             /** Result */
-            result?: components["schemas"]["Review"] | components["schemas"]["BranchResult"] | components["schemas"]["QuestionResult"] | components["schemas"]["PositionLesson"] | null;
+            result?: components["schemas"]["ReviewSummary"] | components["schemas"]["QuestionResult"] | components["schemas"]["PositionLesson"] | components["schemas"]["GameSummary"] | null;
             /** Error */
             error?: {
                 [key: string]: string;
@@ -1101,6 +1090,9 @@ export interface components {
             /** Choices */
             choices: components["schemas"]["TeachingMove"][];
             decision_contrast?: components["schemas"]["DecisionContrast"] | null;
+            reason: components["schemas"]["LessonReason"] | null;
+            /** Focus */
+            focus: string[];
         };
         /** TeachingConcepts */
         TeachingConcepts: {
@@ -1114,15 +1106,6 @@ export interface components {
             safe_replies: number;
             /** Unsafe Replies */
             unsafe_replies: string[];
-        };
-        /** TeachingDefense */
-        TeachingDefense: {
-            /** Coordinate */
-            coordinate: string;
-            /** Frames */
-            frames: components["schemas"]["TeachingFrame"][];
-            /** Capture Lines */
-            capture_lines?: string[][];
         };
         /** TeachingFrame */
         TeachingFrame: {
@@ -1186,8 +1169,6 @@ export interface components {
             opponent_reply: string | null;
             /** Checked Defenses */
             checked_defenses: string[];
-            /** Defense Lines */
-            defense_lines: components["schemas"]["TeachingDefense"][];
             /** Capture Lines */
             capture_lines: string[][];
             /** Opponent Corner Moves After Reply */
@@ -1203,6 +1184,8 @@ export interface components {
             corner_proof?: components["schemas"]["CornerProof"] | null;
             continuation_lesson?: components["schemas"]["ContinuationLesson"] | null;
             concepts: components["schemas"]["TeachingConcepts"];
+            /** Defendable */
+            defendable?: boolean | null;
         };
         /** ThreatObservation */
         ThreatObservation: {
@@ -1531,42 +1514,6 @@ export interface operations {
             };
         };
     };
-    analyze_analyze_post: {
-        parameters: {
-            query?: never;
-            header: {
-                authorization: string;
-                "x-session-id": string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AnalyzeRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Analysis"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     review_games__game_id__reviews_post: {
         parameters: {
             query?: never;
@@ -1625,7 +1572,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Review"] | components["schemas"]["ReviewLookup"];
+                    "application/json": components["schemas"]["ReviewSummary"] | components["schemas"]["ReviewLookup"];
                 };
             };
             /** @description Validation Error */
@@ -1639,7 +1586,7 @@ export interface operations {
             };
         };
     };
-    question_games__game_id__review_questions_post: {
+    create_summary_games__game_id__summaries_post: {
         parameters: {
             query?: never;
             header: {
@@ -1653,7 +1600,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["QuestionRequest"];
+                "application/json": components["schemas"]["LanguageRequest"];
             };
         };
         responses: {
@@ -1677,11 +1624,10 @@ export interface operations {
             };
         };
     };
-    teaching_lesson_games__game_id__review_lesson_get: {
+    get_summary_games__game_id__summary_get: {
         parameters: {
-            query: {
-                revision: number;
-                move: string;
+            query?: {
+                language?: "en" | "zh";
             };
             header: {
                 authorization: string;
@@ -1700,7 +1646,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TeachingComparison"];
+                    "application/json": components["schemas"]["GameSummary"] | components["schemas"]["ReviewLookup"];
                 };
             };
             /** @description Validation Error */
@@ -1718,6 +1664,7 @@ export interface operations {
         parameters: {
             query: {
                 revision: number;
+                language?: "en" | "zh";
             };
             header: {
                 authorization: string;
@@ -1788,7 +1735,7 @@ export interface operations {
             };
         };
     };
-    compare_position_lesson_games__game_id__lessons_compare_get: {
+    corner_practice_lesson_games__game_id__lessons_corner_practice_get: {
         parameters: {
             query: {
                 revision: number;
@@ -1811,7 +1758,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TeachingComparison"];
+                    "application/json": components["schemas"]["CornerPractice"];
                 };
             };
             /** @description Validation Error */
@@ -1829,6 +1776,7 @@ export interface operations {
         parameters: {
             query: {
                 revision: number;
+                language?: "en" | "zh";
             };
             header: {
                 authorization: string;
@@ -1885,7 +1833,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GameState"] | components["schemas"]["Task"];
+                    "application/json": components["schemas"]["GameState"];
                 };
             };
             /** @description Validation Error */

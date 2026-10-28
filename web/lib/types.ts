@@ -4,16 +4,15 @@ export type SavedGame = components["schemas"]["SavedGame"];
 
 export type TeachingComparison = components["schemas"]["TeachingComparison"];
 export type TeachingMove = components["schemas"]["TeachingMove"];
+export type LessonReason = components["schemas"]["LessonReason"];
 export type TeachingFrame = components["schemas"]["TeachingFrame"];
-export type TeachingDefense = components["schemas"]["TeachingDefense"];
+export type CornerPractice = components["schemas"]["CornerPractice"];
+export type CornerPracticeOption = components["schemas"]["CornerPracticeOption"];
 export type PositionLesson = components["schemas"]["PositionLesson"];
 export type QuestionResult = components["schemas"]["QuestionResult"];
 export type LessonView = components["schemas"]["LessonView"];
-export type ReplyOpportunity = components["schemas"]["ReplyOpportunity"];
-export type CornerWitness = components["schemas"]["CornerComparisonWitness"];
 export type EarlierDecisionResult = components["schemas"]["EarlierDecisionResult"];
 export type EarlierDecisionLink = components["schemas"]["EarlierDecisionLink"];
-export type CoachToolCall = components["schemas"]["CoachToolCall"];
 
 export type Color = "X" | "O";
 export type Difficulty = "easy" | "medium" | "hard";
@@ -53,7 +52,6 @@ export interface GameState {
   result: GameResult | null;
   parent_game_id: string | null;
   parent_revision: number | null;
-  auto_play: boolean;
 }
 
 export interface Candidate {
@@ -89,85 +87,12 @@ export interface Hint {
   displayed: boolean;
 }
 
-export interface Review {
-  game_id: string;
-  initial_board: string[];
-  initial_turn: Color;
-  history: Pick<HistoryEvent, "event_index" | "actor" | "kind" | "coordinate" | "revision">[];
-  evidence: ReviewEvidence[];
-  hints: {
-    hint_id: string;
-    revision: number;
-    recommended_move: string;
-    analysis_settings?: Analysis["settings"] | null;
-  }[];
-  hint_adoption: { shown_turns: number; adopted_turns: number };
-  result: GameResult;
-  human_color: Color;
-  parent_game_id: string | null;
-  parent_revision: number | null;
-  opponent_config_id: string;
-  key_moves: ReviewEvidence[];
-  branch_mode: "manual" | "follow_hints" | null;
-  automatic_hint_moves: {
-    revision: number;
-    hint_id: string;
-    coordinate: string;
-    analysis_settings: Analysis["settings"];
-  }[];
-  format_version?: string | null;
-  summary_facts?: ReviewFact[];
-  branch_results?: { game_id: string; parent_revision: number; result: GameResult }[];
-}
-
-export interface ReviewFact {
-  id: string;
-  text: string;
-  topic: string;
-  revision?: number | null;
-}
-
-export interface CoachingCard {
-  revision: number;
-  facts: ReviewFact[];
-  lesson_id: string;
-  lesson: { title: string; text: string; question: string };
-}
-
-export interface VariationFrame {
-  board: string[];
-  turn: Color | null;
-  coordinate: string | null;
-}
-
-export interface MoveComparison {
-  coordinate: string;
-  corner: number;
-  empty_corner_neighbor: number;
-  opponent_moves: number;
-  own_moves: number;
-  frontier_difference: number;
-  disc_difference: number;
-  opponent_legal_moves: string[];
-  opponent_corners: string[];
-  frames: VariationFrame[];
-}
-
-export interface ReviewEvidence {
-  revision: number;
-  actor: Color;
-  actual_move: string;
-  recommended_move: string;
-  score_loss: number;
-  analysis: Analysis;
-  shown_hint_ids: string[];
-  adopted_hint: boolean;
-  is_played?: boolean;
-  stage?: string | null;
-  comparisons?: MoveComparison[];
-}
+export type ReviewSummary = components["schemas"]["ReviewSummary"];
+export type KeyMove = components["schemas"]["KeyMove"];
+export type GameSummary = components["schemas"]["GameSummary"];
 
 interface TaskState {
+  language: 'en' | 'zh';
   task_id: string;
   status: "queued" | "running" | "succeeded" | "failed";
   game_id: string;
@@ -175,15 +100,15 @@ interface TaskState {
 }
 
 export type Task = TaskState & (
-  | { kind: "review"; result: Review | null }
-  | { kind: "branch"; result: { game_id: string; result: GameResult } | null }
+  | { kind: "review"; result: ReviewSummary | null }
   | { kind: "question"; result: QuestionResult | null }
   | { kind: "lesson"; result: PositionLesson | null }
+  | { kind: "summary"; result: GameSummary | null }
 );
 
 export interface TrackedTask {
   task: Task;
-  purpose: "review" | "question" | "branch" | "lesson";
+  purpose: "review" | "question" | "lesson" | "summary";
   game_id: string;
   revision?: number;
   question?: string;

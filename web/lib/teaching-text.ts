@@ -1,5 +1,5 @@
 import type { Locale } from "./locale";
-import type { CornerWitness, TeachingComparison, TeachingFrame, TeachingMove } from "./types";
+import type { CornerPracticeOption, LessonReason, TeachingComparison, TeachingFrame, TeachingMove } from "./types";
 
 export function teachingNote(locale: Locale): string {
   return locale === "zh"
@@ -8,8 +8,9 @@ export function teachingNote(locale: Locale): string {
 }
 
 export function teachingChoiceLabel(move: TeachingMove, locale: Locale): string {
+  const tied = move.assessment.best_moves.length > 1;
   return move.assessment.is_played ? locale === "zh" ? "你当时下的" : "Your game move"
-    : locale === "zh" ? "推荐走法" : "Recommended move";
+    : locale === "zh" ? tied ? "推荐走法之一" : "推荐走法" : tied ? "One of the recommended moves" : "Recommended move";
 }
 
 export function cornerName(square: string, locale: Locale): string {
@@ -18,8 +19,24 @@ export function cornerName(square: string, locale: Locale): string {
   return name ? `${name} ${square}` : square;
 }
 
-export function defenseFeedback(rootMove: string, attempted: string, target: string, locale: Locale): string {
-  return locale === "zh" ? `在 ${rootMove} 的续着中，你下 ${attempted} 后，对手仍能占${cornerName(target, locale)}。这一步防守没有挡住抢角。` : `In the ${rootMove} continuation, after your ${attempted}, the opponent can still take the ${cornerName(target, locale)}. This defense does not stop the corner capture.`;
+export function practicePrompt(options: CornerPracticeOption[], target: string, locale: Locale): string {
+  const zh = locale === "zh", corner = cornerName(target, locale);
+  const prompt = zh ? `回到你落子之前：选一步，试着不让对手拿到${corner}。` : `Back before your move: pick a move that keeps the opponent from taking the ${corner}.`;
+  if (options.some((option) => option.safe)) return prompt;
+  return prompt + (zh ? `不过这个局面里，每一步都会让对手能拿到${corner}，试试看它是怎么拿到的。` : ` In this position every move lets the opponent take it; try one to see how.`);
+}
+
+export function practiceFeedback(option: CornerPracticeOption, target: string, recommended: string, locale: Locale): string {
+  const zh = locale === "zh", corner = cornerName(target, locale), move = option.coordinate;
+  if (move === target) return zh ? `挡住了：你自己占了${corner}。` : `Blocked: you take the ${corner} yourself.`;
+  if (option.safe) return zh
+    ? `挡住了：下 ${move} 之后，对手三步之内拿不到${corner}。` + (move === recommended ? "这也是推荐走法。" : option.recommended ? `引擎认为它和 ${recommended} 一样好。` : `不过看完整盘变化，引擎更推荐 ${recommended}。`)
+    : `Blocked: after ${move}, the opponent cannot take the ${corner} within three moves.` + (move === recommended ? " This is also the recommended move." : option.recommended ? ` The engine rates it as good as ${recommended}.` : ` Looking at the whole game, the engine still prefers ${recommended}.`);
+  if (option.attack === "pass") return zh ? `没挡住：下 ${move} 之后，对手只能跳过，可你接着怎么下都挡不住它拿${corner}。`
+    : `Not blocked: after ${move}, the opponent must pass, but whatever you play next it can take the ${corner}.`;
+  if (option.attack === target) return zh ? `没挡住：下 ${move} 之后，对手可以直接占${corner}。` : `Not blocked: after ${move}, the opponent can take the ${corner} right away.`;
+  return zh ? `没挡住：下 ${move} 之后，对手先下 ${option.attack}，你怎么应对都挡不住它拿${corner}。`
+    : `Not blocked: after ${move}, the opponent plays ${option.attack} and then takes the ${corner} whatever you reply.`;
 }
 
 export function stepText(frame: TeachingFrame, player: string, locale: Locale): string {
@@ -47,130 +64,109 @@ export function captureLineText(lines: string[][], actor: "X" | "O", player: str
 }
 
 
-const CORNERS = ["a1", "h1", "a8", "h8"];
-
-function squares(list: string[], locale: Locale): string {
-  return list.slice(0, 3).join(locale === "zh" ? "、" : ", ");
+// Says why a demonstration step matters, following the backend's primary reason
+export function stepNote(comparison: TeachingComparison, choice: TeachingMove, frame: number, locale: Locale): string | null {
+  const zh = locale === "zh";
+  const sep = zh ? "、" : ", ";
+  const list = (squares: string[]) => squares.join(sep);
+  const reason = comparison.reason;
+  const marks = reason?.marks[choice.coordinate];
+  if (reason && marks && frame === Math.min(reason.frame, choice.frames.length - 1)) {
+    const move = choice.coordinate, count = marks.length;
+    switch (reason.kind) {
+      case "reply_consequence": {
+        const effect = comparison.decision_contrast?.consequence;
+        if (!effect) return null;
+        if (move === effect.opportunity.blocked_after) return zh
+          ? "高亮的是你接下来全部可选的落点，已经集中在同一条线上。"
+          : "The highlighted squares are all your next legal moves, confined to the same line.";
+        return zh ? `高亮这条夹击线，展示你保留下来的 ${effect.opportunity.coordinate} 落点。`
+          : `The highlighted capture line shows your preserved move at ${effect.opportunity.coordinate}.`;
+      }
+      case "corner_contrast": case "reply_contrast": {
+        const who = reason.actor === comparison.actor ? zh ? "你" : "you" : zh ? "对手" : "the opponent";
+        const span = zh ? `${marks[0]} 到 ${marks.at(-1)} 这条线` : `the line from ${marks[0]} to ${marks.at(-1)}`;
+        const [column, row] = [marks[0].charCodeAt(0) - 97, Number(marks[0][1]) - 1];
+        const taken = choice.frames[frame].board[row][column] !== ".";
+        if (move !== reason.move && taken) return zh ? `换成 ${move}，${marks[0]} 已经有棋子，${who}下不了这里。` : `With ${move}, ${marks[0]} is already occupied, so ${who} cannot play there.`;
+        return move === reason.move
+          ? zh ? `现在 ${span}连上了：${who}下 ${marks[0]} 就能夹住 ${list(marks.slice(1, -1))}。` : `Now ${span} is complete: ${who} can play ${marks[0]} and trap ${list(marks.slice(1, -1))}.`
+          : zh ? `换成 ${move}，${span}连不上，${who}下不了 ${marks[0]}。` : `With ${move}, ${span} is broken, so ${who} cannot play ${marks[0]}.`;
+      }
+      case "recapture": {
+        const lesson = choice.continuation_lesson!, anchor = lesson.capture_line.at(-1);
+        return zh ? `对手借 ${anchor} 把你刚翻到的 ${list(lesson.recaptured)} 夹了回去。` : `The opponent uses ${anchor} to flip back ${list(lesson.recaptured)}, which you had just gained.`;
+      }
+      case "quiet": return count
+        ? zh ? `高亮的 ${list(marks)} 挨着空格，对手以后可能从旁边的空格下棋，把${count > 1 ? "它们" : "它"}翻回去。` : `The highlighted ${list(marks)} ${count > 1 ? "sit" : "sits"} next to an empty square, where the opponent may later play to flip ${count > 1 ? "them" : "it"} back.`
+        : zh ? `${move} 翻过来的棋子里，没有挨着空格的（边上的不算）。` : `None of the discs ${move} flips sits next to an empty square (edge discs aside).`;
+      case "mobility": return count
+        ? zh ? `高亮的 ${count} 个空格是对手的安全落点：下在那里不会让你拿到角。` : `The ${count} highlighted squares are safe replies for the opponent: none of them lets you take a corner.`
+        : zh ? "对手没有安全落点：它下在哪里都会让你拿到角。" : "The opponent has no safe reply: every move it makes lets you take a corner.";
+      case "stable": return count
+        ? zh ? `高亮的 ${list(marks)} 以后不会再被翻转。` : `The highlighted ${list(marks)} can never be flipped again.`
+        : zh ? `${move} 没有让你的棋子变得不能被翻转。` : `${move} makes none of your discs impossible to flip.`;
+      case "corners": return count
+        ? zh ? `现在对手可以直接占角：${list(marks)}。` : `Now the opponent can take a corner right away: ${list(marks)}.`
+        : zh ? "现在对手不能直接占角。" : "Now the opponent cannot take a corner right away.";
+    }
+  }
+  // A corner both moves lose is not the lesson, so its steps get no notes
+  if (comparison.insight.kind === "shared_corner" || !choice.target) return null;
+  const ray = choice.capture_lines[0];
+  const lost = choice.defendable === false ? zh ? "在这一步之前，这个角就已经保不住了。" : " This corner was already lost before this move." : "";
+  if (choice.kind === "corner_given" && frame === 1) return (zh
+    ? `现在对手可以直接下 ${choice.target}` + (ray ? `，借 ${ray.at(-1)} 夹住 ${list(ray.slice(1, -1))}` : "") + "。"
+    : `Now the opponent can play ${choice.target} right away` + (ray ? `, using ${ray.at(-1)} to trap ${list(ray.slice(1, -1))}` : "") + ".") + lost;
+  if (choice.kind !== "corner_forced") return null;
+  const count = choice.checked_defenses.length;
+  if (frame === 2) return (zh ? `对手下了这一步以后，你怎么应对都挡不住它下 ${choice.target}。` : `After this move, nothing you play stops the opponent from taking ${choice.target}.`) + lost;
+  if (frame === 3) return count ? zh ? `这只是你的一种应对。这时你共有 ${count} 种下法，换成哪一种都挡不住。` : `This is just one of your ${count} possible replies; none of them stops it.`
+    : zh ? "你没有合法落点，只能跳过。" : "You have no legal move and must pass.";
+  if (frame === 4) return ray ? zh ? `它借 ${ray.at(-1)} 夹住 ${list(ray.slice(1, -1))}，拿到了这个角。` : `It uses ${ray.at(-1)} to trap ${list(ray.slice(1, -1))} and takes the corner.`
+    : zh ? "它拿到了这个角。" : "It takes the corner.";
+  return null;
 }
 
-export function lessonText(comparison: TeachingComparison, move: TeachingMove, locale: Locale): string[] {
-  const zh = locale === "zh";
-  const forced = move.assessment.status === "forced";
-  const witness = comparison.insight.witness;
-  const contrast = comparison.decision_contrast;
-  if (!forced && (witness || contrast)) {
-    const opportunity = witness?.opportunity ?? contrast!.removed_reply ?? contrast!.added_reply!;
-    const added = contrast?.removed_reply && contrast.added_reply;
-    const lesson = witnessLesson(comparison, witness ?? {prefix: [], opportunity}, locale);
-    if (added) lesson[2] += zh ? `不过，${opportunity.blocked_after} 也让对手多了 ${added.coordinate} 这个落点。` : ` However, ${opportunity.blocked_after} gives the opponent a new reply at ${added.coordinate}.`;
-    const tradeoff = otherCornerText(comparison, locale);
-    return tradeoff ? [...lesson, tradeoff] : lesson;
-  }
-  const opening = forced ? zh ? `${move.coordinate} 是唯一的合法落点。` : `${move.coordinate} is the only legal move.` : null;
-  const continuation = move.continuation_lesson;
-  if (continuation) {
-    const ray = continuation.capture_line;
-    return [
-      opening ?? (zh ? "这一手翻到的棋子，对手下一步能夹回来吗？" : "Can the opponent flip back the discs you just gained?"),
-      zh ? `对手可以下 ${ray[0]}，借 ${ray[ray.length - 1]} 夹回 ${squares(continuation.recaptured, locale)}。` : `The opponent can play ${ray[0]} and use ${ray[ray.length - 1]} to flip back ${squares(continuation.recaptured, locale)}.`,
-      zh ? "落子前，先替对手找一次夹击，看看刚翻到的棋子能不能保住。" : "Before you play, look for the opponent's capture and check which new discs you can keep.",
-    ];
-  }
-  const target = move.target;
-  if (["corner_given", "corner_forced", "corner_defense"].includes(move.kind)) {
-    const ray = move.capture_lines[0];
-    return [
-      opening ?? (zh ? `先看 ${target}：对手准备怎样把这个角拿走？` : `Look at ${target}: how could the opponent take this corner?`),
-      ray ? captureLineText([ray], move.corner_proof?.attacker ?? (comparison.actor === "X" ? "O" : "X"), comparison.actor, locale)!
-        : zh ? `对手准备占 ${target}。在推演里找出它夹击需要的另一端棋子。` : `The opponent is preparing to take ${target}. In the continuation, find the disc that anchors that capture.`,
-      zh ? "在空角附近落子前，先看自己的棋子会不会接上对手抢角的夹击线。" : "Before playing near an empty corner, check whether your disc completes an opponent capture line into it.",
-    ];
-  }
-  if (move.kind === "corner_taken") return [
-    zh ? `${move.coordinate} 在角上，为什么这颗棋子能一直保住？` : `Why can you keep the disc at corner ${move.coordinate}?`,
-    zh ? "翻转棋子要从两头夹住。角的外侧没有格子，对手夹不住它。" : "Flipping a disc needs both ends of a line. Nothing lies beyond a corner, so it cannot be trapped.",
-  ];
-  if (move.kind === "pass") return [
-    zh ? `下 ${move.coordinate} 后，为什么又轮到你？` : `Why do you move again after ${move.coordinate}?`,
-    zh ? "对手没有合法落点，必须跳过回合；你还能下，对局就继续。" : "The opponent has no legal move and must pass. The game continues while you can still move.",
-  ];
-  const last = move.frames.at(-1)!;
-  if (last.turn === null) {
-    const cells = last.board.join("");
-    const mine = cells.split(comparison.actor).length - 1;
-    const theirs = cells.split(comparison.actor === "X" ? "O" : "X").length - 1;
-    return [opening ?? (zh ? "这一步之后，对局怎样结束？" : "How does the game end after this move?"),
-      zh ? `双方都没有合法落点，按棋子数结算：你 ${mine} 颗，对手 ${theirs} 颗。` : `Neither side can move. You finish with ${mine} discs and the opponent with ${theirs}.`];
-  }
-  return conceptLesson(move, opening, locale);
+// One line for each move worth reviewing, naming its primary reason
+export function reasonLabel(reason: LessonReason | null | undefined, locale: Locale): string | null {
+  if (!reason) return null;
+  const corner = reason.target ? cornerName(reason.target, locale) : "";
+  const labels: Record<LessonReason["kind"], [string, string]> = {
+    forced_move: ["the only legal move", "唯一的合法落点"],
+    corner_contrast: [`the ${corner}`, corner], corner_defense: [`the ${corner}`, corner], corner_threat: [`the ${corner}`, corner],
+    corners: ["whether the opponent can take a corner", "对手能不能直接占角"],
+    reply_contrast: [`the opponent's reply at ${reason.target}`, `对手的落点 ${reason.target}`],
+    reply_consequence: ["keeping a route for your next move", "给下一手保留落点"],
+    recapture: ["discs flipped straight back", "刚翻到的棋子被夹回去"],
+    quiet: ["discs next to empty squares", "挨着空格的棋子"],
+    mobility: ["the opponent's safe replies", "对手的安全落点"],
+    stable: ["discs that can never be flipped", "稳定子"],
+    parity: ["the empty regions", "空地的奇偶"],
+  };
+  const [en, zh] = labels[reason.kind];
+  return locale === "zh" ? `关键：${zh}` : `Key: ${en}`;
 }
 
-function conceptLesson(move: TeachingMove, opening: string | null, locale: Locale): string[] {
-  const zh = locale === "zh";
-  const {exposed, inner_flips, stable_gained} = move.concepts;
-  const more = exposed.length > 3 ? zh ? " 等棋子" : " and others" : "";
-  const reason = !inner_flips ? zh ? `${move.coordinate} 只翻了边上的棋子。` : `${move.coordinate} flips only edge discs.`
-    : exposed.length ? zh ? `${move.coordinate} 翻过来的 ${squares(exposed, locale)}${more} 挨着空格，对手以后可能从旁边的空格下棋，把${exposed.length > 1 ? "它们" : "它"}翻回去。` : `${move.coordinate} flips ${squares(exposed, locale)}${more} next to empty squares, where the opponent may later play to flip them back.`
-      : zh ? `${move.coordinate} 翻过来的棋子四周都有棋子，没有新增挨着空格的棋子，这是安静的一步。` : `Every disc ${move.coordinate} flips is surrounded by discs, so it adds no disc next to an empty square: a quiet move.`;
-  const stable = stable_gained.length ? zh ? `${squares(stable_gained, locale)} 从此不会再被翻转。` : ` ${squares(stable_gained, locale)} can never be flipped again.` : "";
-  return [
-    opening ?? (zh ? "这一步翻过来的棋子，哪些挨着空格？" : "Which discs flipped by this move sit next to empty squares?"),
-    reason + stable,
-    zh ? "落子前比较几个候选：哪一步翻过来的棋子挨着空格最少？" : "Before you play, compare candidates: which one leaves the fewest flipped discs next to empty squares?",
-  ];
-}
+// Failures where Nemotron answered but its text did not pass the code checks
+const CHECK_FAILURES = ["COACH_UNGROUNDED", "REVIEW_PLAN_INVALID", "COACH_ROUNDS", "COACH_NO_TOOL", "REVIEW_TRUNCATED"];
 
-function witnessLesson(comparison: TeachingComparison, witness: CornerWitness, locale: Locale): string[] {
-  const zh = locale === "zh";
-  const player = comparison.actor;
-  const opportunity = witness.opportunity;
-  const ray = opportunity.capture_line, target = ray[0], anchor = ray[ray.length - 1];
-  const middle = ray.slice(1, -1).join(zh ? "、" : ", ");
-  const mine = opportunity.actor === player;
-  const setup = witness.prefix[0];
-  const proof = comparison.choices.find((choice) => choice.coordinate === opportunity.available_after)?.corner_proof;
-  // The proof covers every reply, so the setup cannot be stopped
-  const unstoppable = !mine && !!proof?.forced && proof.attack === setup && proof.target === target;
-  const corner = CORNERS.includes(target) && !mine;
-  const after = opportunity.available_after;
-  const result = zh
-    ? `${after} 之后，` + (unstoppable ? `对手先下 ${setup}，你怎么应对都挡不住，它接着下 ${target}`
-      : setup ? `${setup === "pass" ? "对手跳过回合后" : `对手下 ${setup} 后`}，${mine ? "你" : "对手"}可以下 ${target}` : `${mine ? "你" : "对手"}可以下 ${target}`)
-      + `，借 ${anchor} 夹住 ${middle}${corner ? "，拿到这个角" : ""}。`
-    : `After ${after}, ` + (unstoppable ? `the opponent plays ${setup} first; whatever you reply, it then plays ${target}`
-      : setup ? `${setup === "pass" ? "after the opponent passes" : `after the opponent plays ${setup}`}, ${mine ? "you" : "the opponent"} can play ${target}` : `${mine ? "you" : "the opponent"} can play ${target}`)
-      + `, using ${anchor} to trap ${middle}${corner ? " and take the corner" : ""}.`;
-  const owner = (value: string) => value === "." ? zh ? "空格" : "empty" : value === player ? zh ? "你的棋子" : "your disc" : zh ? "对手的棋子" : "an opponent disc";
-  const change = opportunity.changes.find((item) => item.coordinate === anchor) ?? opportunity.changes[0];
-  const attacker = mine ? zh ? "你" : "you" : zh ? "对手" : "the opponent";
-  const same = witness.prefix.length ? zh ? "，同样应对之后" : " and the same replies" : "";
-  const blocked = zh ? `换成 ${opportunity.blocked_after}${same}，` : `With ${opportunity.blocked_after}${same}, `;
-  const effect = change.coordinate === target
-    ? zh ? `${target} 已经有棋子，${attacker}下不了这里。` : `${target} is already occupied, so ${attacker} cannot play there.`
-    : change.coordinate === anchor
-      ? zh ? `${anchor} 是${owner(change.blocked)}，这条线缺了另一端，${attacker}下不了 ${target}。` : `${anchor} is ${owner(change.blocked)}, so the line has no far end and ${attacker} cannot play ${target}.`
-      : zh ? `${change.coordinate} 是${owner(change.blocked)}，这条线在中间断开，${attacker}下不了 ${target}。` : `${change.coordinate} is ${owner(change.blocked)}, so the line breaks and ${attacker} cannot play ${target}.`;
-  const habit = mine
-    ? zh ? "比较两步时，看哪一步之后你还有这样的防守落点。" : " When comparing moves, check which one keeps a defensive square like this."
-    : ray.slice(1, -1).includes(after)
-      ? zh ? "落子前，看新棋子所在的每条线：一端空着时，另一端会不会变成对手的棋子？" : " Before you play, check each line through the new disc: if one end is empty, could the other end become the opponent's?"
-      : zh ? "落子前，从对手的棋子出发，沿着你的棋子看向空格，找对手能完成的夹击。" : " Before you play, start from an opponent disc and look past your discs toward an empty square.";
-  return [
-    mine ? zh ? `先看 ${target}：为什么换成 ${after}，你才能下这里？` : `Look at ${target}: why can you play there only after ${after}?`
-      : zh ? `先看 ${target}：对手怎样才能下这里？` : `Look at ${target}: how can the opponent play there?`,
-    result,
-    blocked + effect + habit,
-  ];
-}
+type CoachSubject = "lesson" | "question" | "summary";
 
-export function otherCornerText(comparison: TeachingComparison, locale: Locale): string | null {
-  const threats = comparison.insight.other_threats ?? [];
-  if (!threats.length) return null;
+// A check failure or a missing model is quiet: the board demonstration still works
+export function coachingFailure(code: string | null | undefined, message: string | null | undefined, subject: CoachSubject, locale: Locale): {quiet: boolean; text: string} {
   const zh = locale === "zh";
-  const better = comparison.insight.better_move;
-  const lines = threats.map((proof) => proof.attack === proof.target
-    ? zh ? `对手可以直接占 ${proof.target}` : `the opponent can take ${proof.target} immediately`
-    : zh ? `对手可以先下 ${proof.attack}，你怎么应对都挡不住它拿 ${proof.target}` : `the opponent can play ${proof.attack} and then take ${proof.target} whatever you reply`);
-  return zh ? `不过，${better} 也有代价：${lines.join("；")}。看完整盘变化后，引擎仍然推荐 ${better}。`
-    : `However, ${better} has a cost: ${lines.join("; ")}. After looking at the whole game, the engine still recommends ${better}.`;
+  if (code === "SERVICE_RESTARTED") return {quiet: false, text: zh
+    ? "服务重启中断了生成，请重试。" : "A server restart interrupted generation. Please retry."};
+  if (code === "REVIEW_NOT_CONFIGURED") return {quiet: true, text: {
+    lesson: zh ? "这个服务没有接入 Nemotron，可以在棋盘上看推演。" : "Nemotron is not set up on this server; explore the line on the board.",
+    question: zh ? "这个服务没有接入 Nemotron，暂时不能回答提问。" : "Nemotron is not set up on this server, so questions cannot be answered.",
+    summary: zh ? "这个服务没有接入 Nemotron，可以在棋盘上选择自己的回合查看推演。" : "Nemotron is not set up on this server; select one of your turns on the board to explore it.",
+  }[subject]};
+  if (!code || !CHECK_FAILURES.includes(code)) return {quiet: false, text: message ?? ""};
+  return {quiet: true, text: {
+    lesson: zh ? "Nemotron 这次没能给出可靠的讲解。可以先在棋盘上看推演，或者再讲解一次。" : "Nemotron could not give a reliable explanation this time. Explore the line on the board, or ask for the lesson again.",
+    question: zh ? "Nemotron 这次没能给出可靠的回答，可以换个问法再问一次。" : "Nemotron could not give a reliable answer this time. Try asking another way.",
+    summary: zh ? "Nemotron 这次没能写出可靠的总结。可以在棋盘上选择自己的回合，或者重新总结。" : "Nemotron could not write a reliable summary this time. Select one of your turns on the board, or summarize again.",
+  }[subject]};
 }
