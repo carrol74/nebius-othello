@@ -18,19 +18,10 @@ __pycache__/
 build/
 dist/
 runtime/
-data/raw/*
-!data/raw/.gitkeep
-data/processed/*
-!data/processed/.gitkeep
-artifacts/*
-!artifacts/.gitkeep
-!artifacts/*.json
-!artifacts/*.yaml
-!artifacts/*.yml
 deploy/backend.env
 deploy/runtime/
 deploy/edax/
-data/book.dat
+/web/openapi.json
 
 # Local discussion, historical research, and experiment records
 /AGENTS.md
@@ -38,5 +29,7 @@ data/book.dat
 /docs/
 /plan.md
 /backend/tools/diagnose_pytrio*.py
-/eval/results/*
-!/eval/results/.gitkeep
+/deploy/README.md
+/data/
+/artifacts/
+/eval/
