@@ -1,5 +1,7 @@
 .DS_Store
 .tmp/
+*.tmp
+/.codegraph/
 .env
 .env.*
 !.env.example

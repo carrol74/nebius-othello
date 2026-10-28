@@ -48,10 +48,6 @@ def main() -> None:
     edax_check = sub.add_parser("check-edax", help="Check Edax through native Python pipes without cloud model calls")
     edax_check.add_argument("--output", type=Path, required=True)
     edax_check.add_argument("--level", type=int, default=8, choices=range(1, 11))
-    blind = sub.add_parser("check-coach-blind", help="Ask Nemotron to choose without engine hints, then check saved native evidence; incurs inference charges")
-    blind.add_argument("--input", type=Path, required=True, help="Saved review JSON, or native review fixture")
-    blind.add_argument("--revisions", type=int, nargs="+", required=True)
-    blind.add_argument("--output", type=Path, required=True)
     generate = sub.add_parser("generate", help="Run native Edax to generate full games and labels")
     generate.add_argument("--output", type=Path, required=True)
     generate.add_argument("--openings", type=Path, required=True)
@@ -128,20 +124,6 @@ def main() -> None:
     base_model = os.environ.get("PYTRIO_BASE_MODEL", "Qwen/Qwen3.5-4B")
     if args.command == "openings":
         write_json(args.output, generate_openings(args.count, args.plies, args.seed))
-    elif args.command == "check-coach-blind":
-        from nemothello.blind_review import evaluate_blind
-        from nemothello.nemotron import Nemotron
-
-        data = json.loads(args.input.read_text())
-        review = data.get("review", data)
-        model = Nemotron(os.environ.get("TOKEN_FACTORY_API_KEY", ""),
-                         os.environ.get("TOKEN_FACTORY_BASE_URL", "https://api.tokenfactory.nebius.com/v1"),
-                         os.environ.get("TOKEN_FACTORY_MODEL_ID", ""))
-        try:
-            report = evaluate_blind(model, review["evidence"], args.revisions, args.output)
-            print(f"Blind comparison completed: {len(report['calls'])} calls; report: {args.output}")
-        finally:
-            model.close()
     elif args.command == "check-edax":
         verify_edax(engine(args.level), args.output)
         print(f"Edax adapter check passed; report: {args.output}")
