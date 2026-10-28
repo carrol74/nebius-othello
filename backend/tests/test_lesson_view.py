@@ -19,15 +19,15 @@ def review():
 def test_every_displayed_line_prefix_resolves_to_its_native_board(review):
     for item in review["evidence"]:
         for choice in compare_lesson(review, item["revision"], item["actual_move"])["choices"]:
-            for frames in [choice["frames"], *(defense["frames"] for defense in choice["defense_lines"])]:
-                for index, frame in enumerate(frames):
-                    view = {"selected_move": choice["coordinate"],
-                            "line": [step["coordinate"] for step in frames[1:index + 1]]}
-                    resolved = resolve_lesson_view(item, view)
-                    assert resolved["board"] == frame["board"]
-                    assert resolved["turn"] == frame["turn"]
-                    assert resolved["flipped"] == frame["flipped"]
-                    assert resolved["line"] == view["line"]
+            frames = choice["frames"]
+            for index, frame in enumerate(frames):
+                view = {"selected_move": choice["coordinate"],
+                        "line": [step["coordinate"] for step in frames[1:index + 1]]}
+                resolved = resolve_lesson_view(item, view)
+                assert resolved["board"] == frame["board"]
+                assert resolved["turn"] == frame["turn"]
+                assert resolved["flipped"] == frame["flipped"]
+                assert resolved["line"] == view["line"]
 
 
 def test_question_uses_alternative_root_and_the_selected_opponent_reply(review):
@@ -58,16 +58,19 @@ def test_unshown_or_mismatched_lines_fail_before_coaching(review):
         assert error.value.code == "LESSON_VIEW"
 
 
-def test_an_undisplayed_legal_move_cannot_become_a_question_view(review):
+def test_a_legal_practice_choice_can_become_a_question_view(review):
     item = next(item for item in review["evidence"] if item["revision"] == 0)
     alternative = next(candidate["coordinate"] for candidate in item["analysis"]["candidates"]
                        if candidate["coordinate"] != item["actual_move"])
-    with pytest.raises(AppError) as error:
-        resolve_lesson_view(item, {"selected_move": alternative, "line": [alternative]})
-    assert error.value.code == "REVIEW_MOVE"
+    view = resolve_lesson_view(item, {"selected_move": alternative, "line": [alternative]})
+    assert view['selected_move'] == alternative
+    assert view['recorded_move'] == item['actual_move']
+    assert view['assessment']['is_played'] is False
+    from nemothello.rules import apply_move
+    assert view['board'] == list(apply_move(tuple(item['analysis']['board']), item['actor'], alternative))
 
 
-def test_defense_attempt_is_kept_in_the_question_context(review):
+def test_a_practice_line_can_be_asked_about(review):
     item = next(item for item in review["evidence"] if item["revision"] == 16)
     view = resolve_lesson_view(item, {"selected_move": "b1", "line": ["b1", "e1", "g6", "a1"]})
     assert view["board"][0][0] == "O"
@@ -83,3 +86,11 @@ def test_view_request_rejects_extra_boards_and_nonquestion_context():
     with pytest.raises(ValidationError):
         PositionLessonRequest.model_validate({**payload, "question": "Why?",
                                             "view": {**payload["view"], "board": []}})
+
+
+def test_question_lines_must_be_legal_from_the_position(review):
+    item = next(item for item in review["evidence"] if item["revision"] == 16)
+    with pytest.raises(AppError, match="legal line"):
+        resolve_lesson_view(item, {"selected_move": "b1", "line": ["b1", "a1"]})
+    with pytest.raises(AppError, match="start with the selected move"):
+        resolve_lesson_view(item, {"selected_move": "b1", "line": ["b3"]})

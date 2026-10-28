@@ -2,13 +2,15 @@ import json
 from typing import Any
 
 from nemothello.board_features import CORNERS
-from nemothello.coaching import plan_schema, side, validate_plan
+from nemothello.coach_statements import statements
+from nemothello.coaching import LINE_PLIES, plan_schema, side, validate_plan
 from nemothello.concepts import corner_moves, exposed_discs, names
 from nemothello.corner_proof import prove_corner
 from nemothello.errors import AppError
 from nemothello.rules import apply_move, coordinate, flips, legal_moves, opponent, square
+from nemothello.teaching import teaching_frames
 
-MAX_LINE = 8
+MAX_LINE = LINE_PLIES
 MAX_REJECTIONS = 3
 
 
@@ -18,13 +20,22 @@ class ToolInputError(Exception):
 
 class CoachTools:
     def __init__(self, review: dict[str, Any], context: dict[str, Any]) -> None:
+        self.context = context
+        self.starts = {item['revision']: item['allowed_moves'] for item in context['positions']}
         revisions = {item["revision"] for item in context["positions"] if item["values"]}
         self.roots = {item["revision"]: (tuple(item["analysis"]["board"]), item["actor"])
-                      for item in review.get("evidence", review["key_moves"]) if item["revision"] in revisions}
+                      for item in (review.get("evidence") or review["key_moves"]) if item["revision"] in revisions}
         self.facts: list[dict[str, Any]] = []
         self.trace: list[dict[str, Any]] = []
         self.checked: dict[str, dict[str, Any]] = {}
         self.rejected: set[tuple[str, str]] = set()
+
+    def unplayed(self) -> list[int]:
+        # A summary is accepted only after every key move has a tool result, so tools stay open until then
+        if self.context["task"] != "summary":
+            return []
+        played = {fact["revision"] for fact in self.facts}
+        return [revision for revision in self.roots if revision not in played]
 
     def definitions(self, context: dict[str, Any], answer_only: bool = False) -> list[dict[str, Any]]:
         revision = {"type": "integer", "enum": sorted(self.roots)}
@@ -42,8 +53,8 @@ class CoachTools:
                 "plies after the player's move: the opponent's move, the player's reply, the opponent's move.",
                 {"revision": revision, "move": move}))
         tools.append(function("submit_answer",
-            "Submit the final answer. Write every number as a {placeholder} from the values and cite the "
-            "facts behind each text.", plan_schema(context, self.facts)["properties"]))
+            "Submit the final answer. A {placeholder} inserts a complete verified statement from statements; "
+            "use it as a standalone sentence, never as a number. Cite the facts behind each text.", plan_schema(context, self.facts)["properties"]))
         return tools
 
     def run(self, name: str, raw: str) -> dict[str, Any]:
@@ -53,7 +64,7 @@ class CoachTools:
             if key in self.checked:
                 fact = self.checked[key]
                 return {"fact_id": fact["id"], "note": "Already checked; cite this fact instead of repeating the call.",
-                        "text": fact["text"], "values": fact["values"]}
+                        "text": fact["text"], "values": fact["values"], "statements": statements(self.context, [fact])}
             revision = arguments.get("revision")
             if revision not in self.roots:
                 raise ToolInputError(f"Position {revision} is not available; use one of {sorted(self.roots)}")
@@ -72,7 +83,8 @@ class CoachTools:
         self.facts.append(fact)
         self.checked[key] = fact
         self.trace.append({"name": name, "arguments": arguments, "fact_id": fact["id"], "error": None})
-        return {"fact_id": fact["id"], "text": fact["text"], "values": fact["values"]}
+        return {"fact_id": fact["id"], "text": fact["text"], "values": fact["values"],
+                "statements": statements(self.context, [fact])}
 
     def new_fact(self, revision: int, text: str, values: dict[str, Any]) -> dict[str, Any]:
         identifier = f"t{len(self.facts) + 1}"
@@ -84,6 +96,8 @@ class CoachTools:
                 or not all(isinstance(move, str) for move in moves)):
             raise ToolInputError(f"moves must list one to {MAX_LINE} coordinates")
         board, turn = self.roots[revision]
+        root_board, root_turn = board, turn
+        line = []
         human = turn
         steps, values = [], {}
         for index, move in enumerate(moves, start=1):
@@ -94,7 +108,10 @@ class CoachTools:
             if move not in legal:
                 played = " → ".join(moves[:index - 1]) or "the saved position"
                 raise ToolInputError(f"{move} is not legal for {side(turn, human)} after {played}; legal moves: {', '.join(legal)}")
+            if index == 1 and move not in self.starts[revision]:
+                raise ToolInputError(f"Start with one of the displayed choices: {', '.join(self.starts[revision])}")
             captured = flips(board, turn, move)
+            line.append(move)
             before_corners = corner_moves(board, opponent(turn))
             board = apply_move(board, turn, move)
             flipped = [coordinate(row, col) for row, col in captured]
@@ -110,6 +127,7 @@ class CoachTools:
                 turn = following
             elif legal_moves(board, turn):
                 steps.append(f"{side(following, human)}: no legal move, must pass")
+                line.append('pass')
             else:
                 turn = None
         mine = sum(row.count(human) for row in board)
@@ -128,7 +146,7 @@ class CoachTools:
                          if available else f"No corner move is available to {side(turn, human)}."))
         text = (f"Line from position {revision}: " + "; ".join(steps) + f". {ending} "
                 f"Discs: you {mine}, the opponent {theirs}. This checks one line only; other replies are possible.")
-        return self.new_fact(revision, text, values)
+        return {**self.new_fact(revision, text, values), 'frames': teaching_frames(root_board, root_turn, line)}
 
     def check_corner_threat(self, revision: int, move: Any) -> dict[str, Any]:
         board, actor = self.roots[revision]
@@ -153,7 +171,7 @@ class CoachTools:
                  for proof in threats]
         text = (f"After {move} at position {revision}: " + "; ".join(lines)
                 + ". Verified by the rules engine within three plies.")
-        return self.new_fact(revision, text, {"threatened": [proof["target"] for proof in threats]})
+        return {**self.new_fact(revision, text, {"threatened": [proof["target"] for proof in threats]}), 'move': move}
 
 
 class CoachSession:

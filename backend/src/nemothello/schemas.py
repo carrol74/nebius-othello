@@ -43,42 +43,31 @@ class HintDisplay(RevisionRequest):
 Language = Literal["en", "zh"]
 
 
-class QuestionRequest(WriteRequest):
-    question: str = Field(min_length=1, max_length=2000)
-    language: Language = "en"
-
-
 class LessonView(RequestModel):
     selected_move: Coordinate
     line: list[Coordinate | Literal["pass"]] = Field(max_length=4)
+
+
+class LanguageRequest(WriteRequest):
+    language: Language = "en"
 
 
 class PositionLessonRequest(WriteRequest):
     revision: int = Field(ge=0)
     question: str | None = Field(default=None, min_length=1, max_length=2000)
     view: LessonView | None = None
-    reflection: str | None = Field(default=None, min_length=1, max_length=1000)
     language: Language = "en"
 
     @model_validator(mode="after")
     def view_requires_question(self):
         if self.view is not None and self.question is None:
             raise ValueError("A teaching view is only used with a question")
-        if self.reflection is not None:
-            self.reflection = self.reflection.strip()
-            if not self.reflection or self.question is not None:
-                raise ValueError("A nonempty recollection can only accompany a lesson request")
         return self
 
 
 class BranchRequest(WriteRequest):
     revision: int = Field(ge=0)
-    mode: Literal["manual", "follow_hints"]
-
-
-class AnalyzeRequest(RequestModel):
-    board: BoardRows
-    turn: Color
+    line: list[Coordinate | Literal["pass"]] = Field(default_factory=list, max_length=4)
 
 
 class HistoryEvent(BaseModel):
@@ -124,7 +113,6 @@ class GameState(BaseModel):
     result: GameResult | None
     parent_game_id: str | None = None
     parent_revision: int | None = None
-    auto_play: bool = False
 
 
 class AnalysisSettings(BaseModel):
@@ -184,10 +172,19 @@ class TeachingFrame(VariationFrame):
     flipped: list[Coordinate]
 
 
-class TeachingDefense(BaseModel):
+class CornerPracticeOption(BaseModel):
     coordinate: Coordinate
+    safe: bool
+    recommended: bool
+    attack: Coordinate | Literal["pass"] | None
+    replies: int = Field(ge=0)
     frames: list[TeachingFrame]
-    capture_lines: list[list[Coordinate]] = Field(default_factory=list)
+    capture_lines: list[list[Coordinate]]
+
+
+class CornerPractice(BaseModel):
+    target: Coordinate
+    options: list[CornerPracticeOption]
 
 
 class DecisionAssessment(BaseModel):
@@ -238,7 +235,6 @@ class TeachingMove(BaseModel):
     target: Coordinate | None
     opponent_reply: Coordinate | None
     checked_defenses: list[Coordinate]
-    defense_lines: list[TeachingDefense]
     capture_lines: list[list[Coordinate]]
     opponent_corner_moves_after_reply: list[Coordinate]
     line_source: Literal["engine", "rules"]
@@ -247,6 +243,8 @@ class TeachingMove(BaseModel):
     corner_proof: CornerProof | None = None
     continuation_lesson: ContinuationLesson | None = None
     concepts: TeachingConcepts
+    # Whether any legal move here keeps the opponent from forcing the target corner
+    defendable: bool | None = None
 
 
 class ContrastSquare(BaseModel):
@@ -282,6 +280,16 @@ class TeachingInsight(BaseModel):
     witness: CornerComparisonWitness | None = None
 
 
+class ReplyConsequence(BaseModel):
+    reply: Coordinate
+    axis: Literal["file", "rank"]
+    axis_value: str
+    actual_moves: list[Coordinate]
+    alternative_moves: list[Coordinate]
+    retained_disc: Coordinate
+    opportunity: ReplyOpportunity
+
+
 class DecisionContrast(BaseModel):
     actual_move: Coordinate
     recommended_move: Coordinate
@@ -289,6 +297,19 @@ class DecisionContrast(BaseModel):
     replies_after_recommended: list[Coordinate]
     removed_reply: ReplyOpportunity | None
     added_reply: ReplyOpportunity | None
+    consequence: ReplyConsequence | None = None
+
+
+class LessonReason(BaseModel):
+    kind: Literal["forced_move", "corner_contrast", "corner_defense", "corner_threat", "corners",
+                  "reply_contrast", "reply_consequence", "recapture", "quiet", "mobility", "stable", "parity"]
+    fact: str
+    move: Coordinate
+    frame: int = Field(ge=1)
+    # Squares to highlight at the key frame, for each move whose line shows the reason
+    marks: dict[str, list[Coordinate]]
+    target: Coordinate | None
+    actor: Color | None
 
 
 class TeachingComparison(BaseModel):
@@ -300,6 +321,8 @@ class TeachingComparison(BaseModel):
     insight: TeachingInsight
     choices: list[TeachingMove]
     decision_contrast: DecisionContrast | None = None
+    reason: LessonReason | None
+    focus: list[str]
 
 
 class MoveComparison(BaseModel):
@@ -320,6 +343,7 @@ class ReviewFact(BaseModel):
     text: str
     topic: str
     revision: int | None = None
+    frames: list[TeachingFrame] = Field(default_factory=list)
 
 
 class Lesson(BaseModel):
@@ -352,16 +376,10 @@ class ReviewEvidence(BaseModel):
     analysis: Analysis
     shown_hint_ids: list[str]
     adopted_hint: bool
-    is_played: bool = True
+    # This game's opponent reply after each candidate, absent when it must pass
+    opponent_replies: dict[Coordinate, Coordinate]
     stage: str | None = None
     comparisons: list[MoveComparison] = Field(default_factory=list)
-
-
-class ReviewHint(BaseModel):
-    hint_id: str
-    revision: int
-    recommended_move: Coordinate
-    analysis_settings: AnalysisSettings | None = None
 
 
 class HintAdoption(BaseModel):
@@ -369,45 +387,15 @@ class HintAdoption(BaseModel):
     adopted_turns: int = Field(ge=0)
 
 
-class AutomaticHintMove(BaseModel):
+class KeyMove(BaseModel):
     revision: int
-    hint_id: str
-    coordinate: Coordinate
-    analysis_settings: AnalysisSettings
+    actual_move: Coordinate
+    reason: LessonReason | None
 
 
-class ReviewEvent(BaseModel):
-    event_index: int
-    actor: Color
-    kind: Literal["move", "pass"]
-    coordinate: Coordinate | None
-    revision: int
-
-
-class Review(BaseModel):
+class ReviewSummary(BaseModel):
     game_id: str
-    result: GameResult
-    human_color: Color
-    initial_board: BoardRows
-    initial_turn: Color
-    history: list[ReviewEvent]
-    parent_game_id: str | None
-    parent_revision: int | None
-    opponent_config_id: str
-    key_moves: list[ReviewEvidence]
-    branch_mode: Literal["manual", "follow_hints"] | None
-    automatic_hint_moves: list[AutomaticHintMove]
-    hints: list[ReviewHint]
-    hint_adoption: HintAdoption
-    evidence: list[ReviewEvidence]
-    format_version: str | None = None
-    summary_facts: list[ReviewFact] = Field(default_factory=list)
-    branch_results: list[dict[str, Any]] = Field(default_factory=list)
-
-
-class BranchResult(BaseModel):
-    game_id: str
-    result: GameResult
+    key_moves: list[KeyMove]
 
 
 class ThreatObservation(BaseModel):
@@ -441,6 +429,7 @@ class EarlierDecisionResult(BaseModel):
 
 
 class QuestionResult(BaseModel):
+    language: Language = 'en'
     answer: str
     model_id: str | None
     usage: dict[str, Any] | None
@@ -453,15 +442,8 @@ class QuestionResult(BaseModel):
     earlier_decision: EarlierDecisionResult | None = None
 
 
-class PlayerReflection(BaseModel):
-    text: str
-    source: Literal["review_recollection", "review_plan"]
-    recorded_move: Coordinate | None
-    collected_at: str
-    prior_analysis_available: bool
-
-
 class PositionLesson(BaseModel):
+    language: Language = 'en'
     game_id: str
     revision: int
     task_id: str | None = None
@@ -475,24 +457,39 @@ class PositionLesson(BaseModel):
     tool_calls: list[CoachToolCall] = Field(default_factory=list)
     coaching_status: Literal["not_requested", "pending", "ready", "failed"]
     coaching_error: str | None = None
+    coaching_error_code: str | None = None
     model_id: str | None = None
     usage: dict[str, Any] | None = None
-    reflection: PlayerReflection | None = None
+
+
+class GameSummary(BaseModel):
+    game_id: str
+    language: Language
+    task_id: str
+    status: Literal["pending", "ready", "failed"]
+    text: str | None = None
+    facts: list[ReviewFact] = Field(default_factory=list)
+    tool_calls: list[CoachToolCall] = Field(default_factory=list)
+    model_id: str | None = None
+    usage: dict[str, Any] | None = None
+    error: str | None = None
+    error_code: str | None = None
 
 
 class Task(BaseModel):
+    language: Language = 'en'
     task_id: str
-    kind: Literal["review", "question", "branch", "lesson"]
+    kind: Literal["review", "question", "lesson", "summary"]
     game_id: str
     status: Literal["queued", "running", "succeeded", "failed"]
-    result: Review | BranchResult | QuestionResult | PositionLesson | None = None
+    result: ReviewSummary | QuestionResult | PositionLesson | GameSummary | None = None
     error: dict[str, str] | None = None
     usage: dict[str, Any] | None = None
 
     @model_validator(mode="after")
     def check_result(self) -> "Task":
-        expected = {"review": Review, "branch": BranchResult, "question": QuestionResult,
-                    "lesson": PositionLesson}[self.kind]
+        expected = {"review": ReviewSummary, "question": QuestionResult, "lesson": PositionLesson,
+                    "summary": GameSummary}[self.kind]
         if self.status == "succeeded":
             if not isinstance(self.result, expected):
                 raise ValueError("Task result does not match the task kind")

@@ -5,22 +5,37 @@ from threading import RLock
 from typing import Any
 from uuid import uuid4
 
-from nemothello.coaching import REVIEW_VERSION, summary_facts
+from nemothello.coaching import COACH_VERSION, REVIEW_VERSION
 from nemothello.earlier_decision import earlier_target, find_earlier_decision
 from nemothello.edax import Edax
 from nemothello.errors import AppError
+from nemothello.game_summary import SUMMARY_VERSION, display_saved_summary
 from nemothello.lesson_view import resolve_lesson_view
 from nemothello.opponents import Difficulty, EdaxOpponent
 from nemothello.position_lessons import (
-    bind_recorded_move,
     check_teachable,
     lesson_context,
     lesson_document,
+    lesson_key,
+    opponent_replies,
 )
 from nemothello.rules import Position, opponent
 from nemothello.schemas import GameState
 from nemothello.storage import Store
-from nemothello.teaching import compare_lesson
+from nemothello.summary_validation import POSITION_REFERENCE
+from nemothello.teaching import compare_lesson, variation_frames
+
+
+def review_summary(review: dict[str, Any]) -> dict[str, Any]:
+    evidence = {item["revision"]: item for item in review["evidence"]}
+    return {"game_id": review["game_id"], "key_moves": [
+        {**move, "reason": compare_lesson({"evidence": [evidence[move["revision"]]]}, move["revision"],
+                                          move["actual_move"])["reason"]}
+        for move in review["key_moves"]]}
+
+
+def summary_key(game_id: str, language: str) -> str:
+    return f"{game_id}:{language}"
 
 
 def public_game(game: dict[str, Any]) -> dict[str, Any]:
@@ -57,6 +72,10 @@ def advance(game: dict[str, Any], move: str) -> dict[str, Any]:
     return game
 
 
+# Task kinds that call Nemotron and spend Token Factory credit
+MODEL_TASKS = ("lesson", "question", "summary")
+
+
 class Games:
     def __init__(
         self, store: Store, opponent: EdaxOpponent,
@@ -64,6 +83,8 @@ class Games:
         task_queue_limit: int = 16,
         difficulty_opponents: dict[Difficulty, EdaxOpponent] | None = None,
         difficulty_hints: dict[Difficulty, Edax] | None = None,
+        model_tasks_per_day: int = 300,
+        model_tasks_per_session_per_day: int = 30,
     ) -> None:
         self.store = store
         self.opponent = opponent
@@ -78,6 +99,8 @@ class Games:
         }
         self.task_limit = task_limit
         self.task_queue_limit = task_queue_limit
+        self.model_tasks_per_day = model_tasks_per_day
+        self.model_tasks_per_session_per_day = model_tasks_per_session_per_day
         self.locks: defaultdict[str, RLock] = defaultdict(RLock)
 
     def get(self, game_id: str, owner: str) -> dict[str, Any]:
@@ -139,8 +162,8 @@ class Games:
         return engine
 
     def review_engine_of(self, game: dict[str, Any]) -> Edax:
-        return max((self.edax, self.hint_engine_of(game), *self.difficulty_hints.values()),
-                   key=lambda engine: engine.level)
+        # Reviews teach at the game's level, matching the hints shown during play
+        return self.hint_engine_of(game)
 
     def check_turn(self, game: dict[str, Any], revision: int, human: bool) -> None:
         if game["revision"] != revision:
@@ -153,18 +176,16 @@ class Games:
 
     def move(
         self, owner: str, game_id: str, request_id: str, revision: int,
-        coordinate: str | None = None, automated: bool = False, hint_id: str | None = None,
+        coordinate: str | None = None,
     ) -> dict[str, Any]:
         human = coordinate is not None
         payload = {"operation": "move" if human else "ai_move", "game_id": game_id,
-                   "revision": revision, "coordinate": coordinate, "hint_id": hint_id}
+                   "revision": revision, "coordinate": coordinate}
         with self.locks[game_id]:
             cached = self.store.cached(owner, request_id, payload)
             if cached is not None:
                 return cached
             game = self.store.get("game", game_id, owner)
-            if game.get("auto_play") and not automated:
-                raise AppError("BRANCH_RUNNING", "Hint replay is running. Wait for it to finish")
             self.check_turn(game, revision, human)
             decision = None
             if not human:
@@ -180,15 +201,6 @@ class Games:
                 current = self.store.get("game", game_id, owner, db)
                 self.check_turn(current, revision, human)
                 updated = advance(current, coordinate)
-                if automated and human:
-                    hint = self.store.get("hint", hint_id, owner, db)
-                    if (hint["game_id"] != game_id or hint["revision"] != revision
-                            or hint["recommended_move"] != coordinate):
-                        raise AppError("HINT_STRATEGY_MISMATCH", "Replay move does not match the hint evidence", 500)
-                    updated.setdefault("automatic_hint_moves", []).append({
-                        "revision": revision, "hint_id": hint_id, "coordinate": coordinate,
-                        "analysis_settings": hint["analysis"]["settings"],
-                    })
                 if decision:
                     updated.setdefault("decisions", []).append({"revision": revision, **decision})
                 self.store.save(db, "game", game_id, owner, updated)
@@ -196,13 +208,9 @@ class Games:
 
             return self.store.mutate(owner, request_id, payload, operation)
 
-    def hint(
-        self, owner: str, game_id: str, revision: int, *, automated: bool = False,
-    ) -> dict[str, Any]:
+    def hint(self, owner: str, game_id: str, revision: int) -> dict[str, Any]:
         with self.locks[game_id]:
             game = self.store.get("game", game_id, owner)
-            if game.get("auto_play") and not automated:
-                raise AppError("BRANCH_RUNNING", "Hint replay is running. Wait for it to finish")
             self.check_turn(game, revision, True)
             analysis = self.hint_engine_of(game).analyze(tuple(game["board"]), game["turn"])
             hint = {
@@ -228,8 +236,6 @@ class Games:
             if hint["game_id"] != game_id or hint["revision"] != revision:
                 raise AppError("STALE_HINT", "Hint does not match the requested board")
             game = self.store.get("game", game_id, owner, db)
-            if game.get("branch_mode") == "follow_hints":
-                raise AppError("AUTOMATIC_HINT", "Automatic replay hints are recorded by the worker, not as human displays")
             known_revisions = {0, *(event["revision"] for event in game["history"])}
             if revision not in known_revisions:
                 raise AppError("STALE_HINT", "Hint position does not exist")
@@ -239,10 +245,10 @@ class Games:
 
         return self.store.mutate(owner, request_id, payload, operation)
 
-    def branch(
-        self, owner: str, game_id: str, request_id: str, revision: int, mode: str
-    ) -> dict[str, Any]:
-        payload = {"operation": "branch", "game_id": game_id, "revision": revision, "mode": mode}
+    def branch(self, owner: str, game_id: str, request_id: str, revision: int,
+               line: list[str] | None = None) -> dict[str, Any]:
+        line = line or []
+        payload = {"operation": "branch", "game_id": game_id, "revision": revision, "line": line}
 
         def operation(db: Connection) -> dict[str, Any]:
             parent = self.store.get("game", game_id, owner, db)
@@ -254,17 +260,19 @@ class Games:
                 if not events:
                     raise AppError("BRANCH_REVISION", "Branch starting position was not found", 422)
                 initial = Position(tuple(events[0]["board"]), events[0]["turn"])
+            try:
+                frame = variation_frames(initial.board, initial.turn, line)[-1]
+            except AppError as exc:
+                raise AppError("BRANCH_LINE", "Continue from a legal line of the saved position", 422) from exc
+            initial = Position(tuple(frame["board"]), frame["turn"])
+            if initial.turn is not None and not initial.moves:
+                initial = Position(initial.board, opponent(initial.turn))
             branch = self.new_game(parent["human_color"], initial, selected,
                                    parent.get("difficulty"),
                                    parent.get("hint_level") or self.edax.level)
-            branch.update(parent_game_id=game_id, parent_revision=revision)
-            branch["auto_play"] = mode == "follow_hints"
-            branch["branch_mode"] = mode
+            branch.update(parent_game_id=game_id, parent_revision=revision, parent_line=line)
             self.store.save(db, "game", branch["game_id"], owner, branch)
-            if mode == "manual":
-                return public_game(branch)
-            task = self.make_task(db, owner, branch["game_id"], "branch", {})
-            return self.public_task(task)
+            return public_game(branch)
 
         return self.store.mutate(owner, request_id, payload, operation)
 
@@ -279,8 +287,18 @@ class Games:
         ).fetchone()[0]
         if active >= self.task_queue_limit:
             raise AppError("TASK_QUEUE_FULL", "Task queue is full. Please try again later", 429, True)
+        now = datetime.now(UTC)
+        if kind in MODEL_TASKS:
+            # Sessions are free to create, so the service-wide count is what caps spending
+            owners = [row[0] for row in db.execute(
+                "SELECT owner FROM records WHERE kind='task' AND json_extract(document, '$.kind') IN (?, ?, ?) "
+                "AND substr(json_extract(document, '$.created_at'), 1, 10) = ?",
+                (*MODEL_TASKS, now.date().isoformat()))]
+            if (len(owners) >= self.model_tasks_per_day
+                    or owners.count(owner) >= self.model_tasks_per_session_per_day):
+                raise AppError("MODEL_DAILY_LIMIT", "Today's coaching limit has been reached. Try again tomorrow", 429)
         task = {
-            "task_id": str(uuid4()), "game_id": game_id, "kind": kind,
+            "task_id": str(uuid4()), "game_id": game_id, "kind": kind, "created_at": now.isoformat(),
             "status": "queued", "inputs": inputs, "result": None, "error": None,
         }
         self.store.save(db, "task", task["task_id"], owner, task)
@@ -288,72 +306,118 @@ class Games:
 
     @staticmethod
     def public_task(task: dict[str, Any]) -> dict[str, Any]:
-        return {key: value for key, value in task.items() if key != "inputs"}
+        return {**{key: value for key, value in task.items() if key != "inputs"},
+                'language': task.get('inputs', {}).get('language', 'en')}
 
-    def create_review_task(
-        self, owner: str, game_id: str, request_id: str, question: str | None = None,
-        language: str = "en",
-    ) -> dict[str, Any]:
-        kind = "question" if question else "review"
-        payload = {"operation": kind, "game_id": game_id, "question": question, "language": language}
+    def create_review_task(self, owner: str, game_id: str, request_id: str) -> dict[str, Any]:
+        payload = {"operation": "review", "game_id": game_id}
 
         def operation(db: Connection) -> dict[str, Any]:
             game = self.store.get("game", game_id, owner, db)
             if game["status"] != "finished":
-                raise AppError("REVIEW_REQUIRES_END", "Explanations require a finished game")
-            if question:
-                self.store.get("review", game_id, owner, db)
-            else:
-                saved = next((item for item in self.store.list_records("review", owner, db)
-                              if item["game_id"] == game_id), None)
-                existing = [t for t in self.store.list_records("task", owner, db)
-                            if t["game_id"] == game_id and t["kind"] == "review"
-                            and (t["status"] in ("queued", "running")
-                                 or (t["status"] == "succeeded" and saved
-                                     and saved.get("format_version") == REVIEW_VERSION))]
-                if existing:
-                    return self.public_task(existing[-1])
-            task = self.make_task(db, owner, game_id, kind, {"question": question, "language": language})
+                raise AppError("REVIEW_REQUIRES_END", "Finish this game before reviewing it")
+            saved = next((item for item in self.store.list_records("review", owner, db)
+                          if item["game_id"] == game_id), None)
+            existing = [t for t in self.store.list_records("task", owner, db)
+                        if t["game_id"] == game_id and t["kind"] == "review"
+                        and (t["status"] in ("queued", "running")
+                             or (t["status"] == "succeeded" and saved
+                                 and saved.get("format_version") == REVIEW_VERSION))]
+            if existing:
+                return self.public_task(existing[-1])
+            task = self.make_task(db, owner, game_id, "review", {})
             return self.public_task(task)
 
         return self.store.mutate(owner, request_id, payload, operation)
 
+    def saved_review(self, owner: str, game_id: str, db: Connection | None = None) -> dict[str, Any] | None:
+        return next((item for item in self.store.list_records("review", owner, db)
+                     if item["game_id"] == game_id and item.get("format_version") == REVIEW_VERSION), None)
+
+    def saved_summary(self, owner: str, game_id: str, language: str,
+                      db: Connection | None = None) -> dict[str, Any] | None:
+        summary = next((item for item in self.store.list_records("summary", owner, db)
+                        if item["game_id"] == game_id and item["language"] == language
+                        and item.get("format_version") == SUMMARY_VERSION), None)
+        if summary and summary["status"] == "ready" and POSITION_REFERENCE.search(summary["text"]):
+            review = self.saved_review(owner, game_id, db)
+            if review is not None:
+                return display_saved_summary(summary, review)
+        return summary
+
+    def queue_summary(self, db: Connection, owner: str, game_id: str, language: str) -> dict[str, Any]:
+        review = self.saved_review(owner, game_id, db)
+        if review is None or not review["evidence"]:
+            raise AppError("SUMMARY_UNAVAILABLE", "A summary requires a reviewed game with played human moves", 409)
+        saved = self.saved_summary(owner, game_id, language, db)
+        existing = [task for task in self.store.list_records("task", owner, db)
+                    if task["game_id"] == game_id and task["kind"] == "summary"
+                    and task["inputs"]["language"] == language
+                    and (task["status"] in ("queued", "running")
+                         or (task["status"] == "succeeded" and saved and saved["status"] == "ready"))]
+        if existing:
+            return existing[-1]
+        return self.make_task(db, owner, game_id, "summary", {"language": language})
+
+    def create_summary_task(self, owner: str, game_id: str, request_id: str, language: str = "en") -> dict[str, Any]:
+        payload = {"operation": "summary", "game_id": game_id, "language": language}
+
+        def operation(db: Connection) -> dict[str, Any]:
+            self.store.get("game", game_id, owner, db)
+            return self.public_task(self.queue_summary(db, owner, game_id, language))
+
+        return self.store.mutate(owner, request_id, payload, operation)
+
+    def summary(self, owner: str, game_id: str, language: str = "en") -> dict[str, Any]:
+        self.store.get("game", game_id, owner)
+        with self.store.transaction() as db:
+            saved = self.saved_summary(owner, game_id, language, db)
+            if saved:
+                return saved
+            tasks = [task for task in self.store.list_records("task", owner, db)
+                     if task["game_id"] == game_id and task["kind"] == "summary"
+                     and task["inputs"]["language"] == language and task["status"] in ("queued", "running")]
+            return {"task": self.public_task(tasks[-1]) if tasks else None}
+
     def review(self, owner: str, game_id: str) -> dict[str, Any]:
         self.store.get("game", game_id, owner)
         with self.store.transaction() as db:
-            reviews = self.store.list_records("review", owner, db)
-            for review in reviews:
-                if review["game_id"] == game_id:
-                    if review.get("format_version") == REVIEW_VERSION:
-                        review["branch_results"] = [
-                            {key: item[key] for key in ("game_id", "parent_revision", "result")}
-                            for item in self.store.list_records("game", owner, db)
-                            if item.get("parent_game_id") == game_id and item["status"] == "finished"
-                            and item.get("branch_mode") == "follow_hints"
-                            and item["opponent_config_id"] == review["opponent_config_id"]
-                        ]
-                        review["summary_facts"] = summary_facts(review)
-                    return review
+            review = self.saved_review(owner, game_id, db)
+            if review:
+                return review_summary(review)
             tasks = [t for t in self.store.list_records("task", owner, db)
                      if t["game_id"] == game_id and t["kind"] == "review"]
             return {"task": self.public_task(tasks[-1]) if tasks else None}
 
-    def _lesson_at(self, db, owner, game, revision):
-        saved = next((item for item in self.store.list_records('lesson', owner, db)
-                      if item['game_id'] == game['game_id'] and item['revision'] == revision), None)
-        if saved:
-            evidence = bind_recorded_move(game, saved['evidence'])
-            if evidence != saved['evidence']:
-                context = lesson_context(game, evidence, self.store.list_records('hint', owner, db))
-                saved = {**lesson_document(context, evidence), 'reflection': saved.get('reflection')}
-                self.store.save(db, 'lesson', f"{game['game_id']}:{revision}", owner, saved)
-        return saved
+    def _lesson_at(self, db, owner, game, revision, language='en'):
+        candidates = [item for item in self.store.list_records('lesson', owner, db)
+                      if item['game_id'] == game['game_id'] and item['revision'] == revision]
+        saved = next((item for item in candidates if item.get('language') == language
+                      and item.get('coaching_version') == COACH_VERSION), None)
+        if saved and 'opponent_replies' in saved['evidence']:
+            return saved
+        # Without a saved lesson, build the rules lesson from the whole-game analysis; no model call
+        review = next((item for item in self.store.list_records('review', owner, db)
+                       if item['game_id'] == game['game_id'] and item.get('format_version') == REVIEW_VERSION), None)
+        source = saved or (candidates[-1] if candidates else None)
+        evidence = next((item for item in review['evidence'] if item['revision'] == revision), None) if review else None
+        if source:
+            evidence = source['evidence']
+        if evidence is None:
+            return None
+        if 'opponent_replies' not in evidence:
+            evidence = {**evidence, 'opponent_replies': opponent_replies(
+                tuple(evidence['analysis']['board']), evidence['actor'], self.opponent_of(game))}
+        document = lesson_document(lesson_context(game, evidence, self.store.list_records('hint', owner, db)), evidence, language)
+        if source:
+            self.store.save(db, 'lesson', lesson_key(game['game_id'], revision, language), owner, document)
+        return document
 
-    def position_lesson(self, owner: str, game_id: str, revision: int) -> dict[str, Any]:
+    def position_lesson(self, owner: str, game_id: str, revision: int, language: str = 'en') -> dict[str, Any]:
         game = self.store.get("game", game_id, owner)
         check_teachable(game, revision)
         with self.store.transaction() as db:
-            saved = self._lesson_at(db, owner, game, revision)
+            saved = self._lesson_at(db, owner, game, revision, language)
             if saved:
                 comparison = compare_lesson({"evidence": [saved["evidence"]]}, revision,
                                             saved["evidence"]["actual_move"])
@@ -363,54 +427,51 @@ class Games:
                         "earlier_eligible": earlier_target(game, saved['evidence'], comparison) is not None}
             tasks = [item for item in self.store.list_records("task", owner, db)
                      if item["game_id"] == game_id and item["kind"] == "lesson"
+                     and item['inputs'].get('language', 'en') == language
                      and item["inputs"]["revision"] == revision]
             return {"task": self.public_task(tasks[-1]) if tasks else None}
 
-    def earlier_decision(self, owner, game_id, revision):
-        saved = self.position_lesson(owner, game_id, revision)
+    def earlier_decision(self, owner, game_id, revision, language='en'):
+        saved = self.position_lesson(owner, game_id, revision, language)
         if 'evidence' not in saved:
             raise AppError('LESSON_NOT_FOUND', 'Teach this position before checking earlier choices', 409)
         game = self.store.get('game', game_id, owner)
         result = saved.get('earlier_decision')
         if result is None:
-            known = {item['revision']: bind_recorded_move(game, item['evidence'])
-                     for item in self.store.list_records('lesson', owner) if item['game_id'] == game_id}
-            result = find_earlier_decision(game, saved['evidence'], saved['comparison'], self.review_engine_of(game), known)
+            known = {item['revision']: item['evidence']
+                     for item in self.store.list_records('lesson', owner) if item['game_id'] == game_id
+                     and 'opponent_replies' in item['evidence']}
+            result = find_earlier_decision(game, saved['evidence'], saved['comparison'], self.review_engine_of(game),
+                                           self.opponent_of(game), known)
         with self.store.transaction() as db:
-            current = self.store.get('lesson', f'{game_id}:{revision}', owner, db)
+            current = self._lesson_at(db, owner, game, revision, language)
             if any(current['evidence'][key] != saved['evidence'][key]
                    for key in ('revision', 'actor', 'actual_move', 'analysis')):
                 raise AppError('LESSON_CHANGED', 'Reload the position before checking earlier choices', 409)
             current['earlier_decision'] = result
-            self.store.save(db, 'lesson', f'{game_id}:{revision}', owner, current)
+            self.store.save(db, 'lesson', lesson_key(game_id, revision, language), owner, current)
             if result['link'] is not None:
                 earlier_revision = result['link']['revision']
-                existing = self._lesson_at(db, owner, game, earlier_revision)
+                existing = self._lesson_at(db, owner, game, earlier_revision, language)
                 if not existing:
                     context = lesson_context(game, result['link']['evidence'], self.store.list_records('hint', owner, db))
-                    self.store.save(db, 'lesson', f'{game_id}:{earlier_revision}', owner,
-                                    lesson_document(context, result['link']['evidence']))
+                    self.store.save(db, 'lesson', lesson_key(game_id, earlier_revision, language), owner,
+                                    lesson_document(context, result['link']['evidence'], language))
         return result
 
     def create_position_lesson_task(
         self, owner: str, game_id: str, request_id: str, revision: int,
         question: str | None = None,
         view: dict[str, Any] | None = None,
-        reflection: str | None = None,
         language: str = "en",
     ) -> dict[str, Any]:
-        if reflection is not None:
-            reflection = reflection.strip()
-            if not reflection or len(reflection) > 1000 or question is not None:
-                raise AppError("LESSON_REFLECTION", "Include a short recollection with the initial lesson request", 422)
         payload = {"operation": "position_lesson", "game_id": game_id,
-                   "revision": revision, "question": question, "view": view, "reflection": reflection,
-                   "language": language}
+                   "revision": revision, "question": question, "view": view, "language": language}
 
         def operation(db: Connection) -> dict[str, Any]:
             game = self.store.get("game", game_id, owner, db)
             check_teachable(game, revision)
-            saved = self._lesson_at(db, owner, game, revision)
+            saved = self._lesson_at(db, owner, game, revision, language)
             if question:
                 if not saved:
                     raise AppError("LESSON_NOT_FOUND", "Teach this position before asking a question", 409)
@@ -420,32 +481,17 @@ class Games:
                 previous = [item for item in self.store.list_records("task", owner, db)
                             if item["game_id"] == game_id and item["kind"] == "lesson"
                             and item["inputs"]["revision"] == revision]
-                recollection = saved.get("reflection") if saved else None
-                if previous:
-                    recollection = previous[0]["inputs"].get("reflection")
-                if previous and reflection is not None and reflection != (recollection or {}).get("text"):
-                    raise AppError("LESSON_REFLECTION", "The first recollection is saved. Add new thoughts in a follow-up question", 409)
-                if not previous and reflection is not None:
-                    recorded = next((event["coordinate"] for event in game["history"]
-                                     if event["revision"] == revision + 1 and event["kind"] == "move"), None)
-                    reviews = self.store.list_records("review", owner, db)
-                    prior_review = any(item["game_id"] == game_id and any(entry["revision"] == revision
-                                       for entry in item.get("evidence", [])) for item in reviews)
-                    prior_hint = any(item["game_id"] == game_id and item["revision"] == revision
-                                     for item in self.store.list_records("hint", owner, db))
-                    recollection = {"text": reflection, "source": "review_recollection" if recorded else "review_plan",
-                                    "recorded_move": recorded, "collected_at": datetime.now(UTC).isoformat(),
-                                    "prior_analysis_available": bool(saved or prior_review or prior_hint)}
                 existing = [item for item in previous
-                            if (item["status"] in ("queued", "running")
+                            if item['inputs'].get('language', 'en') == language
+                            and item['inputs'].get('coaching_version') == COACH_VERSION
+                            and (item["status"] in ("queued", "running")
                                  or (item["status"] == "succeeded" and saved
                                      and saved["coaching_status"] == "ready"))]
                 if existing:
                     return self.public_task(existing[-1])
             task = self.make_task(db, owner, game_id, "question" if question else "lesson",
-                                  {"revision": revision, "question": question, "language": language,
-                                   "view": question_view if question else None,
-                                   "reflection": saved.get("reflection") if question else recollection})
+                                  {"revision": revision, "question": question, "language": language, 'coaching_version': COACH_VERSION,
+                                   "view": question_view if question else None})
             return self.public_task(task)
 
         return self.store.mutate(owner, request_id, payload, operation)

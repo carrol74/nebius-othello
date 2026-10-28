@@ -5,16 +5,26 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from nemothello.board_features import CORNERS, candidate_features
-from nemothello.concepts import concept_facts, concept_focus, concept_profile
+from nemothello.coach_statements import statements
+from nemothello.concepts import concept_facts, concept_profile
 from nemothello.decision import assess_decision, reference_move
 from nemothello.errors import AppError
+from nemothello.learning_goal import explanation_problems, explanation_text, learning_goal
 from nemothello.rules import apply_move, flips, legal_moves, opponent
+from nemothello.teaching import compare_lesson, variation_frames
 
 REVIEW_VERSION = "grounded-v1"
+COACH_VERSION = "decision-consequence-v3"
+# The longest lesson reason, a forced corner, takes four plies to show
+LINE_PLIES = 4
+KEY_MOVES = 3
+KEY_MOVE_LOSS = 4
 COLORS = {"X": "Black", "O": "White"}
 LANGUAGES = {"en": "English", "zh": "Simplified Chinese"}
 # Displayed text limits, so an answer fits in a few short sentences
 TEXT_LIMITS = {"English": 480, "Simplified Chinese": 160}
+# A game summary covers several moves plus one habit to practice
+SUMMARY_LIMITS = {"English": 640, "Simplified Chinese": 220}
 VALUE_MEANINGS = {
     "legal_moves": "number of legal moves for the player at this position",
     "replies": "legal replies the opponent has after this move (in Chinese: 应对, not 回合)",
@@ -85,41 +95,10 @@ def stage(item: dict[str, Any]) -> str:
 
 
 def select_key_moves(evidence: list[dict[str, Any]], human_color: str) -> list[dict[str, Any]]:
-    human = [item for item in evidence if item["actor"] == human_color
-             and len(item["analysis"]["candidates"]) > 1]
-    ordered = sorted(human, key=lambda item: (-item["score_loss"], item["revision"]))
-    losses = [item for item in ordered if item["score_loss"] > 0]
-    pool = losses or ordered[:1]
-    selected = []
-    for phase in ("opening", "midgame", "endgame"):
-        choices = [item for item in pool if stage(item) == phase]
-        if choices:
-            selected.append(choices[0])
-    for item in pool:
-        if len(selected) >= 3:
-            break
-        if item not in selected:
-            selected.append(item)
-    return sorted(selected, key=lambda item: item["revision"])
-
-
-def variation_frames(board, turn, moves):
-    frames = [{"board": list(board), "turn": turn, "coordinate": None}]
-    for move in moves:
-        if turn is None:
-            raise AppError("REVIEW_VARIATION", "Search variation continues after the game ends", 502)
-        if move == "pass":
-            if legal_moves(board, turn):
-                raise AppError("REVIEW_VARIATION", "Search variation contains an invalid pass", 502)
-        else:
-            if move not in legal_moves(board, turn):
-                raise AppError("REVIEW_VARIATION", "Search variation contains an illegal move", 502)
-            board = apply_move(board, turn, move)
-        turn = opponent(turn)
-        if not legal_moves(board, turn) and not legal_moves(board, opponent(turn)):
-            turn = None
-        frames.append({"board": list(board), "turn": turn, "coordinate": move})
-    return frames
+    # Shallow searches disagree by a disc or two, so smaller losses are not mistakes worth a lesson
+    losses = [item for item in evidence if item["actor"] == human_color and item["score_loss"] >= KEY_MOVE_LOSS]
+    largest = sorted(losses, key=lambda item: (-item["score_loss"], item["revision"]))[:KEY_MOVES]
+    return sorted(largest, key=lambda item: item["revision"])
 
 
 def enrich_evidence(item: dict[str, Any]) -> dict[str, Any]:
@@ -148,16 +127,23 @@ def cell_owner(value: str, human: str) -> str:
     return "empty" if value == "." else "yours" if value == human else "the opponent's"
 
 
+def capture_words(ray: list[str]) -> str:
+    # Spelled out so copied text never lists four squares in a row
+    return f"playing {ray[0]} uses {ray[-1]} to trap {', '.join(ray[1:-1])}"
+
+
+def line_words(moves: list[str]) -> str:
+    return ", then ".join(moves)
+
+
 def fact(identifier, text, topic, revision=None):
     return {"id": identifier, "text": text, "topic": topic, "revision": revision}
 
 
 def summary_facts(review: dict[str, Any]) -> list[dict[str, Any]]:
     result = review["result"]
-    facts = []
-    if result is not None:
-        winner = "The game was a draw" if result["winner"] == "draw" else side(result["winner"], review["human_color"]).capitalize() + " won"
-        facts.append(fact("result", f"You played {COLORS[review['human_color']]}. {winner}: Black {result['black_count']}, White {result['white_count']}.", "outcome"))
+    winner = "The game was a draw" if result["winner"] == "draw" else side(result["winner"], review["human_color"]).capitalize() + " won"
+    facts = [fact("result", f"You played {COLORS[review['human_color']]}. {winner}: Black {result['black_count']}, White {result['white_count']}.", "outcome")]
     adopted = review["hint_adoption"]
     facts.append(fact("adoption", f"You followed hints on {adopted['adopted_turns']} of {adopted['shown_turns']} turns with a displayed hint.", "hints"))
     for hint in review["hints"]:
@@ -170,10 +156,7 @@ def summary_facts(review: dict[str, Any]) -> list[dict[str, Any]]:
         choice = (f"You played {entry['actual_move']} and {'followed it' if entry['actual_move'] == hint['recommended_move'] else 'chose a different move'}."
                   if entry else "No subsequent player move is recorded.")
         facts.append(fact(f"hint:{hint['hint_id']}", f"At position {hint['revision']}, the displayed hint was {hint['recommended_move']}. {choice}", "hints", hint["revision"]))
-    facts.append(fact("outcome_limit", "Following the Edax recommendation does not guarantee a win. The original result does not establish what would happen after an unplayed alternative; a saved replay proves only that replay's result.", "outcome"))
-    for branch in review.get("branch_results", []):
-        outcome = branch["result"]
-        facts.append(fact(f"branch:{branch['game_id']}", f"The saved hint replay from position {branch['parent_revision']} finished Black {outcome['black_count']}, White {outcome['white_count']}. It used the original opponent configuration.", "outcome", branch["parent_revision"]))
+    facts.append(fact("outcome_limit", "Following the Edax recommendation does not guarantee a win. The original result does not establish what would happen after an unplayed alternative.", "outcome"))
     return facts
 
 
@@ -190,22 +173,22 @@ def position_facts(item: dict[str, Any], comparison_move: str | None = None):
     a, b = comparisons[actual], comparisons[recommended]
     prefix = f"p{revision}:"
     if assessment["status"] == "forced":
-        decision = (f"At position {revision}, you played {actual}." if item.get("is_played", True)
-                    else f"At position {revision}, you must play {actual}; no move has been recorded yet.")
+        decision = f"At position {revision}, you played {actual}."
         consequence = (f" After {actual}, the opponent can take "
                        + ", ".join(a["opponent_corners"]) + ".") if a["opponent_corners"] else ""
         return [fact(prefix + "decision", decision, "forced_move", revision),
                 fact(prefix + "forced_move", f"{actual} is your only legal move. "
                      "There is no alternative to compare on this turn." + consequence,
-                     "forced_move", revision)], ["forced_move"], {"focus": [], "values": {}}
+                     "forced_move", revision)], ["forced_move"], {}
     judgment = (" Edax recommends this move together with another equally good move."
                 if assessment["status"] == "tied_best" else " Edax recommends this move."
-                if assessment["status"] == "best" else f" Edax recommends {assessment['best_moves'][0]} instead.")
+                if assessment["status"] == "best" else f" Edax recommends {recommended} instead"
+                + (f"; {', '.join(move for move in assessment['best_moves'] if move != recommended)} "
+                   "is equally good." if len(assessment["best_moves"]) > 1 else "."))
     facts = [
         fact(prefix + "decision", f"At position {revision}, you "
              + (f"played {actual}." if item.get("is_played", True) else
-                f"are comparing {actual}; the recorded move was {item['recorded_move']}." if item.get("recorded_move") else
-                f"can play {actual}; no move has been recorded yet.")
+                f"are comparing {actual}; the recorded move was {item['recorded_move']}.")
              + judgment + f" There are {assessment['legal_move_count']} legal moves. This assessment is separate from any hint shown during play.", "comparison", revision),
     ]
     moves = list(dict.fromkeys((actual, recommended)))
@@ -214,16 +197,9 @@ def position_facts(item: dict[str, Any], comparison_move: str | None = None):
     extra, lessons, values = concept_facts(profiles, moves, revision)
     facts += extra
     lessons = ["comparison", *lessons]
-    if has_comparison and played["score"] != best["score"]:
-        worse, better = sorted(moves, key=lambda move: candidates[move]["score"])
-        focus = concept_focus(profiles, worse, better)
-    else:
-        focus = concept_focus(profiles, None, actual)
-    if has_comparison and (a["corner"] != b["corner"] or set(a["opponent_corners"]) != set(b["opponent_corners"])):
-        focus = ["corners", *focus]
     for move in dict.fromkeys((actual, recommended)):
-        line = " → ".join(candidates[move]["principal_variation"])
-        facts.append(fact(prefix + f"line_{move}", f"One searched continuation at position {revision}: {line}. This line is illustrative; it does not include every legal reply.", "comparison", revision))
+        line = line_words(candidates[move]["principal_variation"][:LINE_PLIES])
+        facts.append(fact(prefix + f"line_{move}", f"The first moves of one searched continuation at position {revision}: {line}. This line is illustrative; it does not include every legal reply.", "comparison", revision))
     if a["corner"] or b["corner"] or a["opponent_corners"] or b["opponent_corners"]:
         corners = lambda value: ", ".join(value) or "none"
         facts.append(fact(prefix + "corners", f"Immediate corner replies for the opponent: after {actual}, {corners(a['opponent_corners'])}"
@@ -249,7 +225,7 @@ def position_facts(item: dict[str, Any], comparison_move: str | None = None):
                           + (f" and {standing(best['score'])} after {recommended}" if has_comparison else "")
                           + ". A played game can still change through later mistakes.", "endgame", revision))
         lessons.append("endgame")
-    return facts, lessons, {"focus": [prefix + name for name in focus], "values": values}
+    return facts, lessons, values
 
 
 def position_values(item: dict[str, Any]) -> dict[str, Any]:
@@ -287,23 +263,6 @@ def move_fact(position: dict[str, Any], move: str) -> dict[str, Any]:
                 f"{values[key + '.replies']} opponent replies.", "comparison", revision)
 
 
-def pass_context(review: dict[str, Any], revision: int):
-    board = tuple(review["initial_board"])
-    for event in review["history"]:
-        if event["kind"] == "pass" and event["revision"] - 1 == revision:
-            actor = event["actor"]
-            if legal_moves(board, actor) or not legal_moves(board, opponent(actor)):
-                raise AppError("REPLAY_MISMATCH", "Recorded pass does not match the board", 500)
-            text = f"At position {revision}, you had no legal move and passed. The opponent could still move. The pass did not change the board or disc counts."
-            return {"revision": revision,
-                    "human": actor == review["human_color"], "allowed_lessons": ["pass"], "values": {}, "focus": [],
-                    "facts": [fact(f"p{revision}:decision", f"At position {revision}, you passed.", "pass", revision),
-                              fact(f"p{revision}:pass", text, "pass", revision)]}
-        if event["kind"] == "move":
-            board = apply_move(board, event["actor"], event["coordinate"])
-    return None
-
-
 def verified_teaching_facts(teaching, revision, human):
     facts = []
     for choice in teaching["choices"]:
@@ -313,7 +272,7 @@ def verified_teaching_facts(teaching, revision, human):
             mechanism = f"The opponent can flip back newly gained discs: {', '.join(continuation['recaptured'])}."
             facts.append(fact(f"p{revision}:continuation_{choice['coordinate']}",
                               f"In the displayed {choice['coordinate']} continuation: {mechanism} "
-                              f"Verified capture line: {' → '.join(ray)}. This shows one local mechanism, "
+                              f"Verified capture: {capture_words(ray)}. This shows one local mechanism, "
                               "not a forced continuation.",
                               "comparison", revision))
         proof = choice["corner_proof"]
@@ -322,28 +281,50 @@ def verified_teaching_facts(teaching, revision, human):
         attack = proof["attack"]
         action = f"take {proof['target']} immediately" if attack == proof["target"] else (
             f"play {attack}; every legal defense then still permits {proof['target']} on the next turn")
+        lost = (f" No legal move at this position keeps {proof['target']} from such a threat."
+                if choice["defendable"] is False else "")
         facts.append(fact(f"p{revision}:proof_{choice['coordinate']}",
                           f"After {choice['coordinate']}, {side(proof['attacker'], human)} can {action}. "
-                          "This is a rules-verified corner threat within three plies after the root move.",
+                          "This is a rules-verified corner threat within three plies after the root move." + lost,
                           "corners", revision))
     insight = teaching["insight"]
+    if insight["kind"] == "shared_corner":
+        moves = " and ".join(choice["coordinate"] for choice in teaching["choices"])
+        facts.append(fact(f"p{revision}:shared_corner",
+                          f"Both {moves} let the opponent force {insight['target']}, so that corner is not "
+                          "what separates the two moves.", "corners", revision))
     witness = insight.get('witness')
     if witness:
         opportunity = witness['opportunity']
-        prefix = ' → '.join(witness['prefix']) or 'no further moves'
+        prefix = line_words(witness['prefix']) or 'no further moves'
         cells = ', '.join(f"{entry['coordinate']}: {cell_owner(entry['available'], human)} versus "
                           f"{cell_owner(entry['blocked'], human)}" for entry in opportunity['changes'])
         facts.append(fact(f'p{revision}:corner_contrast',
                           f"Compare {opportunity['available_after']} and {opportunity['blocked_after']} "
                           f"after the same further sequence ({prefix}). "
-                          f"Only in the {opportunity['available_after']} variation is there a capture line for "
-                          f"{side(opportunity['actor'], human)} from {opportunity['coordinate']}: "
-                          f"{' → '.join(opportunity['capture_line'])}. Changed cells: {cells}. "
+                          f"Only in the {opportunity['available_after']} variation can "
+                          f"{side(opportunity['actor'], human)} capture there: "
+                          f"{capture_words(opportunity['capture_line'])}. Changed cells: {cells}. "
                           "This compares capture geometry on those boards; it does not let that player "
                           "move out of turn.",
                           'corners', revision))
     contrast = teaching.get("decision_contrast")
     if contrast:
+        consequence = contrast.get("consequence")
+        if consequence:
+            witness = consequence["opportunity"]
+            facts.append(fact(f"p{revision}:reply_consequence",
+                              f"The searched reply after {contrast['actual_move']} is {consequence['reply']}; "
+                              f"the same reply is legal after {contrast['recommended_move']}. "
+                              f"After the played move and this reply, your complete legal move set is "
+                              f"{', '.join(consequence['actual_moves'])}, all on {consequence['axis']} "
+                              f"{consequence['axis_value']}. After the alternative and the same reply, your moves are "
+                              f"{', '.join(consequence['alternative_moves'])}. The alternative preserves the opponent disc "
+                              f"on {consequence['retained_disc']}, which your played move flips; this enables "
+                              f"{capture_words(witness['capture_line'])} on your next turn. "
+                              "Preserving an opponent disc can retain a capture route for you. "
+                              "This is a concrete response and opportunity comparison, not all possible replies.",
+                              "comparison", revision))
         changes = []
         for witness in (contrast["removed_reply"], contrast["added_reply"]):
             if witness:
@@ -351,7 +332,7 @@ def verified_teaching_facts(teaching, revision, human):
                                   f"{cell_owner(entry['blocked'], human)}" for entry in witness["changes"])
                 changes.append(f"{side(witness['actor'], human).capitalize()} can play {witness['coordinate']} after "
                                f"{witness['available_after']}, but it is illegal after {witness['blocked_after']}. "
-                               f"One verified capture line is {' → '.join(witness['capture_line'])}; "
+                               f"One verified capture: {capture_words(witness['capture_line'])}; "
                                f"the alternative board changes {cells}.")
         facts.append(fact(f"p{revision}:decision_contrast", " ".join(changes)
                           + " Both complete immediate reply sets were checked. These are opportunity changes; "
@@ -375,55 +356,31 @@ def verified_teaching_facts(teaching, revision, human):
     return facts
 
 
-def position_focus(facts: list[dict[str, Any]], revision: int, concepts: list[str]) -> list[str]:
-    ids = [entry["id"] for entry in facts]
-
-    def unique(prefix: str) -> str | None:
-        # A fact that holds for both moves does not separate them
-        matches = [key for key in ids if key.startswith(prefix)]
-        return matches[0] if len(matches) == 1 else None
-
-    proof = next((key for key in (f"p{revision}:corner_contrast", f"p{revision}:defense") if key in ids), None)
-    ranked = [proof or unique(f"p{revision}:proof_"), *concepts[:1 if concepts[:1] == [f"p{revision}:corners"] else 0],
-              f"p{revision}:decision_contrast" if f"p{revision}:decision_contrast" in ids else None,
-              unique(f"p{revision}:continuation_"), *concepts]
-    return list(dict.fromkeys(key for key in ranked if key))[:3]
-
-
-def review_context(review: dict[str, Any], question: str | None, revision: int | None = None,
+def review_context(review: dict[str, Any], question: str | None, revision: int,
                    language: str = "en") -> dict[str, Any]:
-    requested = {int(value) for value in re.findall(r"(?:position(?:\s+revision)?|revision|局面)\s*(\d+)", question or "", re.IGNORECASE)}
-    if revision is not None and requested - {revision}:
-        raise AppError("REVIEW_POSITION", "Move to the requested position before asking about it", 422)
-    evidence = review.get("evidence", review["key_moves"])
-    if revision is not None:
-        selected = [item for item in evidence if item["revision"] == revision]
-    elif requested:
-        selected = [item for item in evidence if item["revision"] in requested]
-        if len(requested) > 3:
-            raise AppError("REVIEW_POSITION", "Ask about at most three positions at a time", 422)
-    else:
-        selected = select_key_moves(evidence, review["human_color"])
+    selected = [item for item in review["evidence"] if item["revision"] == revision]
+    if not selected:
+        raise AppError("REVIEW_POSITION", "Choose a saved position before a move", 422)
     positions = []
     for original in selected:
         if original["actor"] != review["human_color"]:
             raise AppError("REVIEW_OPPONENT", "Choose one of your own turns for teaching", 422)
         item = original if original.get("comparisons") else enrich_evidence(original)
-        view = review.get("teaching_view") if revision == item["revision"] else None
+        view = review.get("teaching_view")
         if view:
             item = {**item, "actual_move": view["selected_move"],
                     "is_played": view["assessment"]["is_played"], "recorded_move": view["recorded_move"]}
-        teaching = view["teaching"] if view else review.get("teaching_comparison") if revision == item["revision"] else None
+        teaching = view["teaching"] if view else compare_lesson({"evidence": [original]}, revision, original["actual_move"])
         reference = next((choice["coordinate"] for choice in teaching["choices"]
-                          if choice["coordinate"] != item["actual_move"]), None) if teaching else None
-        facts, lessons, concepts = position_facts(item, reference)
-        if teaching and assess_decision(item, item["actual_move"])["status"] != "forced":
+                          if choice["coordinate"] != item["actual_move"]), None)
+        facts, lessons, concept_values = position_facts(item, reference)
+        if assess_decision(item, item["actual_move"])["status"] != "forced":
             teaching_facts = verified_teaching_facts(teaching, item["revision"], item["actor"])
             facts.extend(teaching_facts)
             if any(entry["topic"] == "corners" for entry in teaching_facts) and "corners" not in lessons:
                 lessons.append("corners")
         if view:
-            line = " → ".join(view["line"]) or "before the selected move"
+            line = line_words(view["line"]) or "before the selected move"
             last = (f"Last move: {side(view['actor'], item['actor'])} played {view['line'][-1]}, flipping "
                     + (", ".join(view["flipped"]) or "no discs") + ". ") if view["line"] else ""
             turn = (f"Next to move: {side(view['turn'], item['actor'])}; legal squares: "
@@ -431,11 +388,11 @@ def review_context(review: dict[str, Any], question: str | None, revision: int |
             facts.append(fact(f"p{item['revision']}:view", f"The question refers to the {view['selected_move']} line: {line}. "
                               + last + turn + ". The recommendation is for the root choice, not this later board.",
                               "comparison", item["revision"]))
-        earlier = review.get('earlier_decision') if revision == item['revision'] else None
+        earlier = review.get('earlier_decision')
         if earlier and earlier['status'] == 'verified':
             link = earlier['link']
-            move_number = sum(event['kind'] == 'move' and event['revision'] <= link['revision']
-                              for event in review['history']) + 1
+            # Move numbers count every disc placed since the opening four, so branches keep the game's numbering
+            move_number = sum(cell != "." for row in link["evidence"]["analysis"]["board"] for cell in row) - 3
             topic = 'forced_move' if assess_decision(item, item['actual_move'])['status'] == 'forced' else 'corners'
             facts.append(fact(f"p{item['revision']}:earlier_decision",
                               f"In the recorded history, at move {move_number}, "
@@ -447,23 +404,47 @@ def review_context(review: dict[str, Any], question: str | None, revision: int |
                               "or a different game result.", topic, item['revision']))
             if topic not in lessons:
                 lessons.append(topic)
+        for choice in teaching['choices']:
+            line_fact = next((entry for entry in facts if entry['id'] == f"p{item['revision']}:line_{choice['coordinate']}"), None)
+            if line_fact:
+                line_fact.update(frames=choice['frames'], text='Displayed continuation: ' + line_words(
+                    [frame['coordinate'] for frame in choice['frames'][1:]]) + '. Other replies are possible.')
+        missing = set(teaching["focus"]) - {entry["id"] for entry in facts}
+        if missing:
+            raise AppError("REVIEW_FOCUS", f"Focus facts are missing: {', '.join(sorted(missing))}", 500)
+        goal = learning_goal(teaching)
+        if goal:
+            goal_fact = next(entry for entry in facts if entry["id"] == goal["fact_id"])
+            focus_move = teaching["reason"]["move"] if goal.get("consequence") else goal["available_move"]
+            goal_choice = next(choice for choice in teaching["choices"] if choice["coordinate"] == focus_move)
+            goal_fact["frames"] = goal_choice["frames"]
         positions.append({"revision": item["revision"],
+                          "allowed_moves": list(dict.fromkeys([item['actual_move'], reference or reference_move(item, item['actual_move']) or item['actual_move']])),
                           "decision": assess_decision(item, item["actual_move"]),
-                          "player_reflection": review.get("player_reflection") if revision == item["revision"] else None,
                           **({"view": view} if view else {}),
                           "human": item["actor"] == review["human_color"], "facts": facts,
-                          "focus": position_focus(facts, item["revision"], concepts["focus"]),
-                          "values": {**position_values(item), **concepts["values"]}, "allowed_lessons": lessons})
-    for requested_revision in sorted(requested - {item["revision"] for item in positions}):
-        position = pass_context(review, requested_revision)
-        if position is None:
-            raise AppError("REVIEW_POSITION", "Choose a saved position before a move or pass", 422)
-        if not position["human"]:
-            raise AppError("REVIEW_OPPONENT", "Choose one of your own turns for teaching", 422)
-        positions.append(position)
-    return {"summary_facts": summary_facts(review), "summary_values": summary_values(review),
+                          "focus": teaching["focus"],
+                          "primary_reason": teaching["reason"]["kind"] if teaching["reason"] else None,
+                          "learning_goal": goal,
+                          "values": {**position_values(item), **concept_values}, "allowed_lessons": lessons})
+    context = {"summary_facts": summary_facts(review), "summary_values": summary_values(review),
             "positions": positions, "value_meanings": VALUE_MEANINGS, "lessons": LESSONS, "question": question,
             "language": LANGUAGES[language], "task": "question" if question else "review"}
+    context['statements'] = statements(context)
+    return context
+
+
+def game_summary_context(review: dict[str, Any], revisions: list[int], language: str = "en") -> dict[str, Any]:
+    contexts = [review_context(review, None, revision, language) for revision in revisions]
+    context = {**contexts[0], "positions": [item["positions"][0] for item in contexts], "task": "summary"}
+    context["statements"] = statements(context)
+    return context
+
+
+class DecisionExplanation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    changed_square: str = Field(pattern=r"^[a-h][1-8]$")
+    next_time: str = Field(min_length=1, max_length=700)
 
 
 class Selection(BaseModel):
@@ -472,6 +453,7 @@ class Selection(BaseModel):
     fact_ids: list[str] = Field(min_length=1, max_length=6)
     lesson_id: str
     text: str | None = Field(default=None, max_length=700)
+    explanation: DecisionExplanation | None = None
 
 
 class Answer(BaseModel):
@@ -482,9 +464,9 @@ class Answer(BaseModel):
 
 class CoachingPlan(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    topic: Literal["review", "comparison", "hints", "outcome", "strategy", "unsupported"]
+    topic: Literal["review", "summary", "comparison", "hints", "outcome", "strategy", "unsupported"]
     answer: Answer = Field(default_factory=Answer)
-    selections: list[Selection] = Field(max_length=3)
+    selections: list[Selection] = Field(default_factory=list, max_length=3)
 
 
 SLOT = re.compile(r"\{([A-Za-z0-9_.]+)\}")
@@ -504,7 +486,7 @@ CHINESE_NUMBER = re.compile(r"(?!两步[都均各])([两二三四五六七八九
 BOARD_LINE = re.compile(r"\b(?:row|rank) [1-8]\b|第 ?[1-8] ?行", re.IGNORECASE)
 TOPIC_WORDS = (
     (re.compile(r"hint|提示|推荐点", re.IGNORECASE), {"hints"}, "a displayed-hint fact"),
-    (re.compile(r"\bwin|\bwon\b|victory|赢|获胜|胜利|必胜", re.IGNORECASE),
+    (re.compile(r"\bwin|\bwon\b|victory|赢|获胜|胜利|必胜|失利|比分|输了", re.IGNORECASE),
      {"outcome", "endgame"}, "an outcome fact"),
     (re.compile(r"corner|(?<!视)角(?![度色])", re.IGNORECASE),
      {"corners", "corner_neighbor", "forced_move", "tool"}, "a corner fact or tool result"),
@@ -514,11 +496,19 @@ TOPIC_WORDS = (
 # Explain the board, not engine scores; address sides as you/opponent
 SCORE_WORDS = re.compile(r"\bscor(?:e|es|ed|ing)\b|\brat(?:e|es|ed|ing|ings)\b|\bevaluat\w*|评分|得分|分数|分值|估值|盘差",
                          re.IGNORECASE)
-SIDE_NAMES = re.compile(r"\b(?:Black|White)\b|\bthe player\b|黑方|白方|黑棋|白棋|玩家")
+SIDE_NAMES = re.compile(r"\b(?:Black|White)\b|\bthe player\b|黑方|白方|黑棋|白棋|玩家|我们")
 COORDINATE_RUN = re.compile(r"(?<![A-Za-z0-9])[a-h][1-8](?:(?:\s*(?:[,，、→/]|和|及|或|and|or)\s*|\s+)[a-h][1-8]){3,}",
                             re.IGNORECASE)
 COMPARISON_WORDS = re.compile(r"更|比(?!如|较)|多于|少于|\b(?:more|fewer|less|greater|higher|lower|better|worse)\b",
                               re.IGNORECASE)
+# Glossary terms the coach must use instead
+TERM_FIXES = ((re.compile("暴露"), "挨着空格的棋子"),
+              (re.compile("(?<!跳过)回合"), "应对 for a reply, or 跳过回合 for a pass"))
+CJK = re.compile(r"[\u4e00-\u9fff]")
+LATIN_WORD = re.compile(r"[A-Za-z]{2,}")
+NAMES = {"Edax", "Nemotron"}
+# Category names of primary reasons, which a summary must describe on the board instead
+REASON_LABELS = re.compile(r"contrast|对比", re.IGNORECASE)
 IDENTIFIER = re.compile(r"\b[a-z]+(?:_[a-z]+)+\b")
 
 
@@ -563,20 +553,40 @@ def plan_schema(context: dict[str, Any], tool_facts=()) -> dict[str, Any]:
         selections = {"type": "array", "items": selection, "maxItems": len(positions)}
         if context["task"] == "review":
             selections["minItems"] = len(positions)
+            if any(item.get("learning_goal") for item in positions):
+                selection["required"].remove("text")
+                selection["properties"]["explanation"] = {
+                    "type": "object", "additionalProperties": False,
+                    "required": ["changed_square", "next_time"],
+                    "properties": {
+                        "changed_square": {"type": "string", "enum": sorted({change["square"] for item in positions
+                                            if item.get("learning_goal") for change in item["learning_goal"]["changes"]})},
+                        "next_time": {"type": "string", "minLength": 1},
+                    },
+                }
+                if all(item.get("learning_goal") for item in positions):
+                    selection["required"].append("explanation")
+                    del selection["properties"]["text"]
     else:
         selections = {"type": "array", "items": {"type": "object"}, "maxItems": 0}
-    return {
+    topics = {"review": ["review"], "summary": ["summary"]}.get(
+        context["task"], ["comparison", "hints", "outcome", "strategy", "unsupported"])
+    schema = {
         "type": "object", "additionalProperties": False,
         "required": ["topic", "answer", "selections"],
         "properties": {
-            "topic": {"type": "string", "enum": ["review"] if context["task"] == "review"
-                      else ["comparison", "hints", "outcome", "strategy", "unsupported"]},
+            "topic": {"type": "string", "enum": topics},
             "answer": {"type": "object", "additionalProperties": False, "required": ["text", "fact_ids"],
                        "properties": {"text": {"type": "string", **({"maxLength": 0} if context["task"] == "review" else {})},
                                       "fact_ids": {**fact_ids, "maxItems": 8}}},
             "selections": selections,
         },
     }
+    if context["task"] == "summary":
+        # A summary has no per-move cards, so the field is left out instead of required empty
+        schema["required"].remove("selections")
+        del schema["properties"]["selections"]
+    return schema
 
 
 def ungrounded(message: str) -> AppError:
@@ -625,6 +635,10 @@ def check_text(text: str, cited: list[dict[str, Any]], values: dict[str, Any],
                      else any(item["id"] == source for item in cited))
         if not supported:
             problems.append(f"{label} uses {{{key}}} without citing a fact from {source}")
+        before, after = text[:match.start()].rstrip(), text[match.end():].lstrip()
+        if (before and before[-1] not in '.!?。！？') or (after and after[0] not in '.!?。！？'):
+            problems.append(f"{label} must use {{{key}}} as a complete standalone statement; "
+                            'do not change its subject, move, or measurement')
     # Same-length masking keeps offsets for excerpts
     bare = mask(SLOT, text)
     for match in re.finditer(r"\d+", mask(BOARD_LINE, mask(COORDINATE, bare))):
@@ -649,7 +663,17 @@ def check_text(text: str, cited: list[dict[str, Any]], values: dict[str, Any],
                         "write you and the opponent (你/对手)")
     for match in COORDINATE_RUN.finditer(text):
         problems.append(f"{label} lists too many squares in {excerpt(text, *match.span())}; "
-                        "name at most three that matter")
+                        "name at most three that matter, and describe a capture in words such as "
+                        "'c3 uses f6 to trap d4, e5'")
+    if "\\" in bare:
+        problems.append(f"{label} contains a backslash; write line breaks as real line breaks, not \\n")
+    if CJK.search(bare):
+        for match in LATIN_WORD.finditer(mask(COORDINATE, bare)):
+            if match.group() not in NAMES:
+                problems.append(f"{label} mixes in the English word {match.group()}; write it in Chinese")
+    for pattern, term in TERM_FIXES:
+        for match in pattern.finditer(bare):
+            problems.append(f"{label} writes {match.group()}; write {term} instead")
     for match in IDENTIFIER.finditer(bare):
         problems.append(f"{label} shows the internal name {match.group()}; write plain words")
     if COMPARISON_WORDS.search(bare):
@@ -699,26 +723,50 @@ def validate_plan(raw: str, context: dict[str, Any], tool_facts=()) -> CoachingP
         raise AppError("REVIEW_PLAN_INVALID", "The coach returned an invalid lesson plan: "
                        f"{'.'.join(str(part) for part in problem['loc'])} {problem['msg']}", 502) from exc
     available = available_facts(context, tool_facts)
-    # Move inline citations like {t1} into fact_ids
+    positions = {item["revision"]: item for item in context["positions"]}
+    for selection in plan.selections:
+        if selection.explanation is not None:
+            if selection.text:
+                raise AppError("REVIEW_PLAN_INVALID", "Use explanation or text, not both", 502)
+            goal = positions.get(selection.revision, {}).get("learning_goal")
+            if not goal or context["task"] != "review":
+                raise AppError("REVIEW_PLAN_INVALID", "An explanation needs a verified review learning_goal", 502)
+            problems = explanation_problems(selection.explanation, goal)
+            if problems:
+                raise ungrounded("Correct these problems: " + "; ".join(problems))
+            selection.text = explanation_text(selection.explanation, goal, context["language"])
+    # Move inline citations like {t1} into fact_ids; citing a fact twice is harmless
     for part in [plan.answer, *plan.selections]:
+        inline = []
         if part.text:
             part.text, inline = strip_citations(part.text, available)
-            part.fact_ids = [*part.fact_ids, *(key for key in dict.fromkeys(inline) if key not in part.fact_ids)]
+        part.fact_ids = list(dict.fromkeys([*part.fact_ids, *inline]))
     positions = {item["revision"]: item for item in context["positions"]}
     question = context["task"] == "question"
-    if question and (plan.topic == "review" or (plan.topic == "unsupported" and plan.selections)):
+    summary = context["task"] == "summary"
+    if summary:
+        if plan.topic != "summary" or plan.selections or not plan.answer.text.strip():
+            raise AppError("REVIEW_PLAN_INVALID", "For task=summary, set topic=summary, write answer.text, "
+                           "and leave selections empty", 502)
+        missing = [item["focus"][0] for item in context["positions"]
+                   if item["focus"] and item["focus"][0] not in plan.answer.fact_ids]
+        if missing:
+            raise AppError("REVIEW_PLAN_INVALID", "The summary must cite the first focus fact of every position: "
+                           + ", ".join(missing), 502)
+    if question and (plan.topic in ("review", "summary") or (plan.topic == "unsupported" and plan.selections)):
         raise AppError("REVIEW_PLAN_INVALID", "The coach returned an incompatible answer plan", 502)
     if question and not plan.answer.text.strip():
         raise AppError("REVIEW_PLAN_INVALID", "The coach did not write an answer to the question", 502)
     if question and plan.topic != "unsupported" and not plan.answer.fact_ids:
         raise AppError("REVIEW_PLAN_INVALID", "The coach answered without citing evidence", 502)
-    if not question and (plan.topic != "review" or len(plan.selections) != len(positions)):
+    review = context["task"] == "review"
+    if review and (plan.topic != "review" or len(plan.selections) != len(positions)):
         raise AppError("REVIEW_PLAN_INVALID", "The coach did not cover the selected player decisions", 502)
-    if not question and plan.answer.text.strip():
+    if review and plan.answer.text.strip():
         raise AppError("REVIEW_PLAN_INVALID", "For task=review, leave answer.text empty and write in the selections", 502)
-    if (not set(plan.answer.fact_ids) <= available.keys()
-            or len(plan.answer.fact_ids) != len(set(plan.answer.fact_ids))):
-        raise AppError("REVIEW_PLAN_INVALID", "The coach cited unavailable or repeated evidence", 502)
+    unknown = [key for key in plan.answer.fact_ids if key not in available]
+    if unknown:
+        raise AppError("REVIEW_PLAN_INVALID", "The coach cited unavailable evidence: " + ", ".join(unknown), 502)
     seen = set()
     for selection in plan.selections:
         position = positions.get(selection.revision)
@@ -741,16 +789,33 @@ def validate_plan(raw: str, context: dict[str, Any], tool_facts=()) -> CoachingP
         problems += check_text(selection.text, cited, values, coordinates,
                                f"The explanation for position {selection.revision}")
         focus = positions[selection.revision].get("focus") or []
-        if not question and focus and focus[0] not in selection.fact_ids:
+        if review and focus and focus[0] not in selection.fact_ids:
             problems.append(f"The explanation for position {selection.revision} must build on its first focus "
                             f"fact {focus[0]}; cite it and explain what it shows")
+        goal = positions[selection.revision].get("learning_goal")
+        if review and goal:
+            problems += explanation_problems(selection.explanation, goal)
         cited_by_cards.extend(cited)
     problems += check_text(plan.answer.text, [*(available[key] for key in plan.answer.fact_ids), *cited_by_cards],
                            values, coordinates, "The answer")
-    limit = TEXT_LIMITS[context["language"]]
+    rendered_statements = statements(context, tool_facts)
+    if summary:
+        # The summary must come from moves the coach actually played out, one per key move
+        played = {available[key]["revision"] for key in plan.answer.fact_ids if available[key]["topic"] == "tool"}
+        named = {move.lower() for move in COORDINATE.findall(plan.answer.text)}
+        for match in REASON_LABELS.finditer(plan.answer.text):
+            problems.append(f"The summary writes the category name {match.group()}; say what happens on the board")
+        for revision, position in positions.items():
+            if revision not in played:
+                problems.append(f"Before summarizing, play out {position['allowed_moves'][0]} at position {revision} "
+                                "with play_line or check_corner_threat and cite that result")
+            if position["allowed_moves"][0] not in named:
+                problems.append(f"The summary must name the move {position['allowed_moves'][0]} you played at "
+                                f"position {revision}")
+    limit = (SUMMARY_LIMITS if summary else TEXT_LIMITS)[context["language"]]
     for part, label in [*((item, f"The explanation for position {item.revision}") for item in plan.selections),
                         (plan.answer, "The answer")]:
-        shown = SLOT.sub(lambda match: format_value(values.get(match.group(1), match.group())), part.text or "")
+        shown = SLOT.sub(lambda match: rendered_statements.get(match.group(1), match.group()), part.text or "")
         if len(shown) > limit:
             problems.append(f"{label} has {len(shown)} characters; keep it under {limit}")
     if problems:
@@ -768,7 +833,7 @@ def used_move_facts(text: str, positions: dict[int, dict[str, Any]], shown: list
 def render_plan(plan: CoachingPlan, context: dict[str, Any], tool_facts=()):
     positions = {item["revision"]: item for item in context["positions"]}
     available = available_facts(context, tool_facts)
-    values = context_values(context, tool_facts)
+    values = statements(context, tool_facts)
     cards = []
     for selection in plan.selections:
         position = positions[selection.revision]
@@ -779,6 +844,9 @@ def render_plan(plan: CoachingPlan, context: dict[str, Any], tool_facts=()):
         if context["task"] == "question" and f"p{selection.revision}:mobility" in own:
             required.append(f"p{selection.revision}:mobility")
         facts = [available[key] for key in dict.fromkeys([*required, *selection.fact_ids])]
+        if selection.explanation is not None:
+            goal_id = position["learning_goal"]["fact_id"]
+            facts = [entry for entry in facts if entry["id"] != goal_id] + [available[goal_id]]
         if selection.text:
             facts.extend(used_move_facts(selection.text, positions, facts))
         cards.append({"revision": selection.revision, "facts": facts,

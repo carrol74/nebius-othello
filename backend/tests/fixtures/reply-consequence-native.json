@@ -1,0 +1,2237 @@
+{
+  "source": "Recorded human decision; native Edax 4.6 level 4 root analysis, level 8 reply comparison, level 1 legal-move cross-check after the shared f4 reply.",
+  "evidence": {
+    "revision": 8,
+    "actor": "X",
+    "actual_move": "d3",
+    "recommended_move": "c5",
+    "score_loss": 15,
+    "analysis": {
+      "board": [
+        "........",
+        "........",
+        ".....O..",
+        "...OO...",
+        "...OXX..",
+        "..XOXO..",
+        "...X....",
+        "..X....."
+      ],
+      "turn": "X",
+      "candidates": [
+        {
+          "coordinate": "g2",
+          "score": -24,
+          "principal_variation": [
+            "g2",
+            "f4"
+          ],
+          "depth": 4,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "c3",
+          "score": -6,
+          "principal_variation": [
+            "c3",
+            "f4"
+          ],
+          "depth": 4,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "d3",
+          "score": -15,
+          "principal_variation": [
+            "d3",
+            "f4"
+          ],
+          "depth": 4,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "e3",
+          "score": -6,
+          "principal_variation": [
+            "e3",
+            "f4"
+          ],
+          "depth": 4,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "c4",
+          "score": -8,
+          "principal_variation": [
+            "c4",
+            "e7"
+          ],
+          "depth": 4,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "c5",
+          "score": 0,
+          "principal_variation": [
+            "c5",
+            "e7"
+          ],
+          "depth": 4,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "g6",
+          "score": -5,
+          "principal_variation": [
+            "g6",
+            "f4"
+          ],
+          "depth": 4,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "c7",
+          "score": -1,
+          "principal_variation": [
+            "c7",
+            "e7"
+          ],
+          "depth": 4,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "f7",
+          "score": -5,
+          "principal_variation": [
+            "f7",
+            "f4"
+          ],
+          "depth": 4,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "g7",
+          "score": -22,
+          "principal_variation": [
+            "g7",
+            "f4"
+          ],
+          "depth": 4,
+          "score_kind": "estimate"
+        }
+      ],
+      "recommended_move": "c5",
+      "score_perspective": "X",
+      "score_kind": "estimate",
+      "engine_version": "4.6",
+      "terminal_score_rule": "winner_takes_empties",
+      "eval_file": "deploy/edax/eval.dat",
+      "depth": 4,
+      "settings": {
+        "level": 4,
+        "minimum_depth": 4,
+        "threads": 1,
+        "book": false,
+        "selectivity": 5
+      },
+      "elapsed_ms": 4.77
+    },
+    "shown_hint_ids": [],
+    "adopted_hint": false,
+    "opponent_replies": {
+      "g2": "f4",
+      "c3": "f4",
+      "d3": "f4",
+      "e3": "d3",
+      "c4": "f4",
+      "c5": "f4",
+      "g6": "f4",
+      "c7": "f4",
+      "f7": "f4",
+      "g7": "f4"
+    },
+    "comparisons": [
+      {
+        "coordinate": "g2",
+        "corner": 0,
+        "empty_corner_neighbor": 2,
+        "opponent_moves": 3,
+        "own_moves": 7,
+        "frontier_difference": 7,
+        "disc_difference": 7,
+        "opponent_legal_moves": [
+          "f4",
+          "b6",
+          "d8"
+        ],
+        "opponent_corners": [],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              "......X.",
+              ".....X..",
+              "...OX...",
+              "...XXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "O",
+            "coordinate": "g2"
+          },
+          {
+            "board": [
+              "........",
+              "......X.",
+              ".....X..",
+              "...OOO..",
+              "...XOO..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": "f4"
+          }
+        ]
+      },
+      {
+        "coordinate": "c3",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 11,
+        "own_moves": 10,
+        "frontier_difference": 3,
+        "disc_difference": 3,
+        "opponent_legal_moves": [
+          "b2",
+          "d3",
+          "c4",
+          "f4",
+          "g5",
+          "b6",
+          "g6",
+          "b7",
+          "e7",
+          "f7",
+          "d8"
+        ],
+        "opponent_corners": [],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "..X..O..",
+              "...XO...",
+              "...OXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "O",
+            "coordinate": "c3"
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "..X..O..",
+              "...XOO..",
+              "...OOO..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": "f4"
+          }
+        ]
+      },
+      {
+        "coordinate": "d3",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 4,
+        "own_moves": 4,
+        "frontier_difference": 9,
+        "disc_difference": 9,
+        "opponent_legal_moves": [
+          "c3",
+          "f4",
+          "b6",
+          "b7"
+        ],
+        "opponent_corners": [],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "...X.O..",
+              "...XX...",
+              "...XXX..",
+              "..XXXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "O",
+            "coordinate": "d3"
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "...X.O..",
+              "...XXO..",
+              "...XXO..",
+              "..XXXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": "f4"
+          }
+        ]
+      },
+      {
+        "coordinate": "e3",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 8,
+        "own_moves": 10,
+        "frontier_difference": 3,
+        "disc_difference": 3,
+        "opponent_legal_moves": [
+          "f2",
+          "d3",
+          "f4",
+          "g5",
+          "b6",
+          "b7",
+          "f7",
+          "d8"
+        ],
+        "opponent_corners": [],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "....XO..",
+              "...OX...",
+              "...OXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "O",
+            "coordinate": "e3"
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "....XO..",
+              "...OOO..",
+              "...OOO..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": "f4"
+          }
+        ]
+      },
+      {
+        "coordinate": "c4",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 7,
+        "own_moves": 9,
+        "frontier_difference": 3,
+        "disc_difference": 3,
+        "opponent_legal_moves": [
+          "b4",
+          "f4",
+          "b6",
+          "g6",
+          "b7",
+          "e7",
+          "d8"
+        ],
+        "opponent_corners": [],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "..XOO...",
+              "...XXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "O",
+            "coordinate": "c4"
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "..XOO...",
+              "...XOX..",
+              "..XOOO..",
+              "...XO...",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": "e7"
+          }
+        ]
+      },
+      {
+        "coordinate": "c5",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 7,
+        "own_moves": 9,
+        "frontier_difference": 3,
+        "disc_difference": 3,
+        "opponent_legal_moves": [
+          "b4",
+          "f4",
+          "b6",
+          "g6",
+          "b7",
+          "e7",
+          "d8"
+        ],
+        "opponent_corners": [],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "..XXXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "O",
+            "coordinate": "c5"
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "..XXOX..",
+              "..XOOO..",
+              "...XO...",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": "e7"
+          }
+        ]
+      },
+      {
+        "coordinate": "g6",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 10,
+        "own_moves": 7,
+        "frontier_difference": 3,
+        "disc_difference": 3,
+        "opponent_legal_moves": [
+          "f4",
+          "g5",
+          "b6",
+          "h6",
+          "b7",
+          "e7",
+          "f7",
+          "g7",
+          "h7",
+          "d8"
+        ],
+        "opponent_corners": [],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XOXXX.",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "O",
+            "coordinate": "g6"
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OOO..",
+              "...OOX..",
+              "..XOXXX.",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": "f4"
+          }
+        ]
+      },
+      {
+        "coordinate": "c7",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 8,
+        "own_moves": 9,
+        "frontier_difference": 3,
+        "disc_difference": 3,
+        "opponent_legal_moves": [
+          "f4",
+          "g5",
+          "b6",
+          "g6",
+          "b7",
+          "e7",
+          "f7",
+          "d8"
+        ],
+        "opponent_corners": [],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XXXO..",
+              "..XX....",
+              "..X....."
+            ],
+            "turn": "O",
+            "coordinate": "c7"
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OOX..",
+              "..XXOO..",
+              "..XXO...",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": "e7"
+          }
+        ]
+      },
+      {
+        "coordinate": "f7",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 9,
+        "own_moves": 7,
+        "frontier_difference": 3,
+        "disc_difference": 3,
+        "opponent_legal_moves": [
+          "f4",
+          "g5",
+          "b6",
+          "g6",
+          "b7",
+          "e7",
+          "g7",
+          "d8",
+          "g8"
+        ],
+        "opponent_corners": [],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XOXX..",
+              "...X.X..",
+              "..X....."
+            ],
+            "turn": "O",
+            "coordinate": "f7"
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OOO..",
+              "...OOX..",
+              "..XOXX..",
+              "...X.X..",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": "f4"
+          }
+        ]
+      },
+      {
+        "coordinate": "g7",
+        "corner": 0,
+        "empty_corner_neighbor": 2,
+        "opponent_moves": 9,
+        "own_moves": 7,
+        "frontier_difference": 3,
+        "disc_difference": 3,
+        "opponent_legal_moves": [
+          "f4",
+          "g5",
+          "b6",
+          "g6",
+          "b7",
+          "e7",
+          "f7",
+          "d8",
+          "h8"
+        ],
+        "opponent_corners": [
+          "h8"
+        ],
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XOXX..",
+              "...X..X.",
+              "..X....."
+            ],
+            "turn": "O",
+            "coordinate": "g7"
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OOO..",
+              "...OOX..",
+              "..XOXX..",
+              "...X..X.",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": "f4"
+          }
+        ]
+      }
+    ],
+    "stage": "opening"
+  },
+  "reply_search": [
+    {
+      "move": "d3",
+      "board": [
+        "........",
+        "........",
+        "...X.O..",
+        "...XX...",
+        "...XXX..",
+        "..XXXO..",
+        "...X....",
+        "..X....."
+      ],
+      "profile": {
+        "move": "d3",
+        "inner_flips": 4,
+        "exposed": [
+          "d4",
+          "d5",
+          "d6",
+          "e4"
+        ],
+        "replies": [
+          "c3",
+          "f4",
+          "b6",
+          "b7"
+        ],
+        "unsafe_replies": [],
+        "safe_replies": [
+          "c3",
+          "f4",
+          "b6",
+          "b7"
+        ],
+        "stable_gained": [],
+        "region": null
+      },
+      "replies": [
+        {
+          "coordinate": "c3",
+          "score": 2,
+          "principal_variation": [
+            "c3",
+            "f4",
+            "e3",
+            "d2",
+            "e1",
+            "c1"
+          ],
+          "depth": 8,
+          "score_kind": "estimate",
+          "capture_lines": [
+            [
+              "c3",
+              "d4",
+              "e5",
+              "f6"
+            ]
+          ],
+          "own_moves": [
+            "g2",
+            "b3",
+            "c4",
+            "f4",
+            "g6",
+            "f7"
+          ],
+          "opponent_moves": [
+            "d2",
+            "e3",
+            "f4",
+            "c5",
+            "g5",
+            "b6",
+            "b7",
+            "c7",
+            "e7",
+            "d8"
+          ],
+          "profile": {
+            "move": "c3",
+            "inner_flips": 2,
+            "exposed": [
+              "d4",
+              "e5"
+            ],
+            "replies": [
+              "g2",
+              "b3",
+              "c4",
+              "f4",
+              "g6",
+              "f7"
+            ],
+            "unsafe_replies": [],
+            "safe_replies": [
+              "g2",
+              "b3",
+              "c4",
+              "f4",
+              "g6",
+              "f7"
+            ],
+            "stable_gained": [],
+            "region": null
+          }
+        },
+        {
+          "coordinate": "f4",
+          "score": 15,
+          "principal_variation": [
+            "f4",
+            "g5",
+            "h6",
+            "g3",
+            "e3",
+            "g4"
+          ],
+          "depth": 8,
+          "score_kind": "estimate",
+          "capture_lines": [
+            [
+              "f4",
+              "f5",
+              "f6"
+            ]
+          ],
+          "own_moves": [
+            "g2",
+            "g3",
+            "g4",
+            "g5",
+            "g6",
+            "g7"
+          ],
+          "opponent_moves": [
+            "c2",
+            "c3",
+            "c4",
+            "c5",
+            "b6",
+            "b7",
+            "c7"
+          ],
+          "profile": {
+            "move": "f4",
+            "inner_flips": 1,
+            "exposed": [
+              "f5"
+            ],
+            "replies": [
+              "g2",
+              "g3",
+              "g4",
+              "g5",
+              "g6",
+              "g7"
+            ],
+            "unsafe_replies": [],
+            "safe_replies": [
+              "g2",
+              "g3",
+              "g4",
+              "g5",
+              "g6",
+              "g7"
+            ],
+            "stable_gained": [],
+            "region": null
+          }
+        },
+        {
+          "coordinate": "b6",
+          "score": -1,
+          "principal_variation": [
+            "b6",
+            "c7",
+            "c4",
+            "f7",
+            "e3",
+            "c5"
+          ],
+          "depth": 8,
+          "score_kind": "estimate",
+          "capture_lines": [
+            [
+              "b6",
+              "c6",
+              "d6",
+              "e6",
+              "f6"
+            ]
+          ],
+          "own_moves": [
+            "g2",
+            "b5",
+            "b7",
+            "c7",
+            "e7",
+            "f7",
+            "g7"
+          ],
+          "opponent_moves": [
+            "d2",
+            "c3",
+            "e3",
+            "c4",
+            "f4",
+            "g4",
+            "d8",
+            "e8"
+          ],
+          "profile": {
+            "move": "b6",
+            "inner_flips": 3,
+            "exposed": [
+              "c6",
+              "d6",
+              "e6"
+            ],
+            "replies": [
+              "g2",
+              "b5",
+              "b7",
+              "c7",
+              "e7",
+              "f7",
+              "g7"
+            ],
+            "unsafe_replies": [
+              "g2",
+              "b7"
+            ],
+            "safe_replies": [
+              "b5",
+              "c7",
+              "e7",
+              "f7",
+              "g7"
+            ],
+            "stable_gained": [],
+            "region": null
+          }
+        },
+        {
+          "coordinate": "b7",
+          "score": -17,
+          "principal_variation": [
+            "b7",
+            "e3",
+            "f7",
+            "e7",
+            "f4",
+            "c5"
+          ],
+          "depth": 8,
+          "score_kind": "estimate",
+          "capture_lines": [
+            [
+              "b7",
+              "c6",
+              "d5",
+              "e4",
+              "f3"
+            ]
+          ],
+          "own_moves": [
+            "e3",
+            "c4",
+            "f4",
+            "b5",
+            "c5",
+            "a6",
+            "b6",
+            "g6",
+            "f7",
+            "g7"
+          ],
+          "opponent_moves": [
+            "c2",
+            "d2",
+            "c3",
+            "c4",
+            "f4",
+            "g5",
+            "g6",
+            "e7",
+            "f7",
+            "d8",
+            "e8"
+          ],
+          "profile": {
+            "move": "b7",
+            "inner_flips": 3,
+            "exposed": [
+              "c6",
+              "d5",
+              "e4"
+            ],
+            "replies": [
+              "e3",
+              "c4",
+              "f4",
+              "b5",
+              "c5",
+              "a6",
+              "b6",
+              "g6",
+              "f7",
+              "g7"
+            ],
+            "unsafe_replies": [
+              "a6"
+            ],
+            "safe_replies": [
+              "e3",
+              "c4",
+              "f4",
+              "b5",
+              "c5",
+              "b6",
+              "g6",
+              "f7",
+              "g7"
+            ],
+            "stable_gained": [],
+            "region": null
+          }
+        }
+      ]
+    },
+    {
+      "move": "c5",
+      "board": [
+        "........",
+        "........",
+        ".....O..",
+        "...OO...",
+        "..XXXX..",
+        "..XOXO..",
+        "...X....",
+        "..X....."
+      ],
+      "profile": {
+        "move": "c5",
+        "inner_flips": 1,
+        "exposed": [
+          "d5"
+        ],
+        "replies": [
+          "b4",
+          "f4",
+          "b6",
+          "g6",
+          "b7",
+          "e7",
+          "d8"
+        ],
+        "unsafe_replies": [],
+        "safe_replies": [
+          "b4",
+          "f4",
+          "b6",
+          "g6",
+          "b7",
+          "e7",
+          "d8"
+        ],
+        "stable_gained": [],
+        "region": null
+      },
+      "replies": [
+        {
+          "coordinate": "b4",
+          "score": -10,
+          "principal_variation": [
+            "b4",
+            "c7",
+            "e7",
+            "g6",
+            "d8",
+            "f4"
+          ],
+          "depth": 8,
+          "score_kind": "estimate",
+          "capture_lines": [
+            [
+              "b4",
+              "c5",
+              "d6"
+            ]
+          ],
+          "own_moves": [
+            "g2",
+            "c3",
+            "d3",
+            "e3",
+            "c4",
+            "b5",
+            "g6",
+            "c7",
+            "f7",
+            "g7"
+          ],
+          "opponent_moves": [
+            "f4",
+            "g5",
+            "b6",
+            "g6",
+            "b7",
+            "c7",
+            "e7",
+            "d8"
+          ],
+          "profile": {
+            "move": "b4",
+            "inner_flips": 1,
+            "exposed": [
+              "c5"
+            ],
+            "replies": [
+              "g2",
+              "c3",
+              "d3",
+              "e3",
+              "c4",
+              "b5",
+              "g6",
+              "c7",
+              "f7",
+              "g7"
+            ],
+            "unsafe_replies": [
+              "g7"
+            ],
+            "safe_replies": [
+              "g2",
+              "c3",
+              "d3",
+              "e3",
+              "c4",
+              "b5",
+              "g6",
+              "c7",
+              "f7"
+            ],
+            "stable_gained": [],
+            "region": null
+          }
+        },
+        {
+          "coordinate": "f4",
+          "score": -3,
+          "principal_variation": [
+            "f4",
+            "e7",
+            "e8",
+            "f8",
+            "d8",
+            "g5"
+          ],
+          "depth": 8,
+          "score_kind": "estimate",
+          "capture_lines": [
+            [
+              "f4",
+              "e5",
+              "d6"
+            ],
+            [
+              "f4",
+              "f5",
+              "f6"
+            ]
+          ],
+          "own_moves": [
+            "g2",
+            "d3",
+            "e3",
+            "g4",
+            "g5",
+            "g6",
+            "e7"
+          ],
+          "opponent_moves": [
+            "b4",
+            "b5",
+            "b6",
+            "b7",
+            "e7",
+            "d8"
+          ],
+          "profile": {
+            "move": "f4",
+            "inner_flips": 2,
+            "exposed": [
+              "f5"
+            ],
+            "replies": [
+              "g2",
+              "d3",
+              "e3",
+              "g4",
+              "g5",
+              "g6",
+              "e7"
+            ],
+            "unsafe_replies": [],
+            "safe_replies": [
+              "g2",
+              "d3",
+              "e3",
+              "g4",
+              "g5",
+              "g6",
+              "e7"
+            ],
+            "stable_gained": [],
+            "region": null
+          }
+        },
+        {
+          "coordinate": "b6",
+          "score": -8,
+          "principal_variation": [
+            "b6",
+            "c7",
+            "f4",
+            "a5",
+            "e7",
+            "f7"
+          ],
+          "depth": 8,
+          "score_kind": "estimate",
+          "capture_lines": [
+            [
+              "b6",
+              "c5",
+              "d4"
+            ],
+            [
+              "b6",
+              "c6",
+              "d6"
+            ]
+          ],
+          "own_moves": [
+            "g2",
+            "c3",
+            "d3",
+            "e3",
+            "b5",
+            "a6",
+            "g6",
+            "b7",
+            "c7",
+            "f7",
+            "g7"
+          ],
+          "opponent_moves": [
+            "f4",
+            "g5",
+            "g6",
+            "e7",
+            "d8",
+            "e8"
+          ],
+          "profile": {
+            "move": "b6",
+            "inner_flips": 2,
+            "exposed": [
+              "c5",
+              "c6"
+            ],
+            "replies": [
+              "g2",
+              "c3",
+              "d3",
+              "e3",
+              "b5",
+              "a6",
+              "g6",
+              "b7",
+              "c7",
+              "f7",
+              "g7"
+            ],
+            "unsafe_replies": [
+              "g2",
+              "b7",
+              "g7"
+            ],
+            "safe_replies": [
+              "c3",
+              "d3",
+              "e3",
+              "b5",
+              "a6",
+              "g6",
+              "c7",
+              "f7"
+            ],
+            "stable_gained": [],
+            "region": null
+          }
+        },
+        {
+          "coordinate": "g6",
+          "score": -10,
+          "principal_variation": [
+            "g6",
+            "e7",
+            "e8",
+            "f4",
+            "c4",
+            "f8"
+          ],
+          "depth": 8,
+          "score_kind": "estimate",
+          "capture_lines": [
+            [
+              "g6",
+              "f5",
+              "e4"
+            ]
+          ],
+          "own_moves": [
+            "g2",
+            "c3",
+            "d3",
+            "e3",
+            "g4",
+            "g5",
+            "h6",
+            "c7",
+            "e7",
+            "g7"
+          ],
+          "opponent_moves": [
+            "b4",
+            "f4",
+            "b5",
+            "b6",
+            "b7",
+            "e7",
+            "d8"
+          ],
+          "profile": {
+            "move": "g6",
+            "inner_flips": 1,
+            "exposed": [
+              "f5"
+            ],
+            "replies": [
+              "g2",
+              "c3",
+              "d3",
+              "e3",
+              "g4",
+              "g5",
+              "h6",
+              "c7",
+              "e7",
+              "g7"
+            ],
+            "unsafe_replies": [
+              "g7"
+            ],
+            "safe_replies": [
+              "g2",
+              "c3",
+              "d3",
+              "e3",
+              "g4",
+              "g5",
+              "h6",
+              "c7",
+              "e7"
+            ],
+            "stable_gained": [],
+            "region": null
+          }
+        },
+        {
+          "coordinate": "b7",
+          "score": -19,
+          "principal_variation": [
+            "b7",
+            "e7",
+            "f7",
+            "b6",
+            "e8",
+            "g6"
+          ],
+          "depth": 8,
+          "score_kind": "estimate",
+          "capture_lines": [
+            [
+              "b7",
+              "c6",
+              "d5",
+              "e4"
+            ]
+          ],
+          "own_moves": [
+            "c3",
+            "d3",
+            "e3",
+            "c4",
+            "b5",
+            "a6",
+            "b6",
+            "g6",
+            "c7",
+            "e7",
+            "f7",
+            "g7"
+          ],
+          "opponent_moves": [
+            "b4",
+            "c4",
+            "f4",
+            "b5",
+            "g5",
+            "b6",
+            "g6",
+            "e7",
+            "f7",
+            "d8",
+            "e8"
+          ],
+          "profile": {
+            "move": "b7",
+            "inner_flips": 2,
+            "exposed": [
+              "c6",
+              "d5"
+            ],
+            "replies": [
+              "c3",
+              "d3",
+              "e3",
+              "c4",
+              "b5",
+              "a6",
+              "b6",
+              "g6",
+              "c7",
+              "e7",
+              "f7",
+              "g7"
+            ],
+            "unsafe_replies": [
+              "a6",
+              "g7"
+            ],
+            "safe_replies": [
+              "c3",
+              "d3",
+              "e3",
+              "c4",
+              "b5",
+              "b6",
+              "g6",
+              "c7",
+              "e7",
+              "f7"
+            ],
+            "stable_gained": [],
+            "region": null
+          }
+        },
+        {
+          "coordinate": "e7",
+          "score": 0,
+          "principal_variation": [
+            "e7",
+            "f8",
+            "c4",
+            "f7",
+            "b6",
+            "e3"
+          ],
+          "depth": 8,
+          "score_kind": "estimate",
+          "capture_lines": [
+            [
+              "e7",
+              "e6",
+              "e5",
+              "e4"
+            ]
+          ],
+          "own_moves": [
+            "g2",
+            "d3",
+            "e3",
+            "g6",
+            "f7",
+            "f8"
+          ],
+          "opponent_moves": [
+            "b4",
+            "c4",
+            "f4",
+            "g4",
+            "b5",
+            "g5",
+            "b6",
+            "g6",
+            "b7",
+            "c7",
+            "d8"
+          ],
+          "profile": {
+            "move": "e7",
+            "inner_flips": 2,
+            "exposed": [
+              "e5",
+              "e6"
+            ],
+            "replies": [
+              "g2",
+              "d3",
+              "e3",
+              "g6",
+              "f7",
+              "f8"
+            ],
+            "unsafe_replies": [],
+            "safe_replies": [
+              "g2",
+              "d3",
+              "e3",
+              "g6",
+              "f7",
+              "f8"
+            ],
+            "stable_gained": [],
+            "region": null
+          }
+        },
+        {
+          "coordinate": "d8",
+          "score": -7,
+          "principal_variation": [
+            "d8",
+            "e8",
+            "e7",
+            "g6",
+            "c7",
+            "f8"
+          ],
+          "depth": 8,
+          "score_kind": "estimate",
+          "capture_lines": [
+            [
+              "d8",
+              "d7",
+              "d6"
+            ]
+          ],
+          "own_moves": [
+            "g2",
+            "c3",
+            "d3",
+            "e3",
+            "g6",
+            "c7",
+            "e7",
+            "f7",
+            "g7",
+            "e8"
+          ],
+          "opponent_moves": [
+            "b4",
+            "f4",
+            "g4",
+            "b5",
+            "b6",
+            "g6",
+            "b7",
+            "e7",
+            "b8"
+          ],
+          "profile": {
+            "move": "d8",
+            "inner_flips": 1,
+            "exposed": [
+              "d7"
+            ],
+            "replies": [
+              "g2",
+              "c3",
+              "d3",
+              "e3",
+              "g6",
+              "c7",
+              "e7",
+              "f7",
+              "g7",
+              "e8"
+            ],
+            "unsafe_replies": [
+              "g7"
+            ],
+            "safe_replies": [
+              "g2",
+              "c3",
+              "d3",
+              "e3",
+              "g6",
+              "c7",
+              "e7",
+              "f7",
+              "e8"
+            ],
+            "stable_gained": [],
+            "region": null
+          }
+        }
+      ]
+    }
+  ],
+  "native_after_reply": {
+    "d3": {
+      "board": [
+        "........",
+        "........",
+        "...X.O..",
+        "...XXO..",
+        "...XXO..",
+        "..XXXO..",
+        "...X....",
+        "..X....."
+      ],
+      "turn": "X",
+      "candidates": [
+        {
+          "coordinate": "g2",
+          "score": -30,
+          "principal_variation": [
+            "g2"
+          ],
+          "depth": 1,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "g3",
+          "score": -14,
+          "principal_variation": [
+            "g3"
+          ],
+          "depth": 1,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "g4",
+          "score": -16,
+          "principal_variation": [
+            "g4"
+          ],
+          "depth": 1,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "g5",
+          "score": -13,
+          "principal_variation": [
+            "g5"
+          ],
+          "depth": 1,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "g6",
+          "score": -16,
+          "principal_variation": [
+            "g6"
+          ],
+          "depth": 1,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "g7",
+          "score": -28,
+          "principal_variation": [
+            "g7"
+          ],
+          "depth": 1,
+          "score_kind": "estimate"
+        }
+      ],
+      "recommended_move": "g5",
+      "score_perspective": "X",
+      "score_kind": "estimate",
+      "engine_version": "4.6",
+      "terminal_score_rule": "winner_takes_empties",
+      "eval_file": "deploy/edax/eval.dat",
+      "depth": 1,
+      "settings": {
+        "level": 1,
+        "minimum_depth": 1,
+        "threads": 1,
+        "book": false,
+        "selectivity": 5
+      },
+      "elapsed_ms": 148.89,
+      "raw_output": "\n    1   -13        0:00.000            32            g5                                                                                                                                                                                                \n    1   -14        0:00.000            27            g3                                                                                                                                                                                                \n    1   -16        0:00.000            22            g4                                                                                                                                                                                                \n    1   -16        0:00.000            17            g6                                                                                                                                                                                                \n    1   -28        0:00.000            12            g7                                                                                                                                                                                                \n    1   -30        0:00.000             7            g2                                                                                                                                                                                                \n"
+    },
+    "c5": {
+      "board": [
+        "........",
+        "........",
+        ".....O..",
+        "...OOO..",
+        "..XXOO..",
+        "..XOXO..",
+        "...X....",
+        "..X....."
+      ],
+      "turn": "X",
+      "candidates": [
+        {
+          "coordinate": "g2",
+          "score": -21,
+          "principal_variation": [
+            "g2"
+          ],
+          "depth": 1,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "d3",
+          "score": -4,
+          "principal_variation": [
+            "d3"
+          ],
+          "depth": 1,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "e3",
+          "score": -5,
+          "principal_variation": [
+            "e3"
+          ],
+          "depth": 1,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "g4",
+          "score": -3,
+          "principal_variation": [
+            "g4"
+          ],
+          "depth": 1,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "g5",
+          "score": -1,
+          "principal_variation": [
+            "g5"
+          ],
+          "depth": 1,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "g6",
+          "score": -3,
+          "principal_variation": [
+            "g6"
+          ],
+          "depth": 1,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "e7",
+          "score": 2,
+          "principal_variation": [
+            "e7"
+          ],
+          "depth": 1,
+          "score_kind": "estimate"
+        }
+      ],
+      "recommended_move": "e7",
+      "score_perspective": "X",
+      "score_kind": "estimate",
+      "engine_version": "4.6",
+      "terminal_score_rule": "winner_takes_empties",
+      "eval_file": "deploy/edax/eval.dat",
+      "depth": 1,
+      "settings": {
+        "level": 1,
+        "minimum_depth": 1,
+        "threads": 1,
+        "book": false,
+        "selectivity": 5
+      },
+      "elapsed_ms": 3.69,
+      "raw_output": "\n    1   +02        0:00.000            37            e7                                                                                                                                                                                                \n    1   -01        0:00.000            32            g5                                                                                                                                                                                                \n    1   -03        0:00.000            27            g6                                                                                                                                                                                                \n    1   -03        0:00.000            22            g4                                                                                                                                                                                                \n    1   -04        0:00.000            17            d3                                                                                                                                                                                                \n    1   -05        0:00.000            12            e3                                                                                                                                                                                                \n    1   -21        0:00.000             7            g2                                                                                                                                                                                                \n"
+    }
+  },
+  "comparison": {
+    "revision": 8,
+    "actor": "X",
+    "selected_move": "d3",
+    "recommended_move": "c5",
+    "reference_move": "c5",
+    "insight": {
+      "kind": "search",
+      "better_move": "c5",
+      "worse_move": "d3",
+      "target": null,
+      "gap": null,
+      "score_kind": "estimate",
+      "proof": null,
+      "example": [],
+      "other_threats": [],
+      "witness": null
+    },
+    "decision_contrast": {
+      "actual_move": "d3",
+      "recommended_move": "c5",
+      "replies_after_actual": [
+        "c3",
+        "f4",
+        "b6",
+        "b7"
+      ],
+      "replies_after_recommended": [
+        "b4",
+        "f4",
+        "b6",
+        "g6",
+        "b7",
+        "e7",
+        "d8"
+      ],
+      "removed_reply": {
+        "actor": "O",
+        "coordinate": "c3",
+        "available_after": "d3",
+        "blocked_after": "c5",
+        "capture_line": [
+          "c3",
+          "d4",
+          "e5",
+          "f6"
+        ],
+        "changes": [
+          {
+            "coordinate": "d4",
+            "available": "X",
+            "blocked": "O"
+          }
+        ]
+      },
+      "added_reply": {
+        "actor": "O",
+        "coordinate": "e7",
+        "available_after": "c5",
+        "blocked_after": "d3",
+        "capture_line": [
+          "e7",
+          "e6",
+          "e5",
+          "e4"
+        ],
+        "changes": [
+          {
+            "coordinate": "e4",
+            "available": "O",
+            "blocked": "X"
+          }
+        ]
+      },
+      "consequence": {
+        "reply": "f4",
+        "axis": "file",
+        "axis_value": "g",
+        "actual_moves": [
+          "g2",
+          "g3",
+          "g4",
+          "g5",
+          "g6",
+          "g7"
+        ],
+        "alternative_moves": [
+          "g2",
+          "d3",
+          "e3",
+          "g4",
+          "g5",
+          "g6",
+          "e7"
+        ],
+        "retained_disc": "d4",
+        "opportunity": {
+          "actor": "X",
+          "coordinate": "e3",
+          "available_after": "c5",
+          "blocked_after": "d3",
+          "capture_line": [
+            "e3",
+            "d4",
+            "c5"
+          ],
+          "changes": [
+            {
+              "coordinate": "d4",
+              "available": "O",
+              "blocked": "X"
+            },
+            {
+              "coordinate": "c5",
+              "available": "X",
+              "blocked": "."
+            }
+          ]
+        }
+      }
+    },
+    "choices": [
+      {
+        "coordinate": "d3",
+        "score": -15,
+        "score_kind": "estimate",
+        "assessment": {
+          "status": "lower_rated",
+          "legal_move_count": 10,
+          "best_moves": [
+            "c5"
+          ],
+          "is_played": true,
+          "score_loss": 15,
+          "score_kind": "estimate",
+          "position": "level"
+        },
+        "kind": "line",
+        "target": null,
+        "opponent_reply": null,
+        "checked_defenses": [],
+        "capture_lines": [],
+        "line_source": "engine",
+        "corner_proof": null,
+        "continuation_lesson": null,
+        "defendable": null,
+        "concepts": {
+          "exposed": [
+            "d4",
+            "d5",
+            "d6",
+            "e4"
+          ],
+          "inner_flips": 4,
+          "stable_gained": [],
+          "safe_replies": 4,
+          "unsafe_replies": []
+        },
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": null,
+            "actor": null,
+            "flipped": []
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "...X.O..",
+              "...XX...",
+              "...XXX..",
+              "..XXXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "O",
+            "coordinate": "d3",
+            "actor": "X",
+            "flipped": [
+              "d4",
+              "d5",
+              "d6",
+              "e4"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              "...X.O..",
+              "...XXO..",
+              "...XXO..",
+              "..XXXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": "f4",
+            "actor": "O",
+            "flipped": [
+              "f5"
+            ]
+          }
+        ],
+        "opponent_corner_moves_after_reply": []
+      },
+      {
+        "coordinate": "c5",
+        "score": 0,
+        "score_kind": "estimate",
+        "assessment": {
+          "status": "best",
+          "legal_move_count": 10,
+          "best_moves": [
+            "c5"
+          ],
+          "is_played": false,
+          "score_loss": 0,
+          "score_kind": "estimate",
+          "position": "level"
+        },
+        "kind": "line",
+        "target": "e3",
+        "opponent_reply": null,
+        "checked_defenses": [],
+        "capture_lines": [],
+        "line_source": "rules",
+        "corner_proof": null,
+        "continuation_lesson": null,
+        "defendable": null,
+        "concepts": {
+          "exposed": [
+            "d5"
+          ],
+          "inner_flips": 1,
+          "stable_gained": [],
+          "safe_replies": 7,
+          "unsafe_replies": []
+        },
+        "frames": [
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "...OXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": null,
+            "actor": null,
+            "flipped": []
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OO...",
+              "..XXXX..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "O",
+            "coordinate": "c5",
+            "actor": "X",
+            "flipped": [
+              "d5"
+            ]
+          },
+          {
+            "board": [
+              "........",
+              "........",
+              ".....O..",
+              "...OOO..",
+              "..XXOO..",
+              "..XOXO..",
+              "...X....",
+              "..X....."
+            ],
+            "turn": "X",
+            "coordinate": "f4",
+            "actor": "O",
+            "flipped": [
+              "e5",
+              "f5"
+            ]
+          }
+        ],
+        "opponent_corner_moves_after_reply": []
+      }
+    ],
+    "reason": {
+      "kind": "reply_consequence",
+      "fact": "p8:reply_consequence",
+      "move": "d3",
+      "frame": 2,
+      "marks": {
+        "d3": [
+          "g2",
+          "g3",
+          "g4",
+          "g5",
+          "g6",
+          "g7"
+        ],
+        "c5": [
+          "e3",
+          "d4",
+          "c5"
+        ]
+      },
+      "target": "e3",
+      "actor": "X"
+    },
+    "focus": [
+      "p8:reply_consequence",
+      "p8:quiet"
+    ]
+  }
+}

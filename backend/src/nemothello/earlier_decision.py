@@ -47,7 +47,7 @@ def earlier_target(game, evidence, comparison):
     return target if threatened(position.board, position.turn) else None
 
 
-def find_earlier_decision(game, evidence, comparison, engine, known=None):
+def find_earlier_decision(game, evidence, comparison, engine, game_opponent, known=None):
     target = earlier_target(game, evidence, comparison)
     result = {'status': 'not_applicable' if target is None else 'not_found',
               'scope': 'continuous_bounded_corner_threat', 'link': None}
@@ -74,7 +74,7 @@ def find_earlier_decision(game, evidence, comparison, engine, known=None):
             continue
         earlier = (known or {}).get(before)
         if earlier is None:
-            earlier = analyze_position(game, before, engine)
+            earlier = analyze_position(game, before, engine, game_opponent)
         if (earlier['actual_move'] != event['coordinate'] or earlier['actor'] != defender
                 or earlier['analysis']['board'] != list(position.board)):
             raise AppError('LESSON_CHANGED', 'Reload the earlier decision before checking its connection', 409)

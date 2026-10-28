@@ -24,7 +24,7 @@ def test_native_ordinary_lesson_stops_at_the_reply_and_names_exposed_discs():
     comparison = compare_lesson({'evidence': [item]}, 8, 'f5')
     assert comparison == case['comparison']
     choice = comparison['choices'][0]
-    assert [frame['coordinate'] for frame in choice['frames'][1:]] == ['f5', 'c6']
+    assert [frame['coordinate'] for frame in choice['frames'][1:]] == ['f5', item['opponent_replies']['f5']] == ['f5', 'c4']
     assert choice['continuation_lesson'] is None
     assert choice['concepts']['exposed'] == ['e5']
 

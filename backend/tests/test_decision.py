@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from nemothello.coaching import enrich_evidence, position_facts, review_context
-from nemothello.decision import assess_decision
+from nemothello.decision import assess_decision, lesson_moves
 from nemothello.errors import AppError
 from nemothello.rules import legal_moves
 from nemothello.schemas import DecisionAssessment, TeachingComparison
@@ -78,6 +78,7 @@ def test_lessons_only_compare_a_lower_rated_game_move_with_the_recommendation(ev
 
 
 def test_ties_and_unfavorable_best_moves_are_never_turned_into_mistakes(evidence):
+    result = json.loads((Path(__file__).parent / "fixtures/review-native-positions.json").read_text())["review"]["result"]
     opening = evidence[0]
     assessment = assess_decision(opening, opening["actual_move"])
     assert assessment["status"] == "tied_best" and assessment["position"] == "behind"
@@ -85,17 +86,8 @@ def test_ties_and_unfavorable_best_moves_are_never_turned_into_mistakes(evidence
     assert "equally good move" in facts[0]["text"]
     assert not any("mistake" in fact["text"] for fact in facts)
     context = review_context({"evidence": [opening], "key_moves": [opening], "human_color": opening["actor"],
-                              "result": None, "hint_adoption": {"shown_turns": 0, "adopted_turns": 0}, "hints": []}, None, revision=0)
+                              "result": result, "hint_adoption": {"shown_turns": 0, "adopted_turns": 0}, "hints": []}, None, revision=0)
     assert context["positions"][0]["decision"] == assessment
-
-
-def test_an_unplayed_position_does_not_label_any_option_as_played(evidence):
-    item = {**evidence[0], "is_played": False}
-    best = assess_decision(item, item["actual_move"])["best_moves"][0]
-    result = compare_lesson({"evidence": [item]}, item["revision"], best)
-    assert len(result["choices"]) == 1
-    assert result["recommended_move"] == best
-    assert not result["choices"][0]["assessment"]["is_played"]
 
 
 def test_a_best_game_move_has_single_move_facts_without_self_comparisons(evidence):
@@ -130,3 +122,12 @@ def test_incomplete_or_corrupt_evidence_cannot_produce_a_decision(evidence, corr
     with pytest.raises(AppError) as error:
         assess_decision(item, item["actual_move"])
     assert error.value.code == "REVIEW_SCORES"
+
+
+def test_tied_best_moves_compare_with_the_one_that_keeps_the_lost_corner():
+    item = json.loads((Path(__file__).parent / "fixtures/tied-best-corner-native.json").read_text())["evidence"]
+    assert assess_decision(item, "g5")["best_moves"] == ["d7", "e7"]
+    assert lesson_moves(item) == ["g5", "e7"]
+    assert compare_lesson({"evidence": [item]}, 0, "g5")["recommended_move"] == "e7"
+    facts, _, _ = position_facts(item)
+    assert "Edax recommends e7 instead; d7 is equally good." in facts[0]["text"]

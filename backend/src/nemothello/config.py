@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     backend_service_token: SecretStr
     task_limit_per_session: int = Field(default=3, ge=1)
     task_queue_limit: int = Field(default=16, ge=1)
+    model_tasks_per_day: int = Field(default=300, ge=1)
+    model_tasks_per_session_per_day: int = Field(default=30, ge=1)
     request_limit_per_session: int = Field(default=300, ge=1)
     request_limit_global: int = Field(default=1200, ge=1)
     request_limit_window_seconds: int = Field(default=60, ge=1)

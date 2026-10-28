@@ -1,4 +1,5 @@
 from nemothello.board_features import capture_lines
+from nemothello.reply_consequence import reply_consequence
 from nemothello.rules import apply_move, legal_moves, opponent, square
 
 
@@ -40,9 +41,11 @@ def decision_contrast(item, choices):
 
     removed = reply_opportunity(states[0], states[1], opponent(actor), root_moves, preferred(actual))
     added = reply_opportunity(states[1], states[0], opponent(actor), root_moves, preferred(recommended))
-    if removed is None and added is None:
+    consequence = reply_consequence(item, actual["coordinate"], recommended["coordinate"])
+    if removed is None and added is None and consequence is None:
         return None
     return {"actual_move": actual["coordinate"], "recommended_move": recommended["coordinate"],
             "replies_after_actual": list(legal_moves(states[0]["board"], opponent(actor))),
             "replies_after_recommended": list(legal_moves(states[1]["board"], opponent(actor))),
-            "removed_reply": removed, "added_reply": added}
+            "removed_reply": removed, "added_reply": added,
+            **({"consequence": consequence} if consequence else {})}

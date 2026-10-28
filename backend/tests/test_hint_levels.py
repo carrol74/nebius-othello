@@ -1,5 +1,4 @@
 import os
-import time
 from pathlib import Path
 from uuid import uuid4
 
@@ -8,7 +7,6 @@ from fastapi.testclient import TestClient
 
 from nemothello.main import app
 from nemothello.opponents import DIFFICULTY_LEVELS, HINT_LEVELS
-from nemothello.position_lessons import analyze_position
 from nemothello.rules import Position
 from nemothello.storage import Store
 
@@ -55,10 +53,10 @@ def test_real_hint_routes_by_game_and_branch_keeps_saved_level(client, difficult
     assert {item["coordinate"] for item in hint["analysis"]["candidates"]} == set(game["legal_moves"])
     assert hint["recommended_move"] in game["legal_moves"]
     review_engine = app.state.games.review_engine_of(game)
-    assert review_engine.level == max(app.state.games.hint_engines)
+    assert review_engine.level == level
     stored = app.state.store.get('game', game['game_id'], 'hint-test-owner')
-    review_analysis = analyze_position(stored, 0, review_engine)['analysis']
-    assert review_analysis['settings']['level'] == 10
+    review_analysis = review_engine.analyze(tuple(stored['board']), stored['turn'])
+    assert review_analysis['settings']['level'] == level
     assert hint['analysis']['settings']['level'] == level
     assert app.state.games.edax.level == 8
 
@@ -68,7 +66,7 @@ def test_real_hint_routes_by_game_and_branch_keeps_saved_level(client, difficult
          coordinate=hint["recommended_move"])
     # Existing games and branches retain their saved hint level when defaults change.
     app.state.games.difficulty_hints[difficulty] = app.state.games.edax
-    branch = post(client, f"/games/{game['game_id']}/branches", revision=0, mode="manual")
+    branch = post(client, f"/games/{game['game_id']}/branches", revision=0)
     assert branch["hint_level"] == level
     assert branch["opponent_config_id"] == game["opponent_config_id"]
     response = client.post(f"/games/{branch['game_id']}/hint", json={"expected_revision": 0})
@@ -77,41 +75,30 @@ def test_real_hint_routes_by_game_and_branch_keeps_saved_level(client, difficult
     assert client.get(f"/games/{game['game_id']}").json()["hint_level"] == level
 
 
-@pytest.mark.parametrize("difficulty", ["easy", "medium", "hard"])
-def test_real_follow_hints_replay_uses_inherited_level_to_terminal(client, difficulty):
-    game = post(client, "/games", human_color="O", difficulty=difficulty)
-    task = post(client, f"/games/{game['game_id']}/branches", revision=0, mode="follow_hints")
-    deadline = time.monotonic() + 30
-    while task["status"] in ("queued", "running") and time.monotonic() < deadline:
-        time.sleep(1.2)
-        response = client.get(f"/tasks/{task['task_id']}")
-        assert response.status_code == 200, response.text
-        task = response.json()
-    assert task["status"] == "succeeded", task
-    branch = app.state.store.get("game", task["game_id"], "hint-test-owner")
-    assert branch["hint_level"] == HINT_LEVELS[difficulty]
-    assert branch["opponent_config_id"] == game["opponent_config_id"]
-    assert branch["status"] == "finished"
-    assert branch["automatic_hint_moves"]
-    assert {move["analysis_settings"]["level"] for move in branch["automatic_hint_moves"]} == {
-        HINT_LEVELS[difficulty],
-    }
-    position = Position(tuple(branch["initial_board"]), branch["initial_turn"])
-    for event in branch["history"]:
+def test_finished_games_are_listed_only_to_their_owner(client):
+    game = post(client, "/games", human_color="O", difficulty="easy")
+    while game["status"] == "active":
+        if game["turn"] == game["human_color"]:
+            game = post(client, f"/games/{game['game_id']}/moves", expected_revision=game["revision"],
+                        coordinate=game["legal_moves"][0])
+        else:
+            game = post(client, f"/games/{game['game_id']}/ai-move", expected_revision=game["revision"])
+    position = Position(tuple(game["initial_board"]), game["initial_turn"])
+    for event in game["history"]:
         if event["kind"] == "move":
             position, _ = position.play(event["coordinate"])
-    assert list(position.board) == branch["board"]
-    assert position.result() == task["result"]["result"]
+    assert list(position.board) == game["board"] and position.result() == game["result"]
+    stored = app.state.store.get("game", game["game_id"], "hint-test-owner")
     saved = client.get('/games')
     assert saved.status_code == 200
     assert saved.json() == [{
-        'game_id': branch['game_id'], 'created_at': branch['created_at'],
-        'human_color': branch['human_color'], 'parent_game_id': game['game_id'],
+        'game_id': game['game_id'], 'created_at': stored['created_at'],
+        'human_color': game['human_color'], 'parent_game_id': None,
         'status': 'finished',
     }]
-    assert Store(app.state.store.path).finished_games('hint-test-owner') == [branch]
+    assert Store(app.state.store.path).finished_games('hint-test-owner') == [stored]
     assert client.get('/games', headers={'X-Session-ID': 'different-owner'}).json() == []
-    assert client.get(f"/games/{branch['game_id']}", headers={
+    assert client.get(f"/games/{game['game_id']}", headers={
         'X-Session-ID': 'different-owner',
     }).status_code == 404
     assert client.get('/games', headers={'Authorization': 'Bearer incorrect'}).status_code == 401
@@ -126,5 +113,5 @@ def test_saved_game_without_hint_level_keeps_original_analysis_level(client):
     response = client.post(f"/games/{game['game_id']}/hint", json={"expected_revision": 0})
     assert response.status_code == 200, response.text
     assert response.json()["analysis"]["settings"]["level"] == 8
-    branch = post(client, f"/games/{game['game_id']}/branches", revision=0, mode="manual")
+    branch = post(client, f"/games/{game['game_id']}/branches", revision=0)
     assert branch["hint_level"] == 8

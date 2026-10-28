@@ -1,6 +1,4 @@
 import json
-import subprocess
-import sys
 from pathlib import Path
 
 import pytest
@@ -78,19 +76,13 @@ def test_any_own_decision_can_be_taught_and_question_stays_on_that_position(save
     context = review_context(lesson_context(game, evidence, []), None, revision=16)
     assert [item["revision"] for item in context["positions"]] == [16]
     assert context["positions"][0]["human"]
+
+
+def test_unfinished_games_cannot_be_reviewed(saved_game):
+    game, _ = saved_game
     with pytest.raises(AppError) as error:
-        review_context(lesson_context(game, evidence, []), "Explain position 11", revision=16)
-    assert error.value.code == "REVIEW_POSITION"
-
-
-def test_active_game_and_unplayed_choice_do_not_claim_an_outcome_or_recorded_move(saved_game):
-    game, review = saved_game
-    evidence = next(item for item in review["evidence"] if item["revision"] == 16)
-    evidence = {**evidence, "is_played": False}
-    context = review_context(lesson_context({**game, "result": None}, evidence, []), None, revision=16)
-    assert not any(item["id"] == "result" for item in context["summary_facts"])
-    decision = next(item for item in context["positions"][0]["facts"] if item["id"].endswith(":decision"))
-    assert "no move has been recorded yet" in decision["text"]
+        check_teachable({**game, "status": "active"}, 16)
+    assert error.value.code == "REVIEW_REQUIRES_END"
 
 
 @pytest.mark.parametrize("human_color", ["X", "O"])
@@ -170,39 +162,20 @@ def test_real_forced_lesson_task_succeeds_without_model_and_avoids_an_unverified
                 advance(game, event["coordinate"])
         with store.transaction() as db:
             store.save(db, "game", game["game_id"], "owner", game)
-        reflection = "I wanted to stop White from reaching h8."
-        task = games.create_position_lesson_task("owner", game["game_id"], "forced-lesson", 58,
-                                                 reflection=reflection)
-        first = store.get("task", task["task_id"], "owner")
-        recollection = first["inputs"]["reflection"]
-        assert recollection["text"] == reflection
-        assert recollection["source"] == "review_recollection" and recollection["recorded_move"] == "d8"
-        assert not recollection["prior_analysis_available"]
-        assert games.create_position_lesson_task("owner", game["game_id"], "forced-lesson", 58,
-                                                reflection=reflection) == task
+        task = games.create_position_lesson_task("owner", game["game_id"], "forced-lesson", 58)
         assert games.create_position_lesson_task("owner", game["game_id"], "same-lesson", 58) == task
-        with pytest.raises(AppError) as error:
-            games.create_position_lesson_task("owner", game["game_id"], "changed-reason", 58,
-                                             reflection="A new explanation after seeing the result")
-        assert error.value.code == "LESSON_REFLECTION"
         tasks.process("owner", store.get("task", task["task_id"], "owner"))
         result = store.get("task", task["task_id"], "owner")
         assert result["status"] == "succeeded", result["error"]
         assert result["result"]["model_id"] is None and result["result"]["usage"] is None
         assert games.position_lesson("owner", game["game_id"], 58)['earlier_eligible']
-        cached = store.get("lesson", f"{game['game_id']}:58", "owner")
-        assert cached["reflection"] == recollection
-        context = lesson_context(game, cached["evidence"], [])
-        context["player_reflection"] = cached["reflection"]
-        player = review_context(context, None, revision=58)["positions"][0]
-        assert player["player_reflection"] == recollection
-        assert not any(reflection in fact["text"] for fact in player["facts"])
+        cached = store.get("lesson", f"{game['game_id']}:58:en", "owner")
         cached["comparison"].pop("insight")
         cached["comparison"].pop("reference_move")
         for choice in cached["comparison"]["choices"]:
             choice.pop("assessment")
         with store.transaction() as db:
-            store.save(db, "lesson", f"{game['game_id']}:58", "owner", cached)
+            store.save(db, "lesson", f"{game['game_id']}:58:en", "owner", cached)
         engine.close()
         restored = games.position_lesson("owner", game["game_id"], 58)
         assert restored["comparison"]["choices"][0]["assessment"]["status"] == "forced"
@@ -213,26 +186,11 @@ def test_real_forced_lesson_task_succeeds_without_model_and_avoids_an_unverified
                                                      58, "Does this guarantee a win?", view)
         queued = store.get("task", question["task_id"], "owner")
         assert queued["inputs"]["view"] == view
-        assert queued["inputs"]["reflection"] == recollection
         tasks.process("owner", queued)
         answered = store.get("task", question["task_id"], "owner")
         assert answered["status"] == "failed"
         assert answered["error"]["code"] == "REVIEW_NOT_CONFIGURED"
         assert engine.process is None
-        independent, evidence = tmp_path / "independent.json", tmp_path / "evidence.json"
-        subprocess.run([sys.executable, str(root / "scripts/export_teaching_cases.py"),
-                        "--database", str(store.path), "--output", str(independent),
-                        "--evidence-output", str(evidence)], check=True)
-        blind = json.loads(independent.read_text())["cases"][0]
-        packet = json.loads(evidence.read_text())["cases"][0]
-        assert blind["board"] == list(position_at(game, 58).board)
-        assert blind["legal_moves"] == ["d8"]
-        assert "engine_evidence" not in blind and "player_reflection" not in blind
-        assert blind["independent_review"]["preferred_moves"] is None
-        assert packet["player_reflection"] == recollection
-        assert packet["questions"][0]["view"] == view
-        assert packet["expert_review"]["explains_choice"] is None
-        assert all(game["game_id"] not in path.read_text() for path in (independent, evidence))
         assert store.get("game", game["game_id"], "owner") == game
     finally:
         engine.close()

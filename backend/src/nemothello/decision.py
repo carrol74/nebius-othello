@@ -1,7 +1,9 @@
 from math import isfinite
 
+from nemothello.board_features import CORNERS
+from nemothello.corner_proof import prove_corner
 from nemothello.errors import AppError
-from nemothello.rules import legal_moves
+from nemothello.rules import apply_move, legal_moves, square
 
 
 def assess_decision(item, coordinate):
@@ -27,14 +29,24 @@ def assess_decision(item, coordinate):
     }
 
 
+def lost_corners(board, actor, move):
+    after = apply_move(board, actor, move)
+    return {target for target in CORNERS
+            if after[square(target)[0]][square(target)[1]] == "." and prove_corner(after, actor, target)["forced"]}
+
+
 def lesson_moves(item):
     actual = item["actual_move"]
     assessment = assess_decision(item, actual)
-    if not item.get("is_played", True):
-        return [assessment["best_moves"][0]]
-    if assessment["status"] == "lower_rated":
-        return [actual, assessment["best_moves"][0]]
-    return [actual]
+    if assessment["status"] != "lower_rated":
+        return [actual]
+    best = assessment["best_moves"]
+    if len(best) > 1:
+        board, actor = tuple(item["analysis"]["board"]), item["actor"]
+        lost = lost_corners(board, actor, actual)
+        # Among equally good moves, compare with one that keeps the corners the played move loses
+        best = sorted(best, key=lambda move: len(lost & lost_corners(board, actor, move)))
+    return [actual, best[0]]
 
 
 def reference_move(item, coordinate):

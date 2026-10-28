@@ -168,7 +168,18 @@
         },
         "shown_hint_ids": [],
         "adopted_hint": false,
-        "stage": "midgame"
+        "stage": "midgame",
+        "opponent_replies": {
+          "b2": "b3",
+          "b3": "a1",
+          "g3": "a1",
+          "g4": "a1",
+          "g5": "a1",
+          "d6": "a1",
+          "e6": "a1",
+          "f6": "a1",
+          "g6": "a1"
+        }
       },
       "move_number": 17,
       "result": {
@@ -344,7 +355,18 @@
             },
             "shown_hint_ids": [],
             "adopted_hint": false,
-            "stage": "opening"
+            "stage": "opening",
+            "opponent_replies": {
+              "b1": "e1",
+              "b2": "a1",
+              "b3": "b4",
+              "g3": "e1",
+              "g4": "e1",
+              "g5": "e1",
+              "d6": "e1",
+              "e6": "e1",
+              "f6": "e6"
+            }
           },
           "recorded_proof": {
             "target": "a1",
@@ -491,7 +513,10 @@
         },
         "shown_hint_ids": [],
         "adopted_hint": false,
-        "stage": "endgame"
+        "stage": "endgame",
+        "opponent_replies": {
+          "d8": "e8"
+        }
       },
       "move_number": 13,
       "result": {
@@ -639,7 +664,16 @@
             },
             "shown_hint_ids": [],
             "adopted_hint": false,
-            "stage": "opening"
+            "stage": "opening",
+            "opponent_replies": {
+              "f3": "c5",
+              "g4": "c5",
+              "g5": "g4",
+              "g6": "c7",
+              "d7": "d3",
+              "e7": "d7",
+              "g7": "c5"
+            }
           },
           "recorded_proof": {
             "target": "h8",

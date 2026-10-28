@@ -7,7 +7,7 @@ import httpx
 
 from nemothello.data import write_json
 from nemothello.rules import Position, replay
-from nemothello.schemas import GameState, Review, Task
+from nemothello.schemas import GameState, ReviewSummary, Task
 
 
 class DemoVerification:
@@ -107,33 +107,34 @@ class DemoVerification:
             self.report["games"]["original"] = original
             review_task = self.request("POST", f"games/{game_id}/reviews", {"request_id": str(uuid4())})
             self.wait_task(review_task)
-            review = Review.model_validate(self.request("GET", f"games/{game_id}/review"))
-            self.check(0 < len(review.key_moves) <= 3, "Engine review selects up to three key moves")
-            self.check(review.hint_adoption.shown_turns == 0, "Programmatic analysis does not claim hints were displayed")
+            review = ReviewSummary.model_validate(self.request("GET", f"games/{game_id}/review"))
+            self.check(len(review.key_moves) <= 3, "Engine review selects up to three key moves")
             self.report["review"] = review.model_dump(mode="json")
-            question = self.wait_task(self.request("POST", f"games/{game_id}/review/questions", {
-                "request_id": str(uuid4()), "question": "Reference a specific position revision and explain the main improvement for this game.",
+            # A game without a four-disc loss has no key move, so teach the first human choice instead
+            revision = review.key_moves[0].revision if review.key_moves else next(
+                event["revision"] - 1 for event in original["history"]
+                if event["kind"] == "move" and event["actor"] == original["human_color"])
+            lesson = self.wait_task(self.request("POST", f"games/{game_id}/lessons", {
+                "request_id": str(uuid4()), "revision": revision,
             }))
-            self.check(bool(question["result"]["answer"].strip()), "Live review question returns an answer")
+            self.check(lesson["result"]["coaching_status"] == "ready", "Live lesson returns Nemotron coaching")
+            self.report["lesson"] = lesson["result"]
+            question = self.wait_task(self.request("POST", f"games/{game_id}/lessons", {
+                "request_id": str(uuid4()), "revision": revision, "question": "Why is the recommended move better here?",
+            }))
+            self.check(bool(question["result"]["answer"].strip()), "Live lesson question returns an answer")
             self.report["question"] = question["result"]
-            manual = self.game(self.request("POST", f"games/{game_id}/branches", {
-                "request_id": str(uuid4()), "revision": 0, "mode": "manual",
+            branch = self.game(self.request("POST", f"games/{game_id}/branches", {
+                "request_id": str(uuid4()), "revision": 0,
             }))
-            manual = self.game(self.request("POST", f"games/{manual['game_id']}/moves", {
+            branch = self.game(self.request("POST", f"games/{branch['game_id']}/moves", {
                 "request_id": str(uuid4()), "expected_revision": 0,
-                "coordinate": manual["legal_moves"][0],
+                "coordinate": branch["legal_moves"][0],
             }))
-            self.report["games"]["manual_branch"] = manual
-            branch_task = self.wait_task(self.request("POST", f"games/{game_id}/branches", {
-                "request_id": str(uuid4()), "revision": 0, "mode": "follow_hints",
-            }))
-            branch = self.game(self.request("GET", f"games/{branch_task['game_id']}"))
-            self.check(branch["status"] == "finished" and not branch["auto_play"],
-                       "Hint replay saves the actual result and finishes automatic play")
             self.check(branch["opponent_config_id"] == original["opponent_config_id"]
                        and branch["parent_game_id"] == game_id, "Branch retains its parent game and opponent configuration")
             self.check(self.request("GET", f"games/{game_id}") == original, "Branch does not change the original history")
-            self.report["games"]["hint_branch"] = branch
+            self.report["games"]["branch"] = branch
             self.report["status"] = "completed"
             return self.report
         except Exception as exc:

@@ -7,7 +7,7 @@ from nemothello.coach_agent import CoachTools
 from nemothello.coaching import check_text, review_context, validate_plan
 from nemothello.concepts import concept_profile, empty_regions, names, stable_discs
 from nemothello.errors import AppError
-from nemothello.position_lessons import lesson_context, lesson_document
+from nemothello.position_lessons import lesson_context
 from nemothello.rules import Position, apply_move, legal_moves, opponent
 
 
@@ -52,9 +52,9 @@ def test_unsafe_replies_are_checked_against_the_rules_engine():
     assert profile["unsafe_replies"] == ["b1", "g1"]
 
 
-def test_focus_ranks_the_concepts_that_separate_the_two_moves():
-    position = review_context(native_review(), "For position revision 24: compare g3 and b5")["positions"][0]
-    assert position["focus"] == ["p24:quiet", "p24:mobility"]
+def test_questions_and_lessons_share_the_ranked_focus():
+    position = review_context(native_review(), "For position revision 24: compare g3 and b5", 24)["positions"][0]
+    assert position["focus"] == review_context(lesson_input(24), None, 24)["positions"][0]["focus"]
     facts = {fact["id"]: fact["text"] for fact in position["facts"]}
     assert "g3 flips discs that then touch an empty square: b3, c3, f3" in facts["p24:quiet"]
     assert {"quiet_move", "mobility"} <= set(position["allowed_lessons"])
@@ -63,7 +63,7 @@ def test_focus_ranks_the_concepts_that_separate_the_two_moves():
 
 def test_play_line_marks_quiet_steps_and_opened_corners():
     review = native_review()
-    context = review_context(review, "For position revision 24: compare g3 and b5")
+    context = review_context(review, "For position revision 24: compare g3 and b5", 24)
     tools = CoachTools(review, context)
     result = tools.run("play_line", json.dumps({"revision": 24, "moves": ["g3"]}))
     assert "b3, c3, f3 now next to an empty square" in result["text"]
@@ -71,7 +71,7 @@ def test_play_line_marks_quiet_steps_and_opened_corners():
 
 
 def test_a_corner_both_moves_give_away_is_not_the_focus():
-    position = review_context(native_review(), "For position revision 20: compare a4 and g4")["positions"][0]
+    position = review_context(native_review(), "For position revision 20: compare a4 and g4", 20)["positions"][0]
     assert "p20:corners" in {fact["id"] for fact in position["facts"]}
     assert "p20:corners" not in position["focus"]
 
@@ -79,13 +79,7 @@ def test_a_corner_both_moves_give_away_is_not_the_focus():
 def lesson_input(revision):
     review = {"game_id": "fixture", **native_review()}
     item = next(entry for entry in review["evidence"] if entry["revision"] == revision)
-    context = lesson_context(review, item, [])
-    comparison = lesson_document(context, item)["comparison"]
-    context["teaching_comparison"] = {"insight": comparison["insight"], "decision_contrast": comparison["decision_contrast"],
-                                      "choices": [{"coordinate": entry["coordinate"], "corner_proof": entry["corner_proof"],
-                                                   "continuation_lesson": entry["continuation_lesson"]}
-                                                  for entry in comparison["choices"]]}
-    return context
+    return lesson_context(review, item, [])
 
 
 def test_a_corner_proof_shared_by_both_moves_is_not_the_focus():
@@ -116,7 +110,7 @@ def test_equal_values_cannot_be_the_reason_one_move_is_better():
     context = review_context(lesson_input(22), None, 22)
     values = context["positions"][0]["values"]
     assert values["p22.a3.safe_replies"] == values["p22.g6.safe_replies"]
-    problems = check_text("a3 后 {p22.a3.safe_replies} 种安全应对，g6 后 {p22.g6.safe_replies} 种，所以 g6 更好。",
+    problems = check_text("{p22.a3.safe_replies}。{p22.g6.safe_replies}。所以 g6 更好。",
                           context["positions"][0]["facts"], values, {"a3", "g6"}, "answer")
     assert problems == [("answer compares safe_replies for a3 and g6, but the values are equal, so they are not a "
                          "reason; leave them out")]
@@ -127,7 +121,16 @@ def test_equal_values_cannot_be_the_reason_one_move_is_better():
     ("The capture runs along row 3 from a3.", 0),
     ("对手两步之后能翻回 b6。", 1),
     ("Edax rates e6 higher.", 1),
+    ("下一步走棋前，先观察对手在此 move 后的可走点。", 1),
+    ("对手跳过回合后，你可以再下 e6。", 1),  # only the missing pass fact
+    ("e6 让对手多了 a3 这个回合。", 1),
+    ("这是导致大比分失利的关键。", 1),
+    ("Edax 推荐 e6。", 0),
 ])
 def test_board_words_are_not_mistaken_for_counts_or_scores(text, problems):
     assert len(check_text(text, [], {}, {"a3", "b6", "e6"}, "answer")) == problems
+
+
+def test_the_coach_uses_glossary_terms():
+    assert check_text("g5 暴露了 f4。", [], {}, {"g5", "f4"}, "answer") == ["answer writes 暴露; write 挨着空格的棋子 instead"]
 

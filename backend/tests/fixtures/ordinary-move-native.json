@@ -279,7 +279,7 @@
       "score_perspective": "X",
       "score_kind": "estimate",
       "engine_version": "4.6",
-      "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+      "eval_file": "deploy/edax/eval.dat",
       "depth": 8,
       "settings": {
         "level": 8,
@@ -1143,7 +1143,16 @@
         ]
       }
     ],
-    "stage": "opening"
+    "stage": "opening",
+    "opponent_replies": {
+      "c1": "c6",
+      "b2": "c6",
+      "f2": "f3",
+      "f3": "f5",
+      "f4": "d1",
+      "f5": "c4",
+      "f6": "c1"
+    }
   },
   "comparison": {
     "revision": 8,
@@ -1184,11 +1193,11 @@
         "target": null,
         "opponent_reply": null,
         "checked_defenses": [],
-        "defense_lines": [],
         "capture_lines": [],
         "line_source": "engine",
         "corner_proof": null,
         "continuation_lesson": null,
+        "defendable": null,
         "concepts": {
           "exposed": [
             "e5"
@@ -1237,23 +1246,26 @@
             "board": [
               "........",
               "..OX....",
-              "..XOO...",
-              ".X.XO...",
-              "..XOXX..",
-              "..OX....",
+              "..OOO...",
+              ".XOOO...",
+              "..XXXX..",
+              "...X....",
               "........",
               "........"
             ],
             "turn": "X",
-            "coordinate": "c6",
+            "coordinate": "c4",
             "actor": "O",
             "flipped": [
-              "d5"
+              "c3",
+              "d4"
             ]
           }
         ],
         "opponent_corner_moves_after_reply": []
       }
-    ]
+    ],
+    "reason": null,
+    "focus": []
   }
 }

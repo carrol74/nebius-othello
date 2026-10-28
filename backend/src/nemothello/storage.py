@@ -167,8 +167,15 @@ class Store:
                 task.update(status="failed", error={
                     "code": "SERVICE_RESTARTED", "message": "Service restart interrupted this task. Create a new task",
                 })
-                if task["kind"] == "branch":
-                    game = self.get("game", task["game_id"], row["owner"], db)
-                    game["auto_play"] = False
-                    self.save(db, "game", task["game_id"], row["owner"], game)
                 self.save(db, "task", row["id"], row["owner"], task)
+
+            summaries = db.execute(
+                "SELECT owner,id,document FROM records WHERE kind='summary' AND status='pending'"
+            ).fetchall()
+            for row in summaries:
+                summary = json.loads(row["document"])
+                task = self.get("task", summary["task_id"], row["owner"], db)
+                if task["status"] == "failed":
+                    summary.update(status="failed", error=task["error"]["message"],
+                                   error_code=task["error"]["code"])
+                    self.save(db, "summary", row["id"], row["owner"], summary)

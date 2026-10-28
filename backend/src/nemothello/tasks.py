@@ -2,12 +2,19 @@ import asyncio
 import logging
 from typing import Any
 
-from nemothello.coaching import REVIEW_VERSION, enrich_evidence, select_key_moves, summary_facts
+from nemothello.coaching import REVIEW_VERSION, enrich_evidence, select_key_moves
 from nemothello.errors import AppError
-from nemothello.games import Games
+from nemothello.game_summary import SUMMARY_VERSION
+from nemothello.games import Games, review_summary, summary_key
 from nemothello.lesson_view import resolve_lesson_view
 from nemothello.nemotron import Nemotron
-from nemothello.position_lessons import analyze_position, lesson_context, lesson_document
+from nemothello.position_lessons import (
+    analyze_position,
+    lesson_context,
+    lesson_document,
+    lesson_key,
+    opponent_replies,
+)
 from nemothello.rules import Position
 from nemothello.storage import Store
 
@@ -45,30 +52,28 @@ class Tasks:
             task["status"] = "running"
             self.store.save(db, "task", task["task_id"], owner, task)
         try:
-            if task["kind"] == "branch":
-                result = self.branch(owner, task)
-            elif task["kind"] == "review":
+            if task["kind"] == "review":
                 result = self.review(owner, task["game_id"])
+            elif task["kind"] == "summary":
+                result = self.summary(owner, task["game_id"], task["task_id"], task["inputs"]["language"])
             elif task["kind"] == "lesson":
                 result = self.lesson(owner, task["game_id"], task["inputs"]["revision"], task["task_id"],
-                                     task["inputs"].get("reflection"), task["inputs"].get("language", "en"))
+                                     task["inputs"].get("language", "en"))
             else:
                 self.nemotron.ensure_configured()
-                revision = task["inputs"].get("revision")
-                if revision is None:
-                    review = self.games.review(owner, task["game_id"])
-                else:
-                    lesson = self.games.position_lesson(owner, task["game_id"], revision)
-                    if lesson.get('earlier_eligible') and lesson.get('earlier_decision') is None:
-                        lesson['earlier_decision'] = self.games.earlier_decision(owner, task['game_id'], revision)
-                    game = self.store.get("game", task["game_id"], owner)
-                    review = lesson_context(game, lesson["evidence"], self.store.list_records("hint", owner))
-                    review["player_reflection"] = lesson.get("reflection")
-                    review['earlier_decision'] = lesson.get('earlier_decision')
-                    review["teaching_view"] = resolve_lesson_view(lesson["evidence"], task["inputs"].get("view"))
+                revision = task["inputs"]["revision"]
+                language = task['inputs'].get('language', 'en')
+                lesson = self.games.position_lesson(owner, task["game_id"], revision, language)
+                if lesson.get('earlier_eligible') and lesson.get('earlier_decision') is None:
+                    lesson['earlier_decision'] = self.games.earlier_decision(owner, task['game_id'], revision, language)
+                game = self.store.get("game", task["game_id"], owner)
+                review = lesson_context(game, lesson["evidence"], self.store.list_records("hint", owner))
+                review['earlier_decision'] = lesson.get('earlier_decision')
+                review["teaching_view"] = resolve_lesson_view(lesson["evidence"], task["inputs"].get("view"))
                 response = self.nemotron.explain(review, task["inputs"]["question"], revision=revision,
                                                  language=task["inputs"].get("language", "en"))
                 result = {"answer": response["answer"], "model_id": response["model_id"],
+                          'language': language,
                           "usage": response["usage"], "coaching": response["coaching"],
                           "format_version": REVIEW_VERSION, "answer_facts": response["answer_facts"],
                           "topic": response["topic"], "view": task["inputs"].get("view"),
@@ -84,16 +89,12 @@ class Tasks:
             task["usage"] = getattr(exc, "usage", None)
         finally:
             with self.store.transaction() as db:
-                if task["kind"] == "branch":
-                    game = self.store.get("game", task["game_id"], owner, db)
-                    game["auto_play"] = False
-                    self.store.save(db, "game", game["game_id"], owner, game)
                 self.store.save(db, "task", task["task_id"], owner, task)
 
     def lesson(self, owner: str, game_id: str, revision: int, task_id: str,
-               reflection: dict[str, Any] | None = None, language: str = "en") -> dict[str, Any]:
+               language: str = "en") -> dict[str, Any]:
         game = self.store.get("game", game_id, owner)
-        saved = self.games.position_lesson(owner, game_id, revision)
+        saved = self.games.position_lesson(owner, game_id, revision, language)
         evidence = saved.get("evidence")
         if evidence is None:
             reviews = self.store.list_records("review", owner)
@@ -101,24 +102,20 @@ class Tasks:
                              and review.get("format_version") == REVIEW_VERSION
                              for item in review["evidence"] if item["revision"] == revision), None)
         if evidence is None:
-            evidence = analyze_position(game, revision, self.games.review_engine_of(game))
+            evidence = analyze_position(game, revision, self.games.review_engine_of(game), self.games.opponent_of(game))
         context = lesson_context(game, evidence, self.store.list_records("hint", owner))
-        context["player_reflection"] = reflection
-        lesson = lesson_document(context, evidence)
-        lesson.update(task_id=task_id, coaching_status='pending', reflection=reflection)
-        key = f"{game_id}:{revision}"
-        context["teaching_comparison"] = {"insight": lesson["comparison"]["insight"],
-                                         "decision_contrast": lesson["comparison"]["decision_contrast"], "choices": [
-            {"coordinate": entry["coordinate"], "corner_proof": entry["corner_proof"],
-             "continuation_lesson": entry["continuation_lesson"]}
-            for entry in lesson["comparison"]["choices"]]}
+        lesson = lesson_document(context, evidence, language)
+        lesson.update(task_id=task_id, coaching_status='pending')
+        key = lesson_key(game_id, revision, language)
         with self.store.transaction() as db:
             self.store.save(db, "lesson", key, owner, lesson)
         try:
             response = self.nemotron.explain(context, revision=revision, language=language)
         except Exception as exc:
             lesson.update(coaching_status="failed", coaching_error=(exc.message if isinstance(exc, AppError)
-                          else "Coaching failed. Retry teaching this position"), usage=getattr(exc, "usage", None))
+                          else "Coaching failed. Retry teaching this position"),
+                          coaching_error_code=exc.code if isinstance(exc, AppError) else "TASK_FAILED",
+                          usage=getattr(exc, "usage", None))
             with self.store.transaction() as db:
                 self.store.save(db, "lesson", key, owner, lesson)
             raise
@@ -128,37 +125,46 @@ class Tasks:
             self.store.save(db, "lesson", key, owner, lesson)
         return lesson
 
-    def branch(self, owner: str, task: dict[str, Any]) -> dict[str, Any]:
-        game_id = task["game_id"]
-        for step in range(61):
-            if self.stop.is_set():
-                raise AppError("SERVICE_STOPPING", "Service shutdown interrupted replay. The saved branch remains available", 503)
-            game = self.games.get(game_id, owner)
-            if game["status"] == "finished":
-                return {"game_id": game_id, "result": game["result"]}
-            revision = game["revision"]
-            move = None
-            hint_id = None
-            if game["turn"] == game["human_color"]:
-                hint = self.games.hint(owner, game_id, revision, automated=True)
-                move = hint["recommended_move"]
-                hint_id = hint["hint_id"]
-            self.games.move(
-                owner, game_id, f"{task['task_id']}:{step}", revision, move,
-                automated=True, hint_id=hint_id,
-            )
-        raise AppError("BRANCH_LENGTH", "Branch exceeded the legal game length. Check the rules", 500)
-
     def review(self, owner: str, game_id: str) -> dict[str, Any]:
         # Whole-game review is engine analysis only; coaching happens per position
         existing = next((item for item in self.store.list_records("review", owner)
                          if item["game_id"] == game_id and item.get("format_version") == REVIEW_VERSION), None)
         if existing:
-            return existing
+            return review_summary(existing)
         review = self.analyze_review(owner, game_id)
         with self.store.transaction() as db:
             self.store.save(db, "review", game_id, owner, review)
-        return review
+        return review_summary(review)
+
+    def summary(self, owner: str, game_id: str, task_id: str, language: str) -> dict[str, Any]:
+        game = self.store.get("game", game_id, owner)
+        review = self.games.saved_review(owner, game_id)
+        revisions = [move["revision"] for move in review["key_moves"]]
+        items = review["evidence"]
+        context = {**lesson_context(game, items[0], self.store.list_records("hint", owner)),
+                   "evidence": items, "key_moves": review["key_moves"]}
+        key = summary_key(game_id, language)
+        document = {"game_id": game_id, "language": language, "task_id": task_id, "status": "pending",
+                    "format_version": SUMMARY_VERSION,
+                    "text": None, "facts": [], "tool_calls": [], "model_id": None, "usage": None,
+                    "error": None, "error_code": None}
+        with self.store.transaction() as db:
+            self.store.save(db, "summary", key, owner, document)
+        try:
+            response = self.nemotron.summarize(context, revisions, language)
+        except Exception as exc:
+            document.update(status="failed", usage=getattr(exc, "usage", None),
+                            tool_calls=getattr(exc, "tool_calls", []),
+                            error=exc.message if isinstance(exc, AppError) else "Summary failed. Retry the summary",
+                            error_code=exc.code if isinstance(exc, AppError) else "TASK_FAILED")
+            with self.store.transaction() as db:
+                self.store.save(db, "summary", key, owner, document)
+            raise
+        document.update(status="ready", text=response["answer"], facts=response["answer_facts"],
+                        tool_calls=response["tool_calls"], model_id=response["model_id"], usage=response["usage"])
+        with self.store.transaction() as db:
+            self.store.save(db, "summary", key, owner, document)
+        return document
 
     def analyze_review(self, owner: str, game_id: str) -> dict[str, Any]:
         game = self.store.get("game", game_id, owner)
@@ -168,6 +174,7 @@ class Tasks:
                  if hint["game_id"] == game_id and hint["displayed"]]
         position = Position(tuple(game["initial_board"]), game["initial_turn"])
         engine = self.games.review_engine_of(game)
+        game_opponent = self.games.opponent_of(game)
         revision = 0
         evidence = []
         for event in game["history"]:
@@ -191,35 +198,12 @@ class Tasks:
                 "analysis": evidence_analysis(analysis),
                 "shown_hint_ids": [hint["hint_id"] for hint in shown],
                 "adopted_hint": any(hint["recommended_move"] == event["coordinate"] for hint in shown),
+                "opponent_replies": opponent_replies(position.board, position.turn, game_opponent),
             }))
             position, _ = position.play(event["coordinate"])
             revision = event["revision"]
         if list(position.board) != game["board"] or position.result() != game["result"]:
             raise AppError("REPLAY_MISMATCH", "History replay does not match the saved final position", 500)
         key_moves = select_key_moves(evidence, game["human_color"])
-        summary = {
-            "game_id": game_id, "result": game["result"], "human_color": game["human_color"],
-            "initial_board": game["initial_board"], "initial_turn": game["initial_turn"],
-            "history": [
-                {key: event[key] for key in ("event_index", "actor", "kind", "coordinate", "revision")}
-                for event in game["history"]
-            ],
-            "parent_game_id": game["parent_game_id"], "parent_revision": game["parent_revision"],
-            "opponent_config_id": game["opponent_config_id"], "key_moves": key_moves,
-            "branch_mode": game.get("branch_mode"),
-            "automatic_hint_moves": game.get("automatic_hint_moves", []),
-            "hints": [{"hint_id": hint["hint_id"], "revision": hint["revision"],
-                       "recommended_move": hint["recommended_move"],
-                       "analysis_settings": hint["analysis"]["settings"]} for hint in hints],
-            "hint_adoption": {"shown_turns": sum(bool(item["shown_hint_ids"]) for item in evidence),
-                              "adopted_turns": sum(item["adopted_hint"] for item in evidence)},
-        }
-        branches = [item for item in self.store.list_records("game", owner)
-                    if item.get("parent_game_id") == game_id and item["status"] == "finished"
-                    and item.get("branch_mode") == "follow_hints"
-                    and item["opponent_config_id"] == game["opponent_config_id"]]
-        review = {**summary, "evidence": evidence, "format_version": REVIEW_VERSION,
-                  "branch_results": [{key: item[key] for key in ("game_id", "parent_revision", "result")}
-                                     for item in branches]}
-        review["summary_facts"] = summary_facts(review)
-        return review
+        return {"game_id": game_id, "format_version": REVIEW_VERSION, "evidence": evidence,
+                "key_moves": [{"revision": item["revision"], "actual_move": item["actual_move"]} for item in key_moves]}

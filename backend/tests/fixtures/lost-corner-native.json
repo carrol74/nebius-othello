@@ -1,0 +1,536 @@
+{
+  "difficulty": "easy",
+  "evidence": {
+    "revision": 24,
+    "actor": "X",
+    "actual_move": "f2",
+    "recommended_move": "f2",
+    "score_loss": 0,
+    "analysis": {
+      "board": [
+        "...X....",
+        "X.XXX...",
+        "XXXXOO..",
+        "XXXOXO..",
+        "X.XOXXX.",
+        "XXXOXXX.",
+        ".XXOXX..",
+        "..XOX..."
+      ],
+      "turn": "X",
+      "candidates": [
+        {
+          "coordinate": "f2",
+          "score": -63,
+          "principal_variation": [
+            "f2",
+            "f8"
+          ],
+          "depth": 4,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "g2",
+          "score": -63,
+          "principal_variation": [
+            "g2",
+            "f2"
+          ],
+          "depth": 4,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "g3",
+          "score": -63,
+          "principal_variation": [
+            "g3",
+            "f8"
+          ],
+          "depth": 4,
+          "score_kind": "estimate"
+        },
+        {
+          "coordinate": "g4",
+          "score": -63,
+          "principal_variation": [
+            "g4",
+            "f8"
+          ],
+          "depth": 4,
+          "score_kind": "estimate"
+        }
+      ],
+      "recommended_move": "f2",
+      "score_perspective": "X",
+      "score_kind": "estimate",
+      "engine_version": "4.6",
+      "terminal_score_rule": "winner_takes_empties",
+      "eval_file": "deploy/edax/eval.dat",
+      "depth": 4,
+      "settings": {
+        "level": 4,
+        "minimum_depth": 4,
+        "threads": 1,
+        "book": false,
+        "selectivity": 5
+      },
+      "elapsed_ms": 4.23
+    },
+    "shown_hint_ids": [],
+    "adopted_hint": false,
+    "opponent_replies": {
+      "f2": "b5",
+      "g2": "f2",
+      "g3": "f2",
+      "g4": "b5"
+    },
+    "comparisons": [
+      {
+        "coordinate": "f2",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 13,
+        "own_moves": 0,
+        "frontier_difference": 29,
+        "disc_difference": 31,
+        "opponent_legal_moves": [
+          "g2",
+          "g3",
+          "g4",
+          "h4",
+          "b5",
+          "h5",
+          "h6",
+          "a7",
+          "g7",
+          "a8",
+          "b8",
+          "f8",
+          "g8"
+        ],
+        "opponent_corners": [
+          "a8"
+        ],
+        "frames": [
+          {
+            "board": [
+              "...X....",
+              "X.XXX...",
+              "XXXXOO..",
+              "XXXOXO..",
+              "X.XOXXX.",
+              "XXXOXXX.",
+              ".XXOXX..",
+              "..XOX..."
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "...X....",
+              "X.XXXX..",
+              "XXXXXX..",
+              "XXXXXX..",
+              "X.XOXXX.",
+              "XXXOXXX.",
+              ".XXOXX..",
+              "..XOX..."
+            ],
+            "turn": "O",
+            "coordinate": "f2"
+          },
+          {
+            "board": [
+              "...X....",
+              "X.XXXX..",
+              "XXXXXX..",
+              "XXXXXX..",
+              "X.XOXXX.",
+              "XXXOXXX.",
+              ".XXOOX..",
+              "..XOOO.."
+            ],
+            "turn": "X",
+            "coordinate": "f8"
+          }
+        ]
+      },
+      {
+        "coordinate": "g2",
+        "corner": 0,
+        "empty_corner_neighbor": 2,
+        "opponent_moves": 17,
+        "own_moves": 3,
+        "frontier_difference": 26,
+        "disc_difference": 25,
+        "opponent_legal_moves": [
+          "c1",
+          "e1",
+          "h1",
+          "b2",
+          "f2",
+          "g3",
+          "g4",
+          "h4",
+          "b5",
+          "h5",
+          "h6",
+          "a7",
+          "g7",
+          "a8",
+          "b8",
+          "f8",
+          "g8"
+        ],
+        "opponent_corners": [
+          "h1",
+          "a8"
+        ],
+        "frames": [
+          {
+            "board": [
+              "...X....",
+              "X.XXX...",
+              "XXXXOO..",
+              "XXXOXO..",
+              "X.XOXXX.",
+              "XXXOXXX.",
+              ".XXOXX..",
+              "..XOX..."
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "...X....",
+              "X.XXX.X.",
+              "XXXXOX..",
+              "XXXOXO..",
+              "X.XOXXX.",
+              "XXXOXXX.",
+              ".XXOXX..",
+              "..XOX..."
+            ],
+            "turn": "O",
+            "coordinate": "g2"
+          },
+          {
+            "board": [
+              "...X....",
+              "X.XXXOX.",
+              "XXXXOO..",
+              "XXXOXO..",
+              "X.XOXXX.",
+              "XXXOXXX.",
+              ".XXOXX..",
+              "..XOX..."
+            ],
+            "turn": "X",
+            "coordinate": "f2"
+          }
+        ]
+      },
+      {
+        "coordinate": "g3",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 15,
+        "own_moves": 0,
+        "frontier_difference": 30,
+        "disc_difference": 29,
+        "opponent_legal_moves": [
+          "b2",
+          "f2",
+          "g2",
+          "h2",
+          "g4",
+          "h4",
+          "b5",
+          "h5",
+          "h6",
+          "a7",
+          "g7",
+          "a8",
+          "b8",
+          "f8",
+          "g8"
+        ],
+        "opponent_corners": [
+          "a8"
+        ],
+        "frames": [
+          {
+            "board": [
+              "...X....",
+              "X.XXX...",
+              "XXXXOO..",
+              "XXXOXO..",
+              "X.XOXXX.",
+              "XXXOXXX.",
+              ".XXOXX..",
+              "..XOX..."
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "...X....",
+              "X.XXX...",
+              "XXXXXXX.",
+              "XXXOXX..",
+              "X.XOXXX.",
+              "XXXOXXX.",
+              ".XXOXX..",
+              "..XOX..."
+            ],
+            "turn": "O",
+            "coordinate": "g3"
+          },
+          {
+            "board": [
+              "...X....",
+              "X.XXX...",
+              "XXXXXXX.",
+              "XXXOXX..",
+              "X.XOXXX.",
+              "XXXOXXX.",
+              ".XXOOX..",
+              "..XOOO.."
+            ],
+            "turn": "X",
+            "coordinate": "f8"
+          }
+        ]
+      },
+      {
+        "coordinate": "g4",
+        "corner": 0,
+        "empty_corner_neighbor": 0,
+        "opponent_moves": 16,
+        "own_moves": 1,
+        "frontier_difference": 27,
+        "disc_difference": 27,
+        "opponent_legal_moves": [
+          "c1",
+          "e1",
+          "b2",
+          "g2",
+          "g3",
+          "h3",
+          "h4",
+          "b5",
+          "h5",
+          "h6",
+          "a7",
+          "g7",
+          "a8",
+          "b8",
+          "f8",
+          "g8"
+        ],
+        "opponent_corners": [
+          "a8"
+        ],
+        "frames": [
+          {
+            "board": [
+              "...X....",
+              "X.XXX...",
+              "XXXXOO..",
+              "XXXOXO..",
+              "X.XOXXX.",
+              "XXXOXXX.",
+              ".XXOXX..",
+              "..XOX..."
+            ],
+            "turn": "X",
+            "coordinate": null
+          },
+          {
+            "board": [
+              "...X....",
+              "X.XXX...",
+              "XXXXOX..",
+              "XXXOXXX.",
+              "X.XOXXX.",
+              "XXXOXXX.",
+              ".XXOXX..",
+              "..XOX..."
+            ],
+            "turn": "O",
+            "coordinate": "g4"
+          },
+          {
+            "board": [
+              "...X....",
+              "X.XXX...",
+              "XXXXOX..",
+              "XXXOXXX.",
+              "X.XOXXX.",
+              "XXXOXXX.",
+              ".XXOOX..",
+              "..XOOO.."
+            ],
+            "turn": "X",
+            "coordinate": "f8"
+          }
+        ]
+      }
+    ],
+    "stage": "midgame"
+  },
+  "comparison": {
+    "revision": 24,
+    "actor": "X",
+    "selected_move": "f2",
+    "recommended_move": "f2",
+    "reference_move": null,
+    "insight": {
+      "kind": "best",
+      "better_move": null,
+      "worse_move": null,
+      "target": null,
+      "gap": null,
+      "score_kind": "estimate",
+      "proof": null,
+      "example": [],
+      "other_threats": [],
+      "witness": null
+    },
+    "decision_contrast": null,
+    "choices": [
+      {
+        "coordinate": "f2",
+        "score": -63,
+        "score_kind": "estimate",
+        "assessment": {
+          "status": "tied_best",
+          "legal_move_count": 4,
+          "best_moves": [
+            "f2",
+            "g2",
+            "g3",
+            "g4"
+          ],
+          "is_played": true,
+          "score_loss": 0,
+          "score_kind": "estimate",
+          "position": "behind"
+        },
+        "kind": "corner_given",
+        "target": "a8",
+        "opponent_reply": "a8",
+        "checked_defenses": [],
+        "capture_lines": [
+          [
+            "a8",
+            "b7",
+            "c6",
+            "d5"
+          ]
+        ],
+        "line_source": "rules",
+        "corner_proof": {
+          "target": "a8",
+          "attacker": "O",
+          "max_plies": 3,
+          "forced": true,
+          "attack": "a8",
+          "defenses": [],
+          "refutations": []
+        },
+        "continuation_lesson": null,
+        "defendable": false,
+        "concepts": {
+          "exposed": [
+            "f3",
+            "f4"
+          ],
+          "inner_flips": 4,
+          "stable_gained": [],
+          "safe_replies": 9,
+          "unsafe_replies": [
+            "g2",
+            "a7",
+            "g7",
+            "b8"
+          ]
+        },
+        "frames": [
+          {
+            "board": [
+              "...X....",
+              "X.XXX...",
+              "XXXXOO..",
+              "XXXOXO..",
+              "X.XOXXX.",
+              "XXXOXXX.",
+              ".XXOXX..",
+              "..XOX..."
+            ],
+            "turn": "X",
+            "coordinate": null,
+            "actor": null,
+            "flipped": []
+          },
+          {
+            "board": [
+              "...X....",
+              "X.XXXX..",
+              "XXXXXX..",
+              "XXXXXX..",
+              "X.XOXXX.",
+              "XXXOXXX.",
+              ".XXOXX..",
+              "..XOX..."
+            ],
+            "turn": "O",
+            "coordinate": "f2",
+            "actor": "X",
+            "flipped": [
+              "e3",
+              "d4",
+              "f3",
+              "f4"
+            ]
+          },
+          {
+            "board": [
+              "...X....",
+              "X.XXXX..",
+              "XXXXXX..",
+              "XXXXXX..",
+              "X.XOXXX.",
+              "XXOOXXX.",
+              ".OXOXX..",
+              "O.XOX..."
+            ],
+            "turn": "X",
+            "coordinate": "a8",
+            "actor": "O",
+            "flipped": [
+              "b7",
+              "c6"
+            ]
+          }
+        ],
+        "opponent_corner_moves_after_reply": []
+      }
+    ],
+    "reason": {
+      "kind": "corner_threat",
+      "fact": "p24:proof_f2",
+      "move": "f2",
+      "frame": 1,
+      "marks": {},
+      "target": "a8",
+      "actor": null
+    },
+    "focus": [
+      "p24:proof_f2"
+    ]
+  }
+}

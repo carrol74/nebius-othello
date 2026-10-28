@@ -1,6 +1,4 @@
 import json
-import subprocess
-import sys
 import time
 from functools import cache
 from pathlib import Path
@@ -13,15 +11,12 @@ from nemothello.board_features import capture_lines
 from nemothello.coaching import review_context, verified_teaching_facts
 from nemothello.earlier_decision import earlier_target, find_earlier_decision, threat_checker
 from nemothello.edax import PV_MOVE, RESULT_LINE, Edax
-from nemothello.games import Games, advance
+from nemothello.games import advance
 from nemothello.main import app
-from nemothello.nemotron import Nemotron
 from nemothello.opponents import EdaxOpponent
 from nemothello.position_lessons import lesson_context, position_at
 from nemothello.rules import apply_move, legal_moves, opponent, square
 from nemothello.schemas import EarlierDecisionResult
-from nemothello.storage import Store
-from nemothello.tasks import Tasks
 from nemothello.teaching import compare_lesson
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -107,7 +102,7 @@ def test_a_current_defensive_choice_or_a_branch_without_earlier_history_does_not
     comparison = compare_lesson({'evidence': [item]}, 16, item['actual_move'])
     engine = Edax(ROOT / 'deploy/edax/edax', ROOT / 'deploy/edax/eval.dat', '4.6', 8)
     assert earlier_target(game, item, comparison) is None
-    assert find_earlier_decision(game, item, comparison, engine)['status'] == 'not_applicable'
+    assert find_earlier_decision(game, item, comparison, engine, EdaxOpponent(engine))['status'] == 'not_applicable'
     case = frozen_cases()[0]
     position = position_at(game, case['revision'])
     branch = {'initial_board': list(position.board), 'initial_turn': position.turn,
@@ -117,7 +112,7 @@ def test_a_current_defensive_choice_or_a_branch_without_earlier_history_does_not
     branch_evidence = {**case['evidence'], 'revision': 0}
     branch_comparison = compare_lesson({'evidence': [branch_evidence]}, 0, branch_evidence['actual_move'])
     assert earlier_target(branch, branch_evidence, branch_comparison)
-    result = find_earlier_decision(branch, branch_evidence, branch_comparison, engine)
+    result = find_earlier_decision(branch, branch_evidence, branch_comparison, engine, EdaxOpponent(engine))
     assert result['status'] == 'not_found' and result['link'] is None
     assert engine.process is None
 
@@ -152,7 +147,7 @@ def test_defensive_demonstrations_keep_the_comparison_goal_and_retain_other_corn
             assert better['kind'] == 'corner_defense' and better['target'] == insight['target']
             assert [frame['coordinate'] for frame in better['frames'][1:]] == insight['example']
             assert better['corner_proof'] == insight['proof'] and not better['corner_proof']['forced']
-            assert better['capture_lines'] == better['defense_lines'] == []
+            assert better['capture_lines'] == []
             assert len(better['frames']) <= 4
             last = better['frames'][-1]
             assert insight['target'] not in legal_moves(tuple(last['board']), opponent(item['actor']))
@@ -263,63 +258,7 @@ def test_real_api_verifies_and_caches_the_forced_history_link_without_a_model(tm
         assert connection.get(path + '/earlier', params={'revision': 58}, headers={'X-Session-ID': 'another-owner'}).status_code == 404
         assert connection.get(path + '/earlier', params={'revision': 59}).status_code == 422
         assert app.state.store.get('game', game['game_id'], 'earlier-owner') == game
-        independent, evidence = tmp_path / 'independent.json', tmp_path / 'evidence.json'
-        subprocess.run([sys.executable, str(ROOT / 'scripts/export_teaching_cases.py'), '--database',
-                        str(app.state.store.path), '--output', str(independent), '--evidence-output', str(evidence)], check=True)
-        assert 'earlier_decision' not in json.loads(independent.read_text())['cases'][0]
-        exported = json.loads(evidence.read_text())['cases'][0]['earlier_decision']
-        assert EarlierDecisionResult.model_validate(exported).model_dump() == result
         assert not app.state.settings.token_factory_api_key.get_secret_value()
-
-
-def test_a_planned_move_becomes_recorded_history_before_its_evidence_is_reused(tmp_path):
-    executable, weights = ROOT / 'deploy/edax/edax', ROOT / 'deploy/edax/eval.dat'
-    if not executable.is_file() or not weights.is_file():
-        pytest.skip('Native Edax and eval.dat are required')
-    original = source_game('forced-move-native.json')
-    engine = Edax(executable, weights, '4.6', 8)
-    model = Nemotron('', 'https://unused.invalid/v1', '')
-    store = Store(tmp_path / 'planned.sqlite3')
-    games = Games(store, EdaxOpponent(engine), engine, 3)
-    tasks = Tasks(store, games, model)
-    game = games.new_game(original['human_color'])
-    for event in original['history']:
-        if event['revision'] <= 12 and event['kind'] == 'move':
-            advance(game, event['coordinate'])
-    with store.transaction() as db:
-        store.save(db, 'game', game['game_id'], 'owner', game)
-    try:
-        task = games.create_position_lesson_task('owner', game['game_id'], 'unplayed-lesson', 12,
-                                                 reflection='I want to place a disc near h8.')
-        tasks.process('owner', store.get('task', task['task_id'], 'owner'))
-        original_lesson = store.get('lesson', f"{game['game_id']}:12", 'owner')
-        assert not original_lesson['evidence']['is_played']
-        assert original_lesson['coaching_status'] == 'failed'
-        reflection = original_lesson['reflection']
-        game = games.move('owner', game['game_id'], 'actual-g7', 12, 'g7')
-        for event in original['history']:
-            if event['revision'] > 13 and event['kind'] == 'move':
-                advance(game, event['coordinate'])
-        assert game['result'] == original['result']
-        with store.transaction() as db:
-            store.save(db, 'game', game['game_id'], 'owner', game)
-        current = games.create_position_lesson_task('owner', game['game_id'], 'forced-later', 58)
-        tasks.process('owner', store.get('task', current['task_id'], 'owner'))
-        engine.close()
-        result = games.earlier_decision('owner', game['game_id'], 58)
-        assert result['status'] == 'verified' and result['link']['revision'] == 12
-        revised = games.position_lesson('owner', game['game_id'], 12)
-        assert revised['evidence']['is_played'] and revised['evidence']['actual_move'] == 'g7'
-        assert revised['evidence']['analysis'] == original_lesson['evidence']['analysis']
-        assert revised['reflection'] == reflection and reflection['source'] == 'review_plan'
-        assert revised['coaching_status'] == 'not_requested' and revised['model_id'] is None
-        assert [choice['coordinate'] for choice in revised['comparison']['choices']] == ['g7', 'd7']
-        assert store.get('task', task['task_id'], 'owner')['error']['code'] == 'REVIEW_NOT_CONFIGURED'
-        assert engine.process is None
-        assert store.get('game', game['game_id'], 'owner') == game
-    finally:
-        engine.close()
-        model.close()
 
 
 def test_native_edax_checks_both_earlier_corner_certificates():

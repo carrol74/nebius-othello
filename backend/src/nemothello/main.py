@@ -15,33 +15,32 @@ from nemothello.errors import AppError
 from nemothello.games import Games
 from nemothello.nemotron import Nemotron
 from nemothello.opponents import DIFFICULTY_LEVELS, HINT_LEVELS, EdaxOpponent
-from nemothello.position_lessons import check_teachable
 from nemothello.schemas import (
-    Analysis,
-    AnalyzeRequest,
     BranchRequest,
+    CornerPractice,
     CreateGame,
     EarlierDecisionResult,
     GameState,
+    GameSummary,
     Hint,
     HintDisplay,
     HintDisplayResult,
     HintRequest,
+    Language,
+    LanguageRequest,
     MoveRequest,
     PositionLesson,
     PositionLessonRequest,
-    QuestionRequest,
-    Review,
     ReviewLookup,
+    ReviewSummary,
     RevisionRequest,
     SavedGame,
     Task,
-    TeachingComparison,
     WriteRequest,
 )
 from nemothello.storage import Store
 from nemothello.tasks import Tasks
-from nemothello.teaching import compare_lesson
+from nemothello.teaching import corner_practice
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +72,8 @@ async def lifespan(app: FastAPI):
         games = Games(store, opponent, edax, settings.task_limit_per_session,
                       settings.task_queue_limit,
                       {name: opponents[level] for name, level in DIFFICULTY_LEVELS.items()},
-                      {name: hint_engines[level] for name, level in HINT_LEVELS.items()})
+                      {name: hint_engines[level] for name, level in HINT_LEVELS.items()},
+                      settings.model_tasks_per_day, settings.model_tasks_per_session_per_day)
         tasks = Tasks(store, games, nemotron)
         app.state.settings, app.state.games, app.state.store = settings, games, store
         worker = asyncio.create_task(tasks.run())
@@ -183,36 +183,24 @@ def display_hint(game_id: str, body: HintDisplay, owner: Owner, request: Request
     )
 
 
-@app.post("/analyze", response_model=Analysis)
-def analyze(body: AnalyzeRequest, owner: Owner, request: Request):
-    return request.app.state.games.edax.analyze(tuple(body.board), body.turn)
-
-
 @app.post("/games/{game_id}/reviews", response_model=Task)
 def review(game_id: str, body: WriteRequest, owner: Owner, request: Request):
     return request.app.state.games.create_review_task(owner, game_id, body.request_id)
 
 
-@app.get("/games/{game_id}/review", response_model=Review | ReviewLookup)
+@app.get("/games/{game_id}/review", response_model=ReviewSummary | ReviewLookup)
 def get_review(game_id: str, owner: Owner, request: Request):
     return request.app.state.games.review(owner, game_id)
 
 
-@app.post("/games/{game_id}/review/questions", response_model=Task)
-def question(game_id: str, body: QuestionRequest, owner: Owner, request: Request):
-    return request.app.state.games.create_review_task(owner, game_id, body.request_id, body.question,
-                                                      body.language)
+@app.post("/games/{game_id}/summaries", response_model=Task)
+def create_summary(game_id: str, body: LanguageRequest, owner: Owner, request: Request):
+    return request.app.state.games.create_summary_task(owner, game_id, body.request_id, body.language)
 
 
-@app.get("/games/{game_id}/review/lesson", response_model=TeachingComparison)
-def teaching_lesson(game_id: str, owner: Owner, request: Request,
-                    revision: Annotated[int, Query(ge=0)],
-                    move: Annotated[str, Query(pattern=r"^[a-h][1-8]$")]):
-    check_teachable(request.app.state.games.get(game_id, owner), revision)
-    saved = request.app.state.games.review(owner, game_id)
-    if "evidence" not in saved:
-        raise AppError("REVIEW_NOT_FOUND", "Analyze the game before requesting a lesson", 409)
-    return compare_lesson(saved, revision, move)
+@app.get("/games/{game_id}/summary", response_model=GameSummary | ReviewLookup)
+def get_summary(game_id: str, owner: Owner, request: Request, language: Language = "en"):
+    return request.app.state.games.summary(owner, game_id, language)
 
 
 @app.post("/games/{game_id}/lessons", response_model=Task)
@@ -220,35 +208,38 @@ def create_position_lesson(game_id: str, body: PositionLessonRequest, owner: Own
     return request.app.state.games.create_position_lesson_task(
         owner, game_id, body.request_id, body.revision, body.question,
         body.view.model_dump() if body.view is not None else None,
-        body.reflection, body.language,
+        body.language,
     )
 
 
 @app.get("/games/{game_id}/lessons", response_model=PositionLesson | ReviewLookup)
 def get_position_lesson(game_id: str, owner: Owner, request: Request,
-                        revision: Annotated[int, Query(ge=0)]):
-    return request.app.state.games.position_lesson(owner, game_id, revision)
+                        revision: Annotated[int, Query(ge=0)], language: Language = 'en'):
+    return request.app.state.games.position_lesson(owner, game_id, revision, language)
 
 
-@app.get("/games/{game_id}/lessons/compare", response_model=TeachingComparison)
-def compare_position_lesson(game_id: str, owner: Owner, request: Request,
-                            revision: Annotated[int, Query(ge=0)],
-                            move: Annotated[str, Query(pattern=r"^[a-h][1-8]$")]):
+@app.get("/games/{game_id}/lessons/corner-practice", response_model=CornerPractice)
+def corner_practice_lesson(game_id: str, owner: Owner, request: Request,
+                           revision: Annotated[int, Query(ge=0)],
+                           move: Annotated[str, Query(pattern=r"^[a-h][1-8]$")]):
     saved = request.app.state.games.position_lesson(owner, game_id, revision)
     if "evidence" not in saved:
-        raise AppError("LESSON_NOT_FOUND", "Teach this position before comparing moves", 409)
-    return compare_lesson({"evidence": [saved["evidence"]]}, revision, move)
+        raise AppError("LESSON_NOT_FOUND", "Teach this position before practicing", 409)
+    choice = next((entry for entry in saved["comparison"]["choices"] if entry["coordinate"] == move), None)
+    if choice is None or choice["kind"] not in ("corner_given", "corner_forced"):
+        raise AppError("PRACTICE_UNAVAILABLE", "This move does not give the opponent a corner", 409)
+    return corner_practice(saved["evidence"], choice["target"])
 
 
 @app.get('/games/{game_id}/lessons/earlier', response_model=EarlierDecisionResult)
 def earlier_decision(game_id: str, owner: Owner, request: Request,
-                     revision: Annotated[int, Query(ge=0)]):
-    return request.app.state.games.earlier_decision(owner, game_id, revision)
+                     revision: Annotated[int, Query(ge=0)], language: Language = 'en'):
+    return request.app.state.games.earlier_decision(owner, game_id, revision, language)
 
 
-@app.post("/games/{game_id}/branches", response_model=GameState | Task)
+@app.post("/games/{game_id}/branches", response_model=GameState)
 def branch(game_id: str, body: BranchRequest, owner: Owner, request: Request):
-    return request.app.state.games.branch(owner, game_id, body.request_id, body.revision, body.mode)
+    return request.app.state.games.branch(owner, game_id, body.request_id, body.revision, body.line)
 
 
 @app.get("/tasks/{task_id}", response_model=Task)

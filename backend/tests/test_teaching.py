@@ -3,10 +3,12 @@ from pathlib import Path
 
 import pytest
 
+from nemothello.board_features import capture_lines
+from nemothello.coaching import review_context
 from nemothello.errors import AppError
 from nemothello.rules import apply_move, legal_moves, opponent
-from nemothello.schemas import TeachingComparison, TeachingMove
-from nemothello.teaching import compare_lesson, teach_move
+from nemothello.schemas import CornerPractice, TeachingComparison, TeachingMove
+from nemothello.teaching import compare_lesson, corner_practice, teach_move
 
 
 @pytest.fixture
@@ -26,11 +28,6 @@ def test_concrete_corner_trap_checks_every_defense(review):
     assert tuple(bad.checked_defenses) == legal_moves(board, "X")
     for move in bad.checked_defenses:
         assert "a1" in legal_moves(apply_move(board, "X", move), "O")
-    assert {line.coordinate for line in bad.defense_lines} == set(bad.checked_defenses)
-    for line in bad.defense_lines:
-        assert line.frames[3].coordinate == line.coordinate
-        assert line.frames[4].board[0][0] == "O"
-        assert {square for ray in line.capture_lines for square in ray[1:-1]} == set(line.frames[4].flipped)
     assert bad.frames[-1].board[0][0] == "O"
     assert better.coordinate == "b3" and better.kind == "corner_defense"
     assert [frame.coordinate for frame in better.frames] == [None, "b3", "e1", "b1"]
@@ -62,3 +59,76 @@ def test_unsupported_lesson_fails_without_a_model_call(review, revision, move, c
     with pytest.raises(AppError) as error:
         compare_lesson(review, revision, move)
     assert error.value.code == code
+
+
+def test_corner_practice_marks_every_first_move_that_stops_the_forced_corner(review):
+    item = next(entry for entry in review["evidence"] if entry["revision"] == 16)
+    practice = CornerPractice.model_validate(corner_practice(item, "a1"))
+    options = {option.coordinate: option for option in practice.options}
+    assert set(options) == set(legal_moves(tuple(item["analysis"]["board"]), item["actor"]))
+    assert not options["b1"].safe and options["b1"].attack == "e1" and options["b1"].replies == 9
+    assert options["b3"].safe and options["b3"].recommended
+    for option in practice.options:
+        if option.safe:
+            assert [frame.coordinate for frame in option.frames[1:]] == [option.coordinate]
+        else:
+            assert option.frames[-1].coordinate == "a1" and option.frames[-1].board[0][0] == "O"
+            assert {square for ray in option.capture_lines for square in ray[1:-1]} <= set(option.frames[-1].flipped)
+    snapshot = json.loads((Path(__file__).parent / "fixtures/corner-practice-native.json").read_text())
+    assert snapshot["practice"] == corner_practice(item, "a1")
+
+
+def test_a_corner_already_lost_before_the_move_is_not_offered_as_practice(review):
+    lost = compare_lesson(review, 22, "a3")
+    assert [(choice["kind"], choice["defendable"]) for choice in lost["choices"]] == [("corner_given", False)] * 2
+    item = next(entry for entry in review["evidence"] if entry["revision"] == 22)
+    assert not any(option["safe"] for option in corner_practice(item, "a1")["options"])
+    assert compare_lesson(review, 16, "b1")["choices"][0]["defendable"] is True
+
+
+def test_lost_corner_snapshot_matches_the_current_lesson():
+    case = json.loads((Path(__file__).parent / "fixtures/lost-corner-native.json").read_text())
+    comparison = compare_lesson({"evidence": [case["evidence"]]}, 24, "f2")
+    assert comparison == case["comparison"]
+    assert [(choice["kind"], choice["target"], choice["defendable"]) for choice in comparison["choices"]] == [
+        ("corner_given", "a8", False)]
+
+
+
+def test_the_primary_reason_leads_the_coach_focus_and_shows_on_its_line():
+    cases = json.loads((Path(__file__).parent / "fixtures/teaching-native-cases.json").read_text())
+    shown = set()
+    for comparison in cases.values():
+        reason = TeachingComparison.model_validate(comparison).reason
+        if reason is None:
+            continue
+        shown.add(reason.kind)
+        assert comparison["focus"][0] == reason.fact
+        choices = {choice["coordinate"]: choice for choice in comparison["choices"]}
+        frames = choices[reason.move]["frames"]
+        assert 1 <= reason.frame < len(frames)
+        if reason.kind in ("corner_contrast", "reply_contrast"):
+            line = reason.marks[reason.move]
+            board = tuple(frames[reason.frame]["board"])
+            assert line in capture_lines(board, reason.actor, reason.target)
+            blocked = next(move for move in reason.marks if move != reason.move)
+            assert reason.target not in legal_moves(tuple(choices[blocked]["frames"][reason.frame]["board"]), reason.actor)
+    assert shown == {"corner_contrast", "reply_contrast", "recapture"}
+
+
+def test_corners_that_do_not_separate_the_moves_are_stated_as_such(review):
+    context = review_context({"game_id": "fixture", **review}, None, 22)
+    position = context["positions"][0]
+    facts = {fact["id"]: fact["text"] for fact in position["facts"]}
+    assert position["focus"] == ["p22:shared_corner"]
+    assert facts["p22:shared_corner"].startswith("Both a3 and g6 let the opponent force a1")
+    assert "No legal move at this position keeps a1" in facts["p22:proof_a3"]
+
+
+def test_occupied_reply_snapshot_matches_the_current_lesson():
+    case = json.loads((Path(__file__).parent / "fixtures/occupied-reply-native.json").read_text())
+    comparison = compare_lesson({"evidence": [case["evidence"]]}, 46, "g2")
+    assert comparison == case["comparison"]
+    reason = comparison["reason"]
+    assert (reason["kind"], reason["move"], reason["target"]) == ("reply_contrast", "g2", "f2")
+    assert comparison["recommended_move"] == "f2"

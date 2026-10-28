@@ -1,5 +1,7 @@
 import subprocess
 import sys
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import pytest
 
@@ -63,7 +65,7 @@ def test_unconfigured_review_fails_before_http(monkeypatch):
     monkeypatch.setattr(client.http, "post", unexpected)
     try:
         with pytest.raises(AppError) as error:
-            client.explain({})
+            client.explain({"evidence": []}, revision=0)
         assert error.value.code == "REVIEW_NOT_CONFIGURED"
     finally:
         client.close()
@@ -105,7 +107,7 @@ def test_game_uses_engine_and_does_not_replace_historical_opponent(tmp_path, mon
         stored["opponent_config_id"] = "historical-trained-opponent"
         games.store.save(db, "game", game["game_id"], "owner", stored)
     with pytest.raises(AppError) as error:
-        games.branch("owner", game["game_id"], "branch", 0, "manual")
+        games.branch("owner", game["game_id"], "branch", 0)
     assert error.value.code == "OPPONENT_CHANGED"
 
 
@@ -150,7 +152,7 @@ def test_difficulty_is_persisted_and_routes_each_game_and_branch(tmp_path, monke
         game = created[name]
         assert game["difficulty"] == name
         games.move("owner", game["game_id"], f"move-{name}", 0)
-        branch = games.branch("owner", game["game_id"], f"branch-{name}", 0, "manual")
+        branch = games.branch("owner", game["game_id"], f"branch-{name}", 0)
         assert branch["difficulty"] == name
         assert branch["opponent_config_id"] == game["opponent_config_id"]
         games.move("owner", branch["game_id"], f"branch-move-{name}", 0)
@@ -168,3 +170,29 @@ def test_create_schema_rejects_unknown_difficulty():
     assert CreateGame(request_id="test-create", human_color="X").difficulty == "medium"
     with pytest.raises(ValidationError):
         CreateGame(request_id="test-create", human_color="X", difficulty="unbounded")
+
+
+def test_model_tasks_are_capped_per_day_for_the_service_and_each_session(tmp_path):
+    root = Path(__file__).resolve().parents[2]
+    executable, weights = root / "deploy/edax/edax", root / "deploy/edax/eval.dat"
+    if not executable.is_file() or not weights.is_file():
+        pytest.skip("Native Edax and eval.dat are required")
+    engine = Edax(executable, weights, "4.6", 4)
+    store = Store(tmp_path / "games.sqlite3")
+    games = Games(store, EdaxOpponent(engine), engine, 5,
+                  model_tasks_per_day=3, model_tasks_per_session_per_day=2)
+    yesterday = (datetime.now(UTC) - timedelta(days=1)).isoformat()
+    with store.transaction() as db:
+        store.save(db, "task", "old", "first", {"task_id": "old", "game_id": "g", "kind": "lesson",
+                                                "created_at": yesterday, "status": "succeeded"})
+        games.make_task(db, "first", "g", "review", {})
+        for kind in ("lesson", "summary"):
+            games.make_task(db, "first", "g", kind, {})
+        with pytest.raises(AppError) as session_limit:
+            games.make_task(db, "first", "g", "question", {})
+        games.make_task(db, "second", "g", "lesson", {})
+        with pytest.raises(AppError) as service_limit:
+            games.make_task(db, "third", "g", "lesson", {})
+    assert session_limit.value.code == service_limit.value.code == "MODEL_DAILY_LIMIT"
+    assert session_limit.value.status == 429
+    assert engine.process is None

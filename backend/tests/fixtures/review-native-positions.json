@@ -620,7 +620,7 @@
           "score_perspective": "X",
           "score_kind": "estimate",
           "engine_version": "4.6",
-          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "eval_file": "deploy/edax/eval.dat",
           "depth": 8,
           "settings": {
             "level": 8,
@@ -770,7 +770,7 @@
           "score_perspective": "X",
           "score_kind": "estimate",
           "engine_version": "4.6",
-          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "eval_file": "deploy/edax/eval.dat",
           "depth": 8,
           "settings": {
             "level": 8,
@@ -878,7 +878,7 @@
           "score_perspective": "X",
           "score_kind": "estimate",
           "engine_version": "4.6",
-          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "eval_file": "deploy/edax/eval.dat",
           "depth": 8,
           "settings": {
             "level": 8,
@@ -1030,7 +1030,7 @@
           "score_perspective": "X",
           "score_kind": "estimate",
           "engine_version": "4.6",
-          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "eval_file": "deploy/edax/eval.dat",
           "depth": 8,
           "settings": {
             "level": 8,
@@ -1124,7 +1124,7 @@
           "score_perspective": "X",
           "score_kind": "estimate",
           "engine_version": "4.6",
-          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "eval_file": "deploy/edax/eval.dat",
           "depth": 8,
           "settings": {
             "level": 8,
@@ -1288,7 +1288,7 @@
           "score_perspective": "O",
           "score_kind": "estimate",
           "engine_version": "4.6",
-          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "eval_file": "deploy/edax/eval.dat",
           "depth": 8,
           "settings": {
             "level": 8,
@@ -1426,7 +1426,7 @@
           "score_perspective": "X",
           "score_kind": "estimate",
           "engine_version": "4.6",
-          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "eval_file": "deploy/edax/eval.dat",
           "depth": 8,
           "settings": {
             "level": 8,
@@ -1562,7 +1562,7 @@
           "score_perspective": "O",
           "score_kind": "estimate",
           "engine_version": "4.6",
-          "eval_file": "/Users/carol/Documents/work/hackathon/nebius/deploy/edax/eval.dat",
+          "eval_file": "deploy/edax/eval.dat",
           "depth": 8,
           "settings": {
             "level": 8,
@@ -1702,7 +1702,13 @@
         "shown_hint_ids": [
           "fab83bf1-54ec-4295-b4b6-11ed76934aa6"
         ],
-        "adopted_hint": true
+        "adopted_hint": true,
+        "opponent_replies": {
+          "d3": "c5",
+          "c4": "e3",
+          "f5": "d6",
+          "e6": "f4"
+        }
       },
       {
         "revision": 2,
@@ -1812,7 +1818,14 @@
         "shown_hint_ids": [
           "cd43e43d-cb29-4ba7-a927-068ed3344550"
         ],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "b6": "f3",
+          "c6": "e3",
+          "d6": "e3",
+          "e6": "d2",
+          "f6": "e3"
+        }
       },
       {
         "revision": 11,
@@ -1948,7 +1961,16 @@
           "elapsed_ms": 10.98
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "c1": "c2",
+          "d1": "e1",
+          "e1": "d1",
+          "c2": "c3",
+          "c3": "b4",
+          "c4": "c3",
+          "b5": "g4"
+        }
       },
       {
         "revision": 16,
@@ -2112,7 +2134,18 @@
           "elapsed_ms": 18.65
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "b1": "e1",
+          "b2": "a1",
+          "b3": "b4",
+          "g3": "e1",
+          "g4": "e1",
+          "g5": "e1",
+          "d6": "e1",
+          "e6": "e1",
+          "f6": "e6"
+        }
       },
       {
         "revision": 19,
@@ -2276,7 +2309,18 @@
           "elapsed_ms": 13.48
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "a1": "b4",
+          "g1": "h1",
+          "a2": "a1",
+          "g2": "g3",
+          "b3": "g4",
+          "g3": "g4",
+          "b4": "a3",
+          "b5": "c6",
+          "a7": "c6"
+        }
       },
       {
         "revision": 20,
@@ -2426,7 +2470,17 @@
           "elapsed_ms": 14.68
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "a4": "a2",
+          "b4": "a1",
+          "g4": "a1",
+          "b5": "b4",
+          "g5": "a1",
+          "d6": "a1",
+          "f6": "a1",
+          "g6": "a2"
+        }
       },
       {
         "revision": 22,
@@ -2576,7 +2630,17 @@
           "elapsed_ms": 11.3
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "a3": "a1",
+          "b4": "a1",
+          "g4": "a1",
+          "b5": "a1",
+          "g5": "a1",
+          "d6": "a1",
+          "f6": "a1",
+          "g6": "c6"
+        }
       },
       {
         "revision": 24,
@@ -2670,7 +2734,13 @@
           "elapsed_ms": 7.28
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "g3": "a5",
+          "b5": "b4",
+          "g5": "g1",
+          "f6": "g1"
+        }
       },
       {
         "revision": 26,
@@ -2808,7 +2878,16 @@
           "elapsed_ms": 12.06
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "b5": "b4",
+          "g5": "g1",
+          "c6": "b4",
+          "d6": "b4",
+          "e6": "g1",
+          "f6": "b4",
+          "g6": "b4"
+        }
       },
       {
         "revision": 47,
@@ -3081,7 +3160,14 @@
           "elapsed_ms": 8.58
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "c6": "d6",
+          "d6": "c6",
+          "e6": "c6",
+          "f6": "e7",
+          "g6": "f6"
+        }
       },
       {
         "revision": 48,
@@ -3147,7 +3233,10 @@
           "elapsed_ms": 3.74
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "d6": "d8"
+        }
       },
       {
         "revision": 49,
@@ -3370,7 +3459,17 @@
           "elapsed_ms": 5.8
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "e6": "h4",
+          "f6": "e7",
+          "g6": "h4",
+          "e7": "h4",
+          "b8": "h4",
+          "c8": "h4",
+          "d8": "b8",
+          "e8": "d8"
+        }
       },
       {
         "revision": 50,
@@ -3434,7 +3533,10 @@
           "elapsed_ms": 4.09
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "b8": "e6"
+        }
       },
       {
         "revision": 51,
@@ -3581,7 +3683,13 @@
           "elapsed_ms": 3.98
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "e6": "e7",
+          "f6": "e6",
+          "g6": "e7",
+          "e7": "f7"
+        }
       },
       {
         "revision": 52,
@@ -3659,7 +3767,11 @@
           "elapsed_ms": 3.44
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "e7": "f6",
+          "c8": "h4"
+        }
       },
       {
         "revision": 53,
@@ -3813,7 +3925,14 @@
           "elapsed_ms": 3.67
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "f6": "f7",
+          "g6": "f6",
+          "f7": "c8",
+          "e8": "c8",
+          "f8": "f7"
+        }
       },
       {
         "revision": 54,
@@ -3869,7 +3988,10 @@
           "elapsed_ms": 4.34
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "f7": "h4"
+        }
       },
       {
         "revision": 55,
@@ -4028,7 +4150,14 @@
           "elapsed_ms": 4.13
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "g6": "h4",
+          "g7": "c8",
+          "e8": "c8",
+          "f8": "g7",
+          "g8": "g7"
+        }
       },
       {
         "revision": 57,
@@ -4158,7 +4287,13 @@
           "elapsed_ms": 3.81
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "g7": "c8",
+          "e8": "c8",
+          "f8": "g7",
+          "g8": "g7"
+        }
       },
       {
         "revision": 59,
@@ -4257,7 +4392,11 @@
           "elapsed_ms": 3.79
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "g7": "f8",
+          "g8": "g7"
+        }
       },
       {
         "revision": 61,
@@ -4352,7 +4491,10 @@
           "elapsed_ms": 4.41
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {
+          "g7": "f8"
+        }
       },
       {
         "revision": 63,
@@ -4399,7 +4541,8 @@
           "elapsed_ms": 4.01
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "opponent_replies": {}
       }
     ],
     "automatic_hint_moves": []
