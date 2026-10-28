@@ -1,15 +1,17 @@
 services:
   backend:
-    build: ../backend
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
     restart: unless-stopped
     env_file: backend.env
     environment:
+      BACKEND_SERVICE_TOKEN: ${BACKEND_SERVICE_TOKEN:?Set a shared service token}
       DATABASE_PATH: /app/runtime/nemothello.sqlite3
       EDAX_EXECUTABLE: /opt/edax/edax
       EDAX_EVAL_FILE: /opt/edax/eval.dat
     volumes:
-      - ./runtime:/app/runtime
-      - ./edax:/opt/edax:ro
+      - runtime:/app/runtime
     expose:
       - "8000"
     stop_grace_period: 180s
@@ -17,18 +19,36 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    logging:
+    logging: &logging
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
-  gateway:
-    image: caddy:2
+  web:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
     restart: unless-stopped
     depends_on:
       - backend
     environment:
-      BACKEND_DOMAIN: ${BACKEND_DOMAIN:?Set an actual backend domain}
+      BACKEND_URL: http://backend:8000
+      BACKEND_SERVICE_TOKEN: ${BACKEND_SERVICE_TOKEN}
+    expose:
+      - "3000"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging: *logging
+  gateway:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      DOMAIN: ${DOMAIN:?Set the public domain}
+      ACME_EMAIL: ${ACME_EMAIL:?Set an email for certificate notices}
     ports:
       - "80:80"
       - "443:443"
@@ -37,7 +57,9 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    logging: *logging
 
 volumes:
+  runtime:
   caddy_data:
   caddy_config:

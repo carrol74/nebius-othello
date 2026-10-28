@@ -1,3 +1,8 @@
-{$BACKEND_DOMAIN} {
-    reverse_proxy backend:8000
+{
+    # With an email set, Caddy falls back to ZeroSSL when Let's Encrypt refuses a certificate
+    email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+    reverse_proxy web:3000
 }
