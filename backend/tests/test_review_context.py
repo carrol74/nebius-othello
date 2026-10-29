@@ -215,9 +215,7 @@ def test_full_review_must_cover_all_selected_human_decisions(native_review):
         first = next(entry for entry in item["facts"] if entry["id"] == item["focus"][0])
         selections.append({"revision": item["revision"], "fact_ids": [first["id"]],
                            "lesson_id": first["topic"], "explanation": {
-                               "changed_square": "b1",
-                               "next_time": "Before moving near an empty corner, which discs could connect the opponent's capture line?",
-                           }})
+                               "changed_square": "b1"}})
     plan = {"topic": "review", "answer": {"text": "", "fact_ids": []}, "selections": selections}
     assert len(render_plan(validate_plan(json.dumps(plan), context), context)["coaching"]) == len(selections)
     incomplete = deepcopy(plan)

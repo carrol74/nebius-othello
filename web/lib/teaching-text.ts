@@ -1,5 +1,5 @@
 import type { Locale } from "./locale";
-import type { CornerPracticeOption, LessonReason, TeachingComparison, TeachingFrame, TeachingMove } from "./types";
+import type { CornerPracticeOption, HistoryEvent, LessonReason, TeachingComparison, TeachingFrame, TeachingMove } from "./types";
 
 export function teachingNote(locale: Locale): string {
   return locale === "zh"
@@ -169,4 +169,16 @@ export function coachingFailure(code: string | null | undefined, message: string
     question: zh ? "Nemotron 这次没能给出可靠的回答，可以换个问法再问一次。" : "Nemotron could not give a reliable answer this time. Try asking another way.",
     summary: zh ? "Nemotron 这次没能写出可靠的总结。可以在棋盘上选择自己的回合，或者重新总结。" : "Nemotron could not write a reliable summary this time. Select one of your turns on the board, or summarize again.",
   }[subject]};
+}
+
+// Null when the game record followed the line's first reply
+export function actualReplyText(history: HistoryEvent[], revision: number, frames: TeachingFrame[], locale: Locale): string | null {
+  const played = history.find((event) => event.revision === revision + 1);
+  const reply = history.find((event) => event.revision === revision + 2);
+  if (!played || !reply || frames.length < 3 || played.coordinate !== frames[1].coordinate) return null;
+  const actual = reply.kind === "pass" ? "pass" : reply.coordinate;
+  if (actual === frames[2].coordinate) return null;
+  return locale === "zh"
+    ? `实际对局里对手${actual === "pass" ? "跳过了回合" : `下的是 ${actual}`}，没有走这条线。这条推演展示的是对手当时也能选的下法。`
+    : `In the actual game the opponent ${actual === "pass" ? "passed" : `played ${actual}`}, not this line. This line shows another move the opponent could have chosen.`;
 }

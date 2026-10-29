@@ -15,8 +15,6 @@ from nemothello.edax import Edax
 from nemothello.errors import AppError
 from nemothello.game_profile import game_profile
 from nemothello.game_summary import (
-    capture_is_next,
-    consequence_text,
     display_saved_summary,
     fact_aliases,
     lesson_opening,
@@ -26,10 +24,10 @@ from nemothello.game_summary import (
     summary_tool,
     validate_summary_check,
 )
-from nemothello.learning_goal import learning_goal
+from nemothello.learning_goal import learning_goal, mechanism_text
 from nemothello.opponents import EdaxOpponent
 from nemothello.position_lessons import opponent_replies
-from nemothello.rules import Position, flips, legal_moves, opponent
+from nemothello.rules import Position, coordinate, flips, legal_moves, opponent
 from nemothello.teaching import compare_lesson
 
 
@@ -127,7 +125,6 @@ def written_draft(evidence):
         {"purpose": "game", "text": "Your decisions across the game provide context for this review.", "fact_ids": ["game_choices"]},
         {"purpose": "lesson", "text": f"Revisit {position['played']} and inspect what the alternative changes.",
          "fact_ids": [position["primary_fact"], f"{position['id']}_decision"]},
-        {"purpose": "practice", "text": "Which captures does each candidate leave for the opponent?", "fact_ids": [position["primary_fact"]]},
     ]}
 
 
@@ -168,7 +165,7 @@ def test_summary_preserves_authored_paragraphs_and_keeps_the_focus_evidence_firs
     result = render_summary(json.dumps(draft), evidence)
     shown = [paragraph["text"] for paragraph in result["paragraphs"]]
     assert result["answer"] == "\n\n".join(shown)
-    assert [shown[0], shown[2]] == [draft["paragraphs"][0]["text"], draft["paragraphs"][2]["text"]]
+    assert shown[0] == draft["paragraphs"][0]["text"]
     focus = evidence["positions"][0]
     assert shown[1] == (lesson_opening(focus, evidence["language"]) if focus["mechanism"]
                         else draft["paragraphs"][1]["text"])
@@ -253,7 +250,7 @@ def test_summary_repairs_presentation_using_real_game_moves(complete_review, lan
     draft["paragraphs"].reverse()
     result = render_summary(json.dumps(draft), evidence)
     paragraphs = result["plan"]["paragraphs"]
-    assert [paragraph["purpose"] for paragraph in paragraphs] == ["game", "lesson", "practice"]
+    assert [paragraph["purpose"] for paragraph in paragraphs] == ["game", "lesson"]
     label = f"第 {expected[position['revision']]} 手" if language == "zh" else f"move {expected[position['revision']]}"
     expected_text = f"在{label}中，你下{position['played']}。" if language == "zh" else f"Revisit {label}: {position['played']}."
     assert paragraphs[1]["text"] == f"{expected_text} {follow}"
@@ -318,30 +315,24 @@ def test_lesson_opens_with_the_verified_move_and_mechanism(complete_review):
         primary = fact_aliases(evidence)[focus["primary_fact"]]
         why = "这会决定对手之后能从哪里翻回。" if language == "zh" else "This decides where the opponent can flip back later."
         draft["paragraphs"][1].update(text=why, fact_ids=[primary])
-        draft["paragraphs"][2]["fact_ids"] = [primary]
         lesson = render_summary(json.dumps(draft), evidence)["paragraphs"][1]
         lead = (f"第 {focus['move_number']} 手你下了 {focus['played']}，推荐下 {focus['recommended']}。"
                 if language == "zh" else
                 f"At move {focus['move_number']} you played {focus['played']}; the recommended move is {focus['recommended']}. ")
         assert lesson["text"] == lead + focus["mechanism"]["text"].strip()
         assert f"{focus['id']}_mechanism" in lesson["fact_ids"]
-        replied = re.findall(r"\b[a-h][1-8]\b", focus["mechanism"]["text"])[0]
-        draft["paragraphs"][2].update(text=f"Before a move, does {replied} still matter?", fact_ids=[])
-        assert render_summary(json.dumps(draft), evidence)["paragraphs"][2]["text"].endswith("still matter?")
 
 
-def test_practice_keeps_one_question_and_chinese_stays_plain(complete_review):
+def test_chinese_summary_stays_plain(complete_review):
     revisions = learning_revisions(complete_review)
     evidence = summary_evidence(complete_review, revisions, "zh")
     draft = written_draft(evidence)
     draft["paragraphs"][0]["text"] = "玩家在中游和末局多次选了翻子最多的走法（game_choices, review_A_unknown）。多数步与 Edax 推荐一致。"
     draft["paragraphs"][1].update(text=draft["paragraphs"][1]["text"], fact_ids=["game_choices"])
-    draft["paragraphs"][2].update(text="先看翻过来的棋子。落子前，对手能从哪里翻回它们？", fact_ids=[])
     result = render_summary(json.dumps(draft), evidence)
     assert fact_aliases(evidence)[evidence["positions"][0]["primary_fact"]] in result["paragraphs"][1]["fact_ids"]
     assert result["paragraphs"][0]["text"] == "你在中盘和终局多次选了翻子最多的走法。多数步与推荐一致。"
     assert "game_choices" in result["paragraphs"][0]["fact_ids"]
-    assert result["paragraphs"][2]["text"] == "落子前，对手能从哪里翻回它们？"
     position = evidence["positions"][0]
     draft["paragraphs"][0]["text"] = f"您在 {{{position['id']}}} 和其他几步都选了翻子最多的走法。"
     shown = render_summary(json.dumps(draft), evidence)["paragraphs"][0]["text"]
@@ -349,10 +340,7 @@ def test_practice_keeps_one_question_and_chinese_stays_plain(complete_review):
     draft["paragraphs"][0]["text"] = f"在第{{{position['id']}}}手和第 {{{position['played']}}} 步，你都选了翻子最多的走法。"
     shown = render_summary(json.dumps(draft), evidence)["paragraphs"][0]["text"]
     assert shown == f"在第 {position['move_number']} 手和 {position['played']} 这一步，你都选了翻子最多的走法。"
-    draft["paragraphs"][2]["text"] = "下一盘记得先检查。"
-    with pytest.raises(AppError, match="one short question"):
-        render_summary(json.dumps(draft), evidence)
-    draft["paragraphs"][2]["text"] = "落子前，先检查 anchor 是不是对手的棋子？"
+    draft["paragraphs"][0]["text"] = "你常检查 anchor 是不是对手的棋子。"
     with pytest.raises(AppError, match="English word anchor"):
         render_summary(json.dumps(draft), evidence)
 
@@ -400,7 +388,13 @@ def test_forced_only_branch_has_no_skill_grade_or_invented_strength(complete_rev
     assert all(item["category"] == "forced" for item in evidence["profile"]["decisions"])
     assert not evidence["positions"] and "paragraphs" not in evidence["profile"]
     assert summary_tool(evidence)["function"]["parameters"]["properties"]["focus_position"]["enum"] == [None]
-
+    draft = {"focus_position": None, "paragraphs": [
+        {"purpose": "game", "text": "Every move in this branch had only one legal square.", "fact_ids": ["game_choices"]},
+        {"purpose": "lesson", "text": "Hints helped you here.", "fact_ids": []},
+    ]}
+    result = render_summary(json.dumps(draft), evidence)
+    assert [paragraph["purpose"] for paragraph in result["paragraphs"]] == ["game"]
+    assert result["answer"] == "Every move in this branch had only one legal square."
 
 
 def test_a_single_choice_in_a_finished_branch_does_not_establish_consistency(complete_review):
@@ -433,13 +427,14 @@ def test_lesson_consequence_names_a_capture_the_rules_allow(complete_review):
         for move in goal["after_same_moves"]:
             position, _ = position.play(move)
         capturer = item["actor"] if goal["actor"] == "you" else opponent(item["actor"])
-        immediate = capture_is_next(item, goal)
-        assert immediate == (position.turn == capturer)
-        if immediate:
+        assert goal["immediate"] == (position.turn == capturer)
+        if goal["immediate"]:
             assert goal["reply"] in position.moves
-        text = consequence_text(goal, "Simplified Chinese", immediate)
-        assert f"可以下 {goal['reply']}" in text and ("不挡住" in text) == (not immediate)
-        assert ("角" in text) == (goal["reply"] in ("a1", "h1", "a8", "h8"))
+        assert set(goal["flipped"]) <= {coordinate(row, col) for row, col in flips(position.board, capturer, goal["reply"])}
+        text = mechanism_text(goal["changes"][0]["square"], goal, "Simplified Chinese")
+        assert f"可以下 {goal['reply']}" in text and ("不挡住" in text) == (not goal["immediate"])
+        assert "、".join(goal["flipped"]) in text and text.count(f"你下 {goal['available_move']}") == 1
+        assert ("是角" in text) == (goal["reply"] in ("a1", "h1", "a8", "h8"))
         checked += 1
     if complete_review["human_color"] == "X":
         assert checked

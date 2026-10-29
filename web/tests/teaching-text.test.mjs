@@ -5,7 +5,7 @@ import ts from "typescript";
 
 const source = readFileSync(new URL("../lib/teaching-text.ts", import.meta.url), "utf8");
 const compiled = ts.transpileModule(source, {compilerOptions: {module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022}}).outputText;
-const {coachingFailure, reasonLabel, practiceFeedback, practicePrompt, stepText, stepNote, captureLineText, teachingChoiceLabel, teachingNote} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
+const {actualReplyText, coachingFailure, reasonLabel, practiceFeedback, practicePrompt, stepText, stepNote, captureLineText, teachingChoiceLabel, teachingNote} = await import(`data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`);
 const cases = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/teaching-native-cases.json", import.meta.url), "utf8"));
 const forced = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/forced-move-native.json", import.meta.url), "utf8"));
 const {comparison: lost} = JSON.parse(readFileSync(new URL("../../backend/tests/fixtures/lost-corner-native.json", import.meta.url), "utf8"));
@@ -113,4 +113,16 @@ test("each move worth reviewing is labeled with its primary reason", () => {
   assert.equal(reasonLabel(cases["2"].reason, "zh"), "关键：对手的落点 b5");
   assert.equal(reasonLabel(cases["47"].reason, "en"), "Key: discs flipped straight back");
   assert.equal(reasonLabel(cases["0"].reason, "zh"), null);
+});
+
+test("a line that left the game record names the opponent's actual reply", () => {
+  const frames = cases["16"].choices[0].frames;
+  const history = (reply) => [
+    {revision: 17, kind: "move", coordinate: frames[1].coordinate},
+    {revision: 18, kind: reply === "pass" ? "pass" : "move", coordinate: reply === "pass" ? null : reply},
+  ];
+  assert.equal(actualReplyText(history(frames[2].coordinate), 16, frames, "zh"), null);
+  assert.match(actualReplyText(history("h8"), 16, frames, "zh"), /^实际对局里对手下的是 h8，没有走这条线/);
+  assert.match(actualReplyText(history("pass"), 16, frames, "en"), /^In the actual game the opponent passed, not this line/);
+  assert.equal(actualReplyText(history("h8").slice(0, 1), 16, frames, "zh"), null);
 });

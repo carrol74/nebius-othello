@@ -74,14 +74,14 @@ def game_profile(review):
                         "in this game does not establish a skill rank, intent, or performance in other games.",
                         "performance"))
     facts.append(fact("game:hints", f"Hints were displayed on {totals['assisted']} non-forced player choices. "
-                      "A displayed hint does not prove it was read or followed; assisted choices do not "
-                      "establish unaided ability.", "hints"))
+                      "A displayed hint does not prove it was read or followed.", "hints"))
     observations = []
     for topic, revisions in patterns.items():
         if not revisions:
             continue
-        evidence = ("The played move flipped a maximum number of discs; a searched best alternative flipped fewer. "
-                    "This is a correlation, not evidence of the player's intent or a rule that fewer flips are better."
+        evidence = ("Each of these played moves flipped the most discs of any legal move in its position, while a "
+                    "searched best alternative flipped fewer. Saying the player played the move that flipped the most "
+                    "is accurate; it does not show why, and fewer flips are not a rule."
                     if topic == "many_flips" else
                     "The played move allowed an immediate opponent corner capture, while at least one searched "
                     "best move did not. This establishes immediate access, not the cause of the final result.")

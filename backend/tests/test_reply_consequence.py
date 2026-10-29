@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from nemothello.coaching import TEXT_LIMITS, DecisionExplanation, verified_teaching_facts
-from nemothello.learning_goal import explanation_text, learning_goal
+from nemothello.coaching import TEXT_LIMITS, verified_teaching_facts
+from nemothello.learning_goal import learning_goal, mechanism_text
 from nemothello.rules import apply_move, coordinate, legal_moves, opponent, square
 from nemothello.schemas import TeachingComparison
 from nemothello.teaching import compare_lesson
@@ -79,14 +79,11 @@ def test_consequence_is_invariant_under_color_and_board_symmetry(swap_colors, tr
     assert learning_goal(comparison)["actor"] == "you"
 
 
-@pytest.mark.parametrize("language,question", [
-    ("Simplified Chinese", "哪些对手棋子可以留下，供你下一回合夹击？"),
-    ("English", "Which opponent disc could you keep to make a legal move next turn?"),
-])
-def test_explanation_connects_the_reply_to_own_choices_and_a_preserved_capture(language, question):
+@pytest.mark.parametrize("language", ["Simplified Chinese", "English"])
+def test_explanation_connects_the_reply_to_own_choices_and_a_preserved_capture(language):
     comparison = FIXTURE["comparison"]
     goal = learning_goal(comparison)
-    text = explanation_text(DecisionExplanation(changed_square="d4", next_time=question), goal, language)
+    text = mechanism_text("d4", goal, language)
     assert all(move in text for move in ("d3", "f4", "c5", "e3", "d4"))
     assert "c3" not in text
     assert len(text) <= TEXT_LIMITS[language]

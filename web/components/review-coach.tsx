@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { useLocale } from "@/lib/locale";
-import { captureLineText, practiceFeedback, practicePrompt, stepNote, stepText, teachingChoiceLabel, teachingNote } from "@/lib/teaching-text";
+import { actualReplyText, captureLineText, practiceFeedback, practicePrompt, stepNote, stepText, teachingChoiceLabel, teachingNote } from "@/lib/teaching-text";
 import { answerMatchesView, canonicalFrames, coachedFrames, displayedTeachingView, lessonFocus, reasonView } from "@/lib/lesson-view";
 import { earlierDecisionText } from "@/lib/earlier-decision";
 import { moveNumber } from "@/lib/game-view";
@@ -63,6 +63,8 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
   const attempt = variation?.exercise?.options.find((option) => option.coordinate === variation.exercise!.attempt);
   const captureFrame = variation?.capture_frame ?? (variation ? variation.lesson_frames.length - 2 : -1);
   const capturePreview = variation && !practicing && variation.frame === captureFrame && !!variation.capture_lines?.length;
+  const actualReply = variation && !variation.exercise && variation.frame >= 2
+    ? actualReplyText(game.history, lesson.revision, variation.lesson_frames, locale) : null;
 
   function explore(choice: TeachingMove, frame?: number, override?: TeachingFrame[], demonstratedAnswerId?: string) {
     const frames = override ?? coachedFrames(lesson, choice);
@@ -93,6 +95,7 @@ export function ReviewCoach({game, lesson, variation, pending, busy, showVariati
       {/* Step 1 of a lesson line is the selected move itself, already shown on its button */}
       {!practicing && (variation.exercise || variation.frame > 1) && <p className="step-text">{stepText(variation.lesson_frames[variation.frame], comparison.actor, locale)}</p>}
       {variation.canonical && stepNote(comparison, activeMove, variation.frame, locale) && <p className="step-note">{stepNote(comparison, activeMove, variation.frame, locale)}</p>}
+      {actualReply && <p className="muted">{actualReply}</p>}
       {attempt && <p className="defense-feedback">{practiceFeedback(attempt, variation.exercise!.target, comparison.recommended_move, locale)}</p>}
       {capturePreview && attempt && variation.capture_lines && <p className="capture-explanation">{captureLineText(variation.capture_lines, variation.lesson_frames[captureFrame + 1].actor!, comparison.actor, locale)}</p>}
       <div className="line-controls" role="group" aria-label={t("Teaching continuation", "教学推演")}>

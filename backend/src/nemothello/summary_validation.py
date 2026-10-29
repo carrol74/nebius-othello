@@ -113,7 +113,6 @@ def paragraph_problems(text, cited, positions):
 PLAIN_TERMS = ((re.compile("中游|中局"), "中盘"), (re.compile("末局|残局"), "终局"), (re.compile("玩家|您"), "你"),
                (re.compile("与搜索一致"), "与推荐一致"),
                (re.compile("(?:\\s*Edax\\s*|搜索)(?:推荐的?)?最佳(?:走法)?|(?:\\s*Edax\\s*|搜索)推荐"), "推荐"))
-SENTENCE = re.compile(r"[^。！？.!?]+[。！？.!?]*")
 
 
 def replace_terms(text, language):
@@ -121,15 +120,12 @@ def replace_terms(text, language):
         return text
     for pattern, term in PLAIN_TERMS:
         text = pattern.sub(term, text)
+    text = re.sub(r"(?<=[\u4e00-\u9fff])(\d+)", r" \1", text)
+    text = re.sub(r"(\d+)(?=[\u4e00-\u9fff])", r"\1 ", text)
     text = re.sub(r"\s*第\s*([a-h][1-8])\s*[步手]", r" \1 这一步", text)
     # Filled-in move numbers keep the spaces the model put around its placeholders
     text = re.sub(r"(?<=[\u4e00-\u9fff，。、；])\s+(?=第 \d+ 手)", "", text)
     return re.sub(r"(第 \d+ 手)\s+(?=[\u4e00-\u9fff，。、；])", r"\1", text)
-
-
-def question_only(text):
-    questions = [sentence.strip() for sentence in SENTENCE.findall(text) if sentence.strip().endswith(("?", "？"))]
-    return questions[-1] if questions else None
 
 
 def presentation_problems(text, language):

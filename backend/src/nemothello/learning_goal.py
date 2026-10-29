@@ -1,4 +1,5 @@
-import re
+from nemothello.board_features import CORNERS
+from nemothello.rules import Position
 
 
 def learning_goal(comparison):
@@ -16,6 +17,11 @@ def learning_goal(comparison):
         contrast = comparison["decision_contrast"]
         opportunity, prefix = contrast["removed_reply"] or contrast["added_reply"], []
     human = comparison["actor"]
+    # Replay the shared moves to learn whether the capturing side moves right after them
+    position, _ = Position(tuple(comparison["choices"][0]["frames"][0]["board"]), human).play(opportunity["available_after"])
+    for move in prefix:
+        if move != "pass":
+            position, _ = position.play(move)
 
     def owner(cell):
         return "empty" if cell == "." else "yours" if cell == human else "opponent's"
@@ -26,6 +32,8 @@ def learning_goal(comparison):
         "alternative_move": opportunity["blocked_after"],
         "reply": opportunity["coordinate"],
         "anchor": opportunity["capture_line"][-1],
+        "flipped": opportunity["capture_line"][1:-1],
+        "immediate": position.turn == opportunity["actor"],
         "actor": "you" if opportunity["actor"] == human else "opponent",
         "after_same_moves": prefix,
         "changes": [{"square": change["coordinate"], "available": owner(change["available"]),
@@ -39,24 +47,13 @@ def learning_goal(comparison):
 
 def explanation_problems(explanation, goal):
     if explanation is None:
-        return ["Use explanation.changed_square and explanation.next_time to teach the learning_goal"]
-    problems = []
+        return ["Use explanation.changed_square to teach the learning_goal"]
     if explanation.changed_square not in {change["square"] for change in goal["changes"]}:
-        problems.append("explanation.changed_square must select a verified square from learning_goal.changes")
-    question = explanation.next_time.strip()
-    if not question.endswith(("?", "？")) or re.search(r"[。.!！?？]", question[:-1]):
-        problems.append("explanation.next_time must be one short observation question, without a preceding assertion")
-    if re.search(r"\b[a-h][1-8]\b|[{}]", question, re.IGNORECASE):
-        problems.append("explanation.next_time must teach a reusable check without coordinates or count placeholders")
-    return problems
+        return ["explanation.changed_square must select a verified square from learning_goal.changes"]
+    return []
 
 
-def explanation_text(explanation, goal, language):
-    text = mechanism_text(explanation.changed_square, goal, language)
-    return text + ("" if language == "Simplified Chinese" else " ") + explanation.next_time.strip()
-
-
-def mechanism_text(changed_square, goal, language, *, show_continuation=False):
+def mechanism_text(changed_square, goal, language):
     change = next(item for item in goal["changes"] if item["square"] == changed_square)
     cell, target, anchor = change["square"], goal["reply"], goal["anchor"]
     move, alternative = goal["available_move"], goal["alternative_move"]
@@ -73,36 +70,41 @@ def mechanism_text(changed_square, goal, language, *, show_continuation=False):
                 f"the same row as {consequence['actual_moves'][0]}")
         return (f"After {alternative} and the opponent's {reply}, all your legal moves lie on {area}. "
                 f"Playing {move} keeps the opponent disc on {cell}; after the same reply, you can play {target}, "
-                f"using {anchor} to capture it. Keeping an opponent disc can give you a way out; flipping it early closes that route. ")
+                f"using {anchor} to capture it. Keeping an opponent disc can give you a way out; flipping it early closes that route.")
+    # The shared moves start with the opponent's reply, then alternate
+    prefix, flipped = goal["after_same_moves"], goal["flipped"]
     if language == "Simplified Chinese":
-        actor = "你" if goal["actor"] == "you" else "对手"
-        timing = "，经过图示应对" if goal["after_same_moves"] else ""
-        if show_continuation and goal["after_same_moves"]:
-            timing = "，经过 " + " → ".join(goal["after_same_moves"])
-        start = f"下 {move} 后{timing}，"
+        actor, victim = ("你", "对手") if goal["actor"] == "you" else ("对手", "你")
+        steps = [f"你下 {move}"] + [("对手" if index % 2 == 0 else "你") + ("停一手" if step == "pass" else f"下 {step}")
+                                    for index, step in enumerate(prefix)]
+        when = (f"{actor}可以下" if goal["immediate"] else
+                f"轮到{victim}下；如果{victim}不挡住，{actor}下一步就可以下")
+        text = (f"{'、'.join(steps)}{'后' if prefix[-1:] == ['pass'] else ' 后'}，{when} {target}，"
+                f"借 {anchor} 的棋子把中间{victim}的 {'、'.join(flipped)} 翻过来。")
+        if target in CORNERS:
+            text += f"{target} 是角，角上的棋子不会再被翻回。"
+        if alternative == target:
+            return text + f"如果改下 {alternative}，就先占住了这个格子，{actor}不能再下这里。"
+        instead = f"如果改下 {alternative}" + ("，双方再走同样的几步" if prefix else "") + "，"
         if cell == target:
-            why = start + f"{target} 留空，{actor}能借 {anchor} 的棋子在这里夹击。"
-        elif cell == anchor:
-            why = start + f"{anchor} 的棋子为{actor}接上了从 {target} 出发的夹击线。"
-        else:
-            why = start + f"{actor}从 {target} 到 {anchor} 的夹击线穿过 {cell}。"
-        state = {"empty": "留空", "yours": "是你的棋子", "opponent's": "是对手的棋子"}[change["alternative"]]
-        effect = "落点已被占据，无法再落子" if cell == target else "这条夹击线便不成立"
-        instead = f"改下 {alternative} 后{timing}，{cell} {state}，{effect}。"
-        return why + instead
-    actor = "you" if goal["actor"] == "you" else "the opponent"
-    possessive = "your" if goal["actor"] == "you" else "the opponent's"
-    timing = " and the shown continuation" if goal["after_same_moves"] else ""
-    if show_continuation and goal["after_same_moves"]:
-        timing = " and " + " → ".join(goal["after_same_moves"])
-    start = f"After {move}{timing}, "
+            return text + instead + f"{target} 已经有棋子，{actor}不能在这里落子。"
+        state = {"empty": "是空格", "yours": "是你的棋子", "opponent's": "是对手的棋子"}[change["alternative"]]
+        return text + instead + f"{cell} {state}，这条线就夹不成了。"
+    actor, victim, first = (("you", "the opponent's", "the opponent moves first; unless the opponent blocks it, you")
+                            if goal["actor"] == "you" else
+                            ("the opponent", "your", "you move first; unless you block it, the opponent"))
+    steps = [f"you play {move}"] + [(("the opponent passes" if step == "pass" else f"the opponent plays {step}")
+                                     if index % 2 == 0 else ("you pass" if step == "pass" else f"you play {step}"))
+                                    for index, step in enumerate(prefix)]
+    when = f"{actor} can play" if goal["immediate"] else f"{first} can then play"
+    text = (f"After {', '.join(steps[:-1]) + ' and ' + steps[-1] if prefix else steps[0]}, {when} {target}, "
+            f"using the disc on {anchor} to flip {victim} {'disc' if len(flipped) == 1 else 'discs'} on {', '.join(flipped)}.")
+    if target in CORNERS:
+        text += f" {target} is a corner, and a disc there can never be flipped back."
+    if alternative == target:
+        return text + f" If you play {alternative} instead, you take that square first."
+    instead = f" If you play {alternative} instead" + (" and the same moves follow" if prefix else "") + ", "
     if cell == target:
-        why = start + f"{target} is empty, with {possessive} disc on {anchor} supporting a capture there."
-    elif cell == anchor:
-        why = start + f"{possessive} disc on {anchor} completes a capture line from {target}."
-    else:
-        why = start + f"{actor} has a capture line from {target} to {anchor} through {cell}."
+        return text + instead + f"{target} is already occupied, so {actor} cannot play there."
     state = {"empty": "is empty", "yours": "holds your disc", "opponent's": "holds the opponent's disc"}[change["alternative"]]
-    effect = "so no disc can be placed there" if cell == target else "breaking that capture line"
-    instead = f"After {alternative}{timing}, {cell} {state}, {effect}."
-    return " ".join((why, instead))
+    return text + instead + f"{cell} {state}, so this capture is not possible."

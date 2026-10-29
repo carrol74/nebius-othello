@@ -9,12 +9,12 @@ from nemothello.coach_statements import statements
 from nemothello.concepts import concept_facts, concept_profile
 from nemothello.decision import assess_decision, reference_move
 from nemothello.errors import AppError
-from nemothello.learning_goal import explanation_problems, explanation_text, learning_goal
+from nemothello.learning_goal import explanation_problems, learning_goal, mechanism_text
 from nemothello.rules import apply_move, flips, legal_moves, opponent
 from nemothello.teaching import compare_lesson, variation_frames
 
 REVIEW_VERSION = "grounded-v1"
-COACH_VERSION = "decision-consequence-v3"
+COACH_VERSION = "decision-consequence-v4"
 # The longest lesson reason, a forced corner, takes four plies to show
 LINE_PLIES = 4
 KEY_MOVES = 3
@@ -444,7 +444,6 @@ def game_summary_context(review: dict[str, Any], revisions: list[int], language:
 class DecisionExplanation(BaseModel):
     model_config = ConfigDict(extra="forbid")
     changed_square: str = Field(pattern=r"^[a-h][1-8]$")
-    next_time: str = Field(min_length=1, max_length=700)
 
 
 class Selection(BaseModel):
@@ -557,11 +556,10 @@ def plan_schema(context: dict[str, Any], tool_facts=()) -> dict[str, Any]:
                 selection["required"].remove("text")
                 selection["properties"]["explanation"] = {
                     "type": "object", "additionalProperties": False,
-                    "required": ["changed_square", "next_time"],
+                    "required": ["changed_square"],
                     "properties": {
                         "changed_square": {"type": "string", "enum": sorted({change["square"] for item in positions
                                             if item.get("learning_goal") for change in item["learning_goal"]["changes"]})},
-                        "next_time": {"type": "string", "minLength": 1},
                     },
                 }
                 if all(item.get("learning_goal") for item in positions):
@@ -734,7 +732,7 @@ def validate_plan(raw: str, context: dict[str, Any], tool_facts=()) -> CoachingP
             problems = explanation_problems(selection.explanation, goal)
             if problems:
                 raise ungrounded("Correct these problems: " + "; ".join(problems))
-            selection.text = explanation_text(selection.explanation, goal, context["language"])
+            selection.text = mechanism_text(selection.explanation.changed_square, goal, context["language"])
     # Move inline citations like {t1} into fact_ids; citing a fact twice is harmless
     for part in [plan.answer, *plan.selections]:
         inline = []
