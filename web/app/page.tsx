@@ -10,7 +10,7 @@ import { canTeachPosition, moveFlips, placedBoard, reviewPosition, savedPosition
 import { ReviewCoach } from "@/components/review-coach";
 import { ReviewNavigation } from "@/components/review-navigation";
 import { LessonStart } from "@/components/lesson-start";
-import { GameSummaryCard } from "@/components/game-summary";
+import { GameSummaryCard, SummaryPeek } from "@/components/game-summary";
 import { GameRules } from "@/components/game-rules";
 import { TermHelp } from "@/components/term-help";
 import { coachingFailure } from "@/lib/teaching-text";
@@ -398,7 +398,7 @@ export default function Home() {
           <TermHelp />
           {modelLimited && <p className="muted" role="status">{t("Today's Nemotron coaching limit has been reached; it resets tomorrow (UTC). Board demonstrations still work.", "今天的 Nemotron 讲解次数已用完，明天（UTC 时间）恢复。棋盘推演照常可以看。")}</p>}
           {summaryView && game ? <GameSummaryCard game={game} keyMoves={keyMoves[game.game_id]} summary={summary} pending={summaryPending} busy={busy} select={selectPosition} retry={retrySummary} reviewTask={tasks.find((entry) => entry.purpose === "review" && entry.game_id === game.game_id)?.task} /> : <>
-          {game && <button className="summary-back" onClick={() => selectPosition(null)}>{t("← Game summary", "← 整盘总结")}</button>}
+          {game && <div className="summary-bar"><button className="summary-back" onClick={() => selectPosition(null)}>{t("← Game summary", "← 整盘总结")}</button><SummaryPeek summary={summary} /></div>}
           {currentLesson && game ? <>
             <ReviewCoach key={`${game.game_id}:${historyRevision}:${locale}`} request={currentLesson.coaching_status !== "ready" && !pendingLesson && !autoCoach
               && currentLesson.comparison.choices[0].assessment.status !== "forced"

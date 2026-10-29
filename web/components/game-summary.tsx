@@ -19,7 +19,7 @@ export function GameSummaryCard({game, keyMoves, summary, pending, busy, select,
       : <p className="muted" role="status">{t("Analyzing this game…", "正在分析这盘棋…")}</p>
       : !game.history.some((event) => event.kind === "move" && event.actor === game.human_color)
         ? <p>{t("You have no played moves to review in this game.", "你在这盘对局中没有落子可供复盘。")}</p> : <>
-          {summary?.status === "ready" ? <div className="coach-note">{summary.text?.split("\n\n").map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div>
+          {summary?.status === "ready" ? <div className="coach-note">{summary.text && <SummaryText text={summary.text} />}</div>
             : pending || summary?.status === "pending" ? <p className="muted" role="status">{t("Nemotron is summarizing this game…", "Nemotron 正在总结这盘棋…")}</p>
               : failure && <div className="summary-failure">
                 <p className={failure.quiet ? "muted" : "inline-error"} role={failure.quiet ? "status" : "alert"}>{failure.text}</p>
@@ -33,4 +33,19 @@ export function GameSummaryCard({game, keyMoves, summary, pending, busy, select,
           </div>}
         </>}
   </section>;
+}
+
+function SummaryText({text}: {text: string}) {
+  return <>{text.split("\n\n").map((paragraph, index) => <p key={index}>{paragraph}</p>)}</>;
+}
+
+// Shows the finished summary on hover or focus while a single move is open
+export function SummaryPeek({summary}: {summary: GameSummary | null | undefined}) {
+  const {t} = useLocale();
+  if (summary?.status !== "ready" || !summary.text) return null;
+  return <span className="summary-peek">
+    <button type="button" aria-label={t("Game summary", "整盘总结")} aria-describedby="summary-peek-text"
+      onKeyDown={(event) => {if (event.key === "Escape") event.currentTarget.blur();}}>i</button>
+    <div className="summary-peek-bubble" id="summary-peek-text" role="tooltip"><SummaryText text={summary.text} /></div>
+  </span>;
 }
