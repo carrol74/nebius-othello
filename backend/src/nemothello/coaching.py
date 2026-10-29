@@ -13,8 +13,8 @@ from nemothello.learning_goal import explanation_problems, learning_goal, mechan
 from nemothello.rules import apply_move, flips, legal_moves, opponent
 from nemothello.teaching import compare_lesson, variation_frames
 
-REVIEW_VERSION = "grounded-v1"
-COACH_VERSION = "decision-consequence-v4"
+REVIEW_VERSION = "grounded-v2"
+COACH_VERSION = "decision-consequence-v5"
 # The longest lesson reason, a forced corner, takes four plies to show
 LINE_PLIES = 4
 KEY_MOVES = 3
@@ -753,8 +753,9 @@ def validate_plan(raw: str, context: dict[str, Any], tool_facts=()) -> CoachingP
                            + ", ".join(missing), 502)
     if question and (plan.topic in ("review", "summary") or (plan.topic == "unsupported" and plan.selections)):
         raise AppError("REVIEW_PLAN_INVALID", "The coach returned an incompatible answer plan", 502)
-    if question and not plan.answer.text.strip():
-        raise AppError("REVIEW_PLAN_INVALID", "The coach did not write an answer to the question", 502)
+    # Inline citations are already moved out, so a bare "..." is all that would be left
+    if question and not re.search(r"[A-Za-z\u4e00-\u9fff]", plan.answer.text):
+        raise AppError("REVIEW_PLAN_INVALID", "The coach did not write an answer to the question; answer it in words", 502)
     if question and plan.topic != "unsupported" and not plan.answer.fact_ids:
         raise AppError("REVIEW_PLAN_INVALID", "The coach answered without citing evidence", 502)
     review = context["task"] == "review"

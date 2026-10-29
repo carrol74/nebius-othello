@@ -6,7 +6,7 @@ Evaluation-file paths are stored relative to the project; board positions and en
 
 `teaching-native-cases.json` contains rules-derived demonstrations for positions 16 and 22 of `review-native-positions.json`. Position 16 checks all nine defenses after b1–e1 and demonstrates the unavoidable a1 corner; position 22 has shared corner access, which must not be described as the cause of the score difference. No model output is used in this fixture.
 
-Evidence items in these fixtures include `opponent_replies`: the move native Edax level 4, the medium opponent, plays after each candidate. The derived snapshots `teaching-native-cases.json`, `ordinary-move-native.json`, `forced-move-native.json`, and `corner-practice-native.json` are regenerated from that evidence by the backend code.
+Evidence items in these fixtures include `opponent_replies`: the move native Edax level 4, the medium opponent, plays after each candidate. They also include `reply_scores`: native Edax scores for every opponent reply after the played move, searched at the same level as that item's analysis, and empty when the played move lost nothing. The derived snapshots `teaching-native-cases.json`, `ordinary-move-native.json`, `forced-move-native.json`, and `corner-practice-native.json` are regenerated from that evidence by the backend code.
 
 `tied-best-corner-native.json` is a real level-8 analysis from a medium game where d7 and e7 tie as best moves after the played g5; only e7 keeps the opponent from forcing a8. Its `opponent_replies` come from native Edax level 4, that game's opponent.
 

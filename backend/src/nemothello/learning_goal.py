@@ -15,7 +15,7 @@ def learning_goal(comparison):
         opportunity, prefix = witness["opportunity"], witness["prefix"]
     else:
         contrast = comparison["decision_contrast"]
-        opportunity, prefix = contrast["removed_reply"] or contrast["added_reply"], []
+        opportunity, prefix = contrast["removed_reply"], []
     human = comparison["actor"]
     # Replay the shared moves to learn whether the capturing side moves right after them
     position, _ = Position(tuple(comparison["choices"][0]["frames"][0]["board"]), human).play(opportunity["available_after"])

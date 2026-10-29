@@ -1427,7 +1427,8 @@
     "stage": "endgame",
     "opponent_replies": {
       "d8": "e8"
-    }
+    },
+    "reply_scores": {}
   },
   "comparison": {
     "revision": 58,

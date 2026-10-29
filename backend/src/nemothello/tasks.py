@@ -14,6 +14,7 @@ from nemothello.position_lessons import (
     lesson_document,
     lesson_key,
     opponent_replies,
+    reply_scores,
 )
 from nemothello.rules import Position
 from nemothello.storage import Store
@@ -199,6 +200,8 @@ class Tasks:
                 "shown_hint_ids": [hint["hint_id"] for hint in shown],
                 "adopted_hint": any(hint["recommended_move"] == event["coordinate"] for hint in shown),
                 "opponent_replies": opponent_replies(position.board, position.turn, game_opponent),
+                "reply_scores": reply_scores(position.board, position.turn, event["coordinate"],
+                                             best["score"] - actual["score"], engine),
             }))
             position, _ = position.play(event["coordinate"])
             revision = event["revision"]

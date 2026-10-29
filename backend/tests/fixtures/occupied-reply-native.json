@@ -83,6 +83,14 @@
       "c2": "d1",
       "f2": "g1",
       "g2": "f1"
+    },
+    "reply_scores": {
+      "f1": 32,
+      "g1": 40,
+      "c2": 36,
+      "d2": 32,
+      "e2": 24,
+      "f2": 25
     }
   },
   "comparison": {
@@ -394,34 +402,7 @@
         "opponent_corner_moves_after_reply": []
       }
     ],
-    "reason": {
-      "kind": "reply_contrast",
-      "fact": "p46:decision_contrast",
-      "move": "g2",
-      "frame": 1,
-      "marks": {
-        "g2": [
-          "f2",
-          "e3",
-          "d4",
-          "c5",
-          "b6",
-          "a7"
-        ],
-        "f2": [
-          "f2",
-          "e3",
-          "d4",
-          "c5",
-          "b6",
-          "a7"
-        ]
-      },
-      "target": "f2",
-      "actor": "O"
-    },
-    "focus": [
-      "p46:decision_contrast"
-    ]
+    "reason": null,
+    "focus": []
   }
 }

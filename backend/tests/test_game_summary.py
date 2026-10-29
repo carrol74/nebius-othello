@@ -26,7 +26,7 @@ from nemothello.game_summary import (
 )
 from nemothello.learning_goal import learning_goal, mechanism_text
 from nemothello.opponents import EdaxOpponent
-from nemothello.position_lessons import opponent_replies
+from nemothello.position_lessons import opponent_replies, reply_scores
 from nemothello.rules import Position, coordinate, flips, legal_moves, opponent
 from nemothello.teaching import compare_lesson
 
@@ -60,6 +60,8 @@ def complete_review(request):
                         "recommended_move": best["coordinate"], "score_loss": best["score"] - actual["score"],
                         "analysis": analysis, "shown_hint_ids": [], "adopted_hint": False,
                         "opponent_replies": opponent_replies(position.board, position.turn, EdaxOpponent(engine)),
+                        "reply_scores": reply_scores(position.board, position.turn, event["coordinate"],
+                                                     best["score"] - actual["score"], engine),
                     }))
                 position, _ = position.play(event["coordinate"])
             revision = event["revision"]
@@ -78,16 +80,16 @@ def plan(text, fact_ids, selections=()):
 def test_summary_covers_every_key_move_with_its_primary_reason_and_a_played_line(summary_context):
     review, context = summary_context
     assert [(position["revision"], position["primary_reason"]) for position in context["positions"]] == [
-        (2, "reply_contrast"), (16, "corner_contrast"), (22, None)]
-    focus = [position["focus"][0] for position in context["positions"]]
-    assert focus == ["p2:decision_contrast", "p16:corner_contrast", "p22:shared_corner"]
+        (2, None), (16, "corner_contrast"), (22, None)]
+    focus = [position["focus"][0] for position in context["positions"] if position["focus"]]
+    assert focus == ["p16:corner_contrast", "p22:shared_corner"]
     tools = CoachTools(review, context)
     played = [tools.run("play_line", json.dumps({"revision": revision, "moves": [move]}))["fact_id"]
               for revision, move in ((2, "b6"), (16, "b1"), (22, "a3"))]
     text = "b6 和 b1 都给对手接上了夹击线，a3 的角两步都保不住。下一盘落子前，先看新棋子会不会接上对手的夹击线。"
     assert validate_plan(plan(text, focus + played), context, tools.facts).answer.text == text
     with pytest.raises(AppError, match="first focus fact of every position: p22:shared_corner"):
-        validate_plan(plan(text, focus[:2] + played), context, tools.facts)
+        validate_plan(plan(text, focus[:1] + played), context, tools.facts)
     with pytest.raises(AppError, match="play out a3 at position 22"):
         validate_plan(plan(text, focus + played[:2]), context, tools.facts)
     with pytest.raises(AppError, match="leave selections empty"):

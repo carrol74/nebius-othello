@@ -112,6 +112,13 @@ def test_dotted_inline_citations_are_recognized(native_review):
     assert [item["id"] for item in response["answer_facts"]] == ["p16:mobility"]
 
 
+@pytest.mark.parametrize("text", ["...", "{p16:mobility}"])
+def test_an_answer_without_words_is_returned_for_revision(native_review, text):
+    context = review_context(native_review, "Besides b3, is there another good move here?", 16)
+    with pytest.raises(AppError, match="answer it in words"):
+        validate_plan(question_plan(text, ["p16:mobility"]), context)
+
+
 def test_chinese_text_may_use_ordinary_words_that_contain_numerals_or_corner_characters(native_review):
     context = review_context(native_review, "局面16：b1 好吗？", 16, language="zh")
     raw = question_plan("从你的视角看，可以观察这一步。{p16.b1.replies}。", ["p16:mobility"])

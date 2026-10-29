@@ -112,6 +112,7 @@ def test_legacy_lesson_rebuilds_evidence_without_changing_history(runtime):
     saved.pop('coaching_version')
     saved.pop('language')
     saved['evidence'].pop('opponent_replies')
+    saved['evidence'].pop('reply_scores')
     with store.transaction() as db:
         store.save(db, 'lesson', f"{game['game_id']}:16", 'owner', saved)
     restored = games.position_lesson('owner', game['game_id'], 16)
@@ -121,6 +122,8 @@ def test_legacy_lesson_rebuilds_evidence_without_changing_history(runtime):
     board, actor = tuple(item['analysis']['board']), item['actor']
     for move, reply in restored['evidence']['opponent_replies'].items():
         assert reply in legal_moves(apply_move(board, actor, move), opponent(actor))
+    replies = legal_moves(apply_move(board, actor, item['actual_move']), opponent(actor))
+    assert item['score_loss'] > 0 and set(restored['evidence']['reply_scores']) == set(replies)
     assert store.get('game', game['game_id'], 'owner') == game
     assert store.get('lesson', f"{game['game_id']}:16", 'owner') == saved
     assert games.position_lesson('owner', game['game_id'], 16)['evidence'] == restored['evidence']

@@ -28,6 +28,14 @@ def check_teachable(game: dict[str, Any], revision: int) -> Position:
     return position
 
 
+def reply_scores(board, actor, move, score_loss, engine) -> dict[str, int]:
+    # The opponent's reply scores after a weaker move, to test whether one reply explains its loss
+    after, other = apply_move(board, actor, move), opponent(actor)
+    if score_loss <= 0 or not legal_moves(after, other):
+        return {}
+    return {item["coordinate"]: item["score"] for item in engine.analyze(after, other)["candidates"]}
+
+
 def opponent_replies(board, actor, game_opponent) -> dict[str, str]:
     # The game's own opponent answers each candidate, so demonstrations match the game's difficulty
     other = opponent(actor)
@@ -52,6 +60,8 @@ def analyze_position(game: dict[str, Any], revision: int, engine, game_opponent)
         "score_loss": best["score"] - actual["score"], "analysis": analysis,
         "shown_hint_ids": [], "adopted_hint": False,
         "opponent_replies": opponent_replies(position.board, position.turn, game_opponent),
+        "reply_scores": reply_scores(position.board, position.turn, played["coordinate"],
+                                     best["score"] - actual["score"], engine),
     })
 
 

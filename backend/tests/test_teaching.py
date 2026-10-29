@@ -129,6 +129,9 @@ def test_occupied_reply_snapshot_matches_the_current_lesson():
     case = json.loads((Path(__file__).parent / "fixtures/occupied-reply-native.json").read_text())
     comparison = compare_lesson({"evidence": [case["evidence"]]}, 46, "g2")
     assert comparison == case["comparison"]
-    reason = comparison["reason"]
-    assert (reason["kind"], reason["move"], reason["target"]) == ("reply_contrast", "g2", "f2")
+    # f2 is legal only after g2, but it is not the opponent's strongest reply, so it is not the reason
+    assert comparison["decision_contrast"]["removed_reply"]["coordinate"] == "f2"
+    scores = case["evidence"]["reply_scores"]
+    assert scores["f2"] < max(scores.values())
+    assert comparison["reason"] is None
     assert comparison["recommended_move"] == "f2"

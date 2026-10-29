@@ -106,7 +106,8 @@ def test_a_tied_opening_does_not_require_an_invented_contrast():
 ])
 def test_an_occupied_reply_is_explained_as_occupied_not_a_broken_line(language, expected):
     comparison = json.loads((FIXTURES / "occupied-reply-native.json").read_text())["comparison"]
-    goal = learning_goal(comparison)
+    # This real contrast is not the lesson reason here; it still exercises the occupied-square wording
+    goal = learning_goal({**comparison, "reason": {"kind": "reply_contrast", "fact": "p46:decision_contrast"}})
     rendered = mechanism_text("f2", goal, language)
     assert expected in rendered
     assert "not possible" not in rendered and "夹不成" not in rendered

@@ -790,7 +790,13 @@
         ]
       }
     ],
-    "stage": "opening"
+    "stage": "opening",
+    "reply_scores": {
+      "c3": 5,
+      "f4": 12,
+      "b6": 1,
+      "b7": -12
+    }
   },
   "reply_search": [
     {

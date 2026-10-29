@@ -18,6 +18,7 @@ from nemothello.position_lessons import (
     lesson_document,
     lesson_key,
     opponent_replies,
+    reply_scores,
 )
 from nemothello.rules import Position, opponent
 from nemothello.schemas import GameState
@@ -394,7 +395,7 @@ class Games:
                       if item['game_id'] == game['game_id'] and item['revision'] == revision]
         saved = next((item for item in candidates if item.get('language') == language
                       and item.get('coaching_version') == COACH_VERSION), None)
-        if saved and 'opponent_replies' in saved['evidence']:
+        if saved and 'reply_scores' in saved['evidence']:
             return saved
         # Without a saved lesson, build the rules lesson from the whole-game analysis; no model call
         review = next((item for item in self.store.list_records('review', owner, db)
@@ -405,9 +406,11 @@ class Games:
             evidence = source['evidence']
         if evidence is None:
             return None
-        if 'opponent_replies' not in evidence:
-            evidence = {**evidence, 'opponent_replies': opponent_replies(
-                tuple(evidence['analysis']['board']), evidence['actor'], self.opponent_of(game))}
+        if 'reply_scores' not in evidence:
+            board = tuple(evidence['analysis']['board'])
+            evidence = {**evidence, 'opponent_replies': opponent_replies(board, evidence['actor'], self.opponent_of(game)),
+                        'reply_scores': reply_scores(board, evidence['actor'], evidence['actual_move'],
+                                                     evidence['score_loss'], self.review_engine_of(game))}
         document = lesson_document(lesson_context(game, evidence, self.store.list_records('hint', owner, db)), evidence, language)
         if source:
             self.store.save(db, 'lesson', lesson_key(game['game_id'], revision, language), owner, document)
@@ -440,7 +443,7 @@ class Games:
         if result is None:
             known = {item['revision']: item['evidence']
                      for item in self.store.list_records('lesson', owner) if item['game_id'] == game_id
-                     and 'opponent_replies' in item['evidence']}
+                     and 'reply_scores' in item['evidence']}
             result = find_earlier_decision(game, saved['evidence'], saved['comparison'], self.review_engine_of(game),
                                            self.opponent_of(game), known)
         with self.store.transaction() as db:

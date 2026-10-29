@@ -179,7 +179,8 @@
           "e6": "a1",
           "f6": "a1",
           "g6": "a1"
-        }
+        },
+        "reply_scores": {}
       },
       "move_number": 17,
       "result": {
@@ -366,6 +367,17 @@
               "d6": "e1",
               "e6": "e1",
               "f6": "e6"
+            },
+            "reply_scores": {
+              "e1": 28,
+              "g1": -13,
+              "b2": -1,
+              "g2": -36,
+              "b3": 26,
+              "b4": 28,
+              "b5": 25,
+              "c6": 25,
+              "a7": 8
             }
           },
           "recorded_proof": {
@@ -516,7 +528,8 @@
         "stage": "endgame",
         "opponent_replies": {
           "d8": "e8"
-        }
+        },
+        "reply_scores": {}
       },
       "move_number": 13,
       "result": {
@@ -673,6 +686,17 @@
               "d7": "d3",
               "e7": "d7",
               "g7": "c5"
+            },
+            "reply_scores": {
+              "d2": 41,
+              "e2": 40,
+              "b3": 38,
+              "d3": 39,
+              "b4": 36,
+              "c5": 50,
+              "b6": 44,
+              "g6": 49,
+              "f8": 45
             }
           },
           "recorded_proof": {

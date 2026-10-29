@@ -632,7 +632,18 @@
           "elapsed_ms": 18.65
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "reply_scores": {
+          "e1": 28,
+          "g1": -13,
+          "b2": -1,
+          "g2": -36,
+          "b3": 26,
+          "b4": 28,
+          "b5": 25,
+          "c6": 25,
+          "a7": 8
+        }
       },
       {
         "revision": 22,
@@ -782,7 +793,17 @@
           "elapsed_ms": 11.3
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "reply_scores": {
+          "a1": 48,
+          "g1": -63,
+          "g2": -46,
+          "g3": -41,
+          "a5": 37,
+          "b5": -41,
+          "c6": -47,
+          "a7": -63
+        }
       },
       {
         "revision": 2,
@@ -892,7 +913,14 @@
         "shown_hint_ids": [
           "cd43e43d-cb29-4ba7-a927-068ed3344550"
         ],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "reply_scores": {
+          "d2": 0,
+          "c3": 1,
+          "e3": 8,
+          "f3": 8,
+          "b5": -1
+        }
       },
       {
         "revision": 20,
@@ -1042,7 +1070,18 @@
           "elapsed_ms": 14.68
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "reply_scores": {
+          "a1": 25,
+          "g1": -16,
+          "a2": 34,
+          "g2": 13,
+          "a3": 17,
+          "g3": 24,
+          "b5": 29,
+          "c6": 25,
+          "a7": 4
+        }
       },
       {
         "revision": 24,
@@ -1136,7 +1175,19 @@
           "elapsed_ms": 7.28
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "reply_scores": {
+          "g1": 48,
+          "g2": 38,
+          "h2": 35,
+          "b4": 53,
+          "g4": 50,
+          "h4": 39,
+          "a5": 55,
+          "b5": 50,
+          "c6": 53,
+          "a7": 33
+        }
       },
       {
         "revision": 19,
@@ -1300,7 +1351,17 @@
           "elapsed_ms": 13.48
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "reply_scores": {
+          "a4": -37,
+          "b4": -35,
+          "g4": -27,
+          "b5": -29,
+          "g5": -47,
+          "d6": -28,
+          "f6": -57,
+          "g6": -43
+        }
       },
       {
         "revision": 26,
@@ -1438,7 +1499,20 @@
           "elapsed_ms": 12.06
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "reply_scores": {
+          "g1": 59,
+          "g2": 50,
+          "h2": 42,
+          "h3": 51,
+          "b4": 59,
+          "g4": 60,
+          "h4": 46,
+          "a6": 44,
+          "c6": 41,
+          "a7": 35,
+          "c7": 41
+        }
       },
       {
         "revision": 11,
@@ -1574,7 +1648,18 @@
           "elapsed_ms": 10.98
         },
         "shown_hint_ids": [],
-        "adopted_hint": false
+        "adopted_hint": false,
+        "reply_scores": {
+          "c3": -11,
+          "g3": -13,
+          "g4": -14,
+          "b5": -13,
+          "g5": -32,
+          "d6": -17,
+          "e6": -17,
+          "f6": -20,
+          "g6": -17
+        }
       }
     ],
     "hints": [
@@ -1708,7 +1793,8 @@
           "c4": "e3",
           "f5": "d6",
           "e6": "f4"
-        }
+        },
+        "reply_scores": {}
       },
       {
         "revision": 2,
@@ -1825,6 +1911,13 @@
           "d6": "e3",
           "e6": "d2",
           "f6": "e3"
+        },
+        "reply_scores": {
+          "d2": 0,
+          "c3": 1,
+          "e3": 8,
+          "f3": 8,
+          "b5": -1
         }
       },
       {
@@ -1970,6 +2063,17 @@
           "c3": "b4",
           "c4": "c3",
           "b5": "g4"
+        },
+        "reply_scores": {
+          "c3": -11,
+          "g3": -13,
+          "g4": -14,
+          "b5": -13,
+          "g5": -32,
+          "d6": -17,
+          "e6": -17,
+          "f6": -20,
+          "g6": -17
         }
       },
       {
@@ -2145,6 +2249,17 @@
           "d6": "e1",
           "e6": "e1",
           "f6": "e6"
+        },
+        "reply_scores": {
+          "e1": 28,
+          "g1": -13,
+          "b2": -1,
+          "g2": -36,
+          "b3": 26,
+          "b4": 28,
+          "b5": 25,
+          "c6": 25,
+          "a7": 8
         }
       },
       {
@@ -2320,6 +2435,16 @@
           "b4": "a3",
           "b5": "c6",
           "a7": "c6"
+        },
+        "reply_scores": {
+          "a4": -37,
+          "b4": -35,
+          "g4": -27,
+          "b5": -29,
+          "g5": -47,
+          "d6": -28,
+          "f6": -57,
+          "g6": -43
         }
       },
       {
@@ -2480,6 +2605,17 @@
           "d6": "a1",
           "f6": "a1",
           "g6": "a2"
+        },
+        "reply_scores": {
+          "a1": 25,
+          "g1": -16,
+          "a2": 34,
+          "g2": 13,
+          "a3": 17,
+          "g3": 24,
+          "b5": 29,
+          "c6": 25,
+          "a7": 4
         }
       },
       {
@@ -2640,6 +2776,16 @@
           "d6": "a1",
           "f6": "a1",
           "g6": "c6"
+        },
+        "reply_scores": {
+          "a1": 48,
+          "g1": -63,
+          "g2": -46,
+          "g3": -41,
+          "a5": 37,
+          "b5": -41,
+          "c6": -47,
+          "a7": -63
         }
       },
       {
@@ -2740,6 +2886,18 @@
           "b5": "b4",
           "g5": "g1",
           "f6": "g1"
+        },
+        "reply_scores": {
+          "g1": 48,
+          "g2": 38,
+          "h2": 35,
+          "b4": 53,
+          "g4": 50,
+          "h4": 39,
+          "a5": 55,
+          "b5": 50,
+          "c6": 53,
+          "a7": 33
         }
       },
       {
@@ -2887,6 +3045,19 @@
           "e6": "g1",
           "f6": "b4",
           "g6": "b4"
+        },
+        "reply_scores": {
+          "g1": 59,
+          "g2": 50,
+          "h2": 42,
+          "h3": 51,
+          "b4": 59,
+          "g4": 60,
+          "h4": 46,
+          "a6": 44,
+          "c6": 41,
+          "a7": 35,
+          "c7": 41
         }
       },
       {
@@ -3167,7 +3338,8 @@
           "e6": "c6",
           "f6": "e7",
           "g6": "f6"
-        }
+        },
+        "reply_scores": {}
       },
       {
         "revision": 48,
@@ -3236,7 +3408,8 @@
         "adopted_hint": false,
         "opponent_replies": {
           "d6": "d8"
-        }
+        },
+        "reply_scores": {}
       },
       {
         "revision": 49,
@@ -3469,7 +3642,8 @@
           "c8": "h4",
           "d8": "b8",
           "e8": "d8"
-        }
+        },
+        "reply_scores": {}
       },
       {
         "revision": 50,
@@ -3536,7 +3710,8 @@
         "adopted_hint": false,
         "opponent_replies": {
           "b8": "e6"
-        }
+        },
+        "reply_scores": {}
       },
       {
         "revision": 51,
@@ -3689,7 +3864,8 @@
           "f6": "e6",
           "g6": "e7",
           "e7": "f7"
-        }
+        },
+        "reply_scores": {}
       },
       {
         "revision": 52,
@@ -3771,7 +3947,8 @@
         "opponent_replies": {
           "e7": "f6",
           "c8": "h4"
-        }
+        },
+        "reply_scores": {}
       },
       {
         "revision": 53,
@@ -3932,7 +4109,8 @@
           "f7": "c8",
           "e8": "c8",
           "f8": "f7"
-        }
+        },
+        "reply_scores": {}
       },
       {
         "revision": 54,
@@ -3991,7 +4169,8 @@
         "adopted_hint": false,
         "opponent_replies": {
           "f7": "h4"
-        }
+        },
+        "reply_scores": {}
       },
       {
         "revision": 55,
@@ -4157,7 +4336,8 @@
           "e8": "c8",
           "f8": "g7",
           "g8": "g7"
-        }
+        },
+        "reply_scores": {}
       },
       {
         "revision": 57,
@@ -4293,7 +4473,8 @@
           "e8": "c8",
           "f8": "g7",
           "g8": "g7"
-        }
+        },
+        "reply_scores": {}
       },
       {
         "revision": 59,
@@ -4396,7 +4577,8 @@
         "opponent_replies": {
           "g7": "f8",
           "g8": "g7"
-        }
+        },
+        "reply_scores": {}
       },
       {
         "revision": 61,
@@ -4494,7 +4676,8 @@
         "adopted_hint": false,
         "opponent_replies": {
           "g7": "f8"
-        }
+        },
+        "reply_scores": {}
       },
       {
         "revision": 63,
@@ -4542,7 +4725,8 @@
         },
         "shown_hint_ids": [],
         "adopted_hint": false,
-        "opponent_replies": {}
+        "opponent_replies": {},
+        "reply_scores": {}
       }
     ],
     "automatic_hint_moves": []

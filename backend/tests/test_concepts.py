@@ -91,10 +91,11 @@ def test_a_corner_proof_shared_by_both_moves_is_not_the_focus():
 def test_lesson_positions_rank_verified_board_reasons():
     focus = {revision: review_context(lesson_input(revision), None, revision)["positions"][0]["focus"]
              for revision in (2, 16, 24, 26)}
-    assert focus[2][0] == "p2:decision_contrast"
+    # The replies contrasted at 2, 24 and 26 are not the opponent's strongest, so they do not lead
+    assert focus[2] == []
     assert focus[16][0] == "p16:corner_contrast"
-    assert focus[24] == ["p24:decision_contrast", "p24:continuation_g3", "p24:quiet"]
-    assert focus[26] == ["p26:decision_contrast"]
+    assert focus[24] == ["p24:continuation_g3", "p24:quiet", "p24:mobility"]
+    assert focus[26] == []
 
 
 def test_coaching_must_build_on_the_first_focus_fact():
@@ -102,7 +103,7 @@ def test_coaching_must_build_on_the_first_focus_fact():
     plan = {"topic": "review", "answer": {"text": "", "fact_ids": []}, "selections": [
         {"revision": 24, "fact_ids": ["p24:quiet"], "lesson_id": "quiet_move",
          "text": "g3 翻过来的 b3、c3、f3 挨着空格。"}]}
-    with pytest.raises(AppError, match="first focus fact p24:decision_contrast"):
+    with pytest.raises(AppError, match="first focus fact p24:continuation_g3"):
         validate_plan(json.dumps(plan, ensure_ascii=False), context)
 
 

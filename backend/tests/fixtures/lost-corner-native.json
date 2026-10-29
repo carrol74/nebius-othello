@@ -380,7 +380,8 @@
         ]
       }
     ],
-    "stage": "midgame"
+    "stage": "midgame",
+    "reply_scores": {}
   },
   "comparison": {
     "revision": 24,

@@ -11,6 +11,13 @@ def corner_replies(board, actor, move):
     return sorted(set(legal_moves(apply_move(board, actor, move), opponent(actor))) & set(CORNERS))
 
 
+def explains_loss(item, reply):
+    # A reply is the reason only if blocking it would recover at least half of the move's loss
+    others = [score for move, score in item["reply_scores"].items() if move != reply]
+    recovered = item["reply_scores"][reply] - max(others) if others else item["score_loss"]
+    return 2 * recovered >= item["score_loss"]
+
+
 def threat_frame(choice):
     # A direct corner shows after your move; a forced one after the opponent's setup move
     return 1 if choice["kind"] == "corner_given" else 2
@@ -61,8 +68,8 @@ def lesson_reasons(item, comparison):
             add("reply_consequence", "reply_consequence", found["blocked_after"], 2,
                 {found["blocked_after"]: consequence["actual_moves"],
                  found["available_after"]: found["capture_line"]}, found["coordinate"], actor)
-        else:
-            found = contrast["removed_reply"] or contrast["added_reply"]
+        elif contrast["removed_reply"] and explains_loss(item, contrast["removed_reply"]["coordinate"]):
+            found = contrast["removed_reply"]
             line = found["capture_line"]
             add("reply_contrast", "decision_contrast", found["available_after"], 1,
                 {found["available_after"]: line, found["blocked_after"]: line}, found["coordinate"], found["actor"])

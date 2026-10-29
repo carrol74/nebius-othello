@@ -1755,29 +1755,8 @@
         "opponent_corner_moves_after_reply": []
       }
     ],
-    "reason": {
-      "kind": "reply_contrast",
-      "fact": "p2:decision_contrast",
-      "move": "b6",
-      "frame": 1,
-      "marks": {
-        "b6": [
-          "b5",
-          "c5",
-          "d5"
-        ],
-        "e6": [
-          "b5",
-          "c5",
-          "d5"
-        ]
-      },
-      "target": "b5",
-      "actor": "O"
-    },
-    "focus": [
-      "p2:decision_contrast"
-    ]
+    "reason": null,
+    "focus": []
   },
   "2-best": {
     "revision": 2,
@@ -2067,29 +2046,8 @@
         "opponent_corner_moves_after_reply": []
       }
     ],
-    "reason": {
-      "kind": "reply_contrast",
-      "fact": "p2:decision_contrast",
-      "move": "b6",
-      "frame": 1,
-      "marks": {
-        "b6": [
-          "b5",
-          "c5",
-          "d5"
-        ],
-        "e6": [
-          "b5",
-          "c5",
-          "d5"
-        ]
-      },
-      "target": "b5",
-      "actor": "O"
-    },
-    "focus": [
-      "p2:decision_contrast"
-    ]
+    "reason": null,
+    "focus": []
   },
   "earlier-h8": {
     "revision": 12,
@@ -3029,6 +2987,325 @@
     },
     "focus": [
       "p12:corner_contrast"
+    ]
+  },
+  "11": {
+    "revision": 11,
+    "actor": "O",
+    "selected_move": "c4",
+    "recommended_move": "c1",
+    "reference_move": "c1",
+    "insight": {
+      "kind": "search",
+      "better_move": "c1",
+      "worse_move": "c4",
+      "target": null,
+      "gap": null,
+      "score_kind": "estimate",
+      "proof": null,
+      "example": [],
+      "other_threats": [],
+      "witness": null
+    },
+    "decision_contrast": {
+      "actual_move": "c4",
+      "recommended_move": "c1",
+      "replies_after_actual": [
+        "c3",
+        "g3",
+        "g4",
+        "b5",
+        "g5",
+        "d6",
+        "e6",
+        "f6",
+        "g6"
+      ],
+      "replies_after_recommended": [
+        "d1",
+        "c2",
+        "g3",
+        "g4",
+        "g5",
+        "d6",
+        "e6",
+        "f6",
+        "g6"
+      ],
+      "removed_reply": {
+        "actor": "X",
+        "coordinate": "c3",
+        "available_after": "c4",
+        "blocked_after": "c1",
+        "capture_line": [
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "changes": [
+          {
+            "coordinate": "c4",
+            "available": "O",
+            "blocked": "."
+          }
+        ]
+      },
+      "added_reply": {
+        "actor": "X",
+        "coordinate": "d1",
+        "available_after": "c1",
+        "blocked_after": "c4",
+        "capture_line": [
+          "d1",
+          "d2",
+          "d3"
+        ],
+        "changes": [
+          {
+            "coordinate": "d2",
+            "available": "O",
+            "blocked": "X"
+          }
+        ]
+      }
+    },
+    "choices": [
+      {
+        "coordinate": "c4",
+        "score": 8,
+        "score_kind": "estimate",
+        "assessment": {
+          "status": "lower_rated",
+          "legal_move_count": 7,
+          "best_moves": [
+            "c1"
+          ],
+          "is_played": true,
+          "score_loss": 2,
+          "score_kind": "estimate",
+          "position": "ahead"
+        },
+        "kind": "line",
+        "target": "c3",
+        "opponent_reply": null,
+        "checked_defenses": [],
+        "capture_lines": [
+          [
+            "c3",
+            "c4",
+            "c5"
+          ]
+        ],
+        "line_source": "rules",
+        "corner_proof": null,
+        "continuation_lesson": {
+          "kind": "recapture",
+          "frame_index": 2,
+          "capture_line": [
+            "c3",
+            "c4",
+            "c5"
+          ],
+          "recaptured": [
+            "c4"
+          ]
+        },
+        "defendable": null,
+        "concepts": {
+          "exposed": [
+            "d4"
+          ],
+          "inner_flips": 1,
+          "stable_gained": [],
+          "safe_replies": 9,
+          "unsafe_replies": []
+        },
+        "frames": [
+          {
+            "board": [
+              ".....X..",
+              "...XXX..",
+              "...XXO..",
+              "...XOO..",
+              "..XOOO..",
+              ".X......",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": null,
+            "actor": null,
+            "flipped": []
+          },
+          {
+            "board": [
+              ".....X..",
+              "...XXX..",
+              "...XXO..",
+              "..OOOO..",
+              "..XOOO..",
+              ".X......",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "c4",
+            "actor": "O",
+            "flipped": [
+              "d4"
+            ]
+          },
+          {
+            "board": [
+              ".....X..",
+              "...XXX..",
+              "..XXXO..",
+              "..XOOO..",
+              "..XOOO..",
+              ".X......",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "c3",
+            "actor": "X",
+            "flipped": [
+              "c4"
+            ]
+          }
+        ],
+        "opponent_corner_moves_after_reply": []
+      },
+      {
+        "coordinate": "c1",
+        "score": 10,
+        "score_kind": "estimate",
+        "assessment": {
+          "status": "best",
+          "legal_move_count": 7,
+          "best_moves": [
+            "c1"
+          ],
+          "is_played": false,
+          "score_loss": 0,
+          "score_kind": "estimate",
+          "position": "ahead"
+        },
+        "kind": "line",
+        "target": "d1",
+        "opponent_reply": null,
+        "checked_defenses": [],
+        "capture_lines": [
+          [
+            "d1",
+            "d2",
+            "d3"
+          ]
+        ],
+        "line_source": "rules",
+        "corner_proof": null,
+        "continuation_lesson": {
+          "kind": "recapture",
+          "frame_index": 2,
+          "capture_line": [
+            "d1",
+            "d2",
+            "d3"
+          ],
+          "recaptured": [
+            "d2"
+          ]
+        },
+        "defendable": null,
+        "concepts": {
+          "exposed": [
+            "d2"
+          ],
+          "inner_flips": 2,
+          "stable_gained": [],
+          "safe_replies": 9,
+          "unsafe_replies": []
+        },
+        "frames": [
+          {
+            "board": [
+              ".....X..",
+              "...XXX..",
+              "...XXO..",
+              "...XOO..",
+              "..XOOO..",
+              ".X......",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": null,
+            "actor": null,
+            "flipped": []
+          },
+          {
+            "board": [
+              "..O..X..",
+              "...OXX..",
+              "...XOO..",
+              "...XOO..",
+              "..XOOO..",
+              ".X......",
+              "........",
+              "........"
+            ],
+            "turn": "X",
+            "coordinate": "c1",
+            "actor": "O",
+            "flipped": [
+              "d2",
+              "e3"
+            ]
+          },
+          {
+            "board": [
+              "..OX.X..",
+              "...XXX..",
+              "...XOO..",
+              "...XOO..",
+              "..XOOO..",
+              ".X......",
+              "........",
+              "........"
+            ],
+            "turn": "O",
+            "coordinate": "d1",
+            "actor": "X",
+            "flipped": [
+              "d2"
+            ]
+          }
+        ],
+        "opponent_corner_moves_after_reply": []
+      }
+    ],
+    "reason": {
+      "kind": "reply_contrast",
+      "fact": "p11:decision_contrast",
+      "move": "c4",
+      "frame": 1,
+      "marks": {
+        "c4": [
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "c1": [
+          "c3",
+          "c4",
+          "c5"
+        ]
+      },
+      "target": "c3",
+      "actor": "X"
+    },
+    "focus": [
+      "p11:decision_contrast"
     ]
   }
 }
