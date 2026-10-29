@@ -11,7 +11,8 @@ RUN git clone --depth 1 --branch v4.6 https://github.com/abulmo/edax-reversi.git
     && make -C edax/src build ARCH=x86-64-v2 CC=gcc OS=linux
 # Evaluation weights are published only with the v4.4 release
 RUN curl -fsSL -o eval.7z https://github.com/abulmo/edax-reversi/releases/download/v4.4/eval.7z \
-    && bsdtar -xf eval.7z data/eval.dat
+    && bsdtar -xf eval.7z data/eval.dat \
+    && chmod 644 data/eval.dat
 
 FROM python:3.12-slim
 
