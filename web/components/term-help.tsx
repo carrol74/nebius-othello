@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import { useLocale } from "@/lib/locale";
 
 const TERMS: [string, string, string, string][] = [
@@ -53,23 +52,18 @@ const TERMS: [string, string, string, string][] = [
 
 export function TermHelp() {
   const {locale, t} = useLocale();
-  const dialog = useRef<HTMLDialogElement>(null);
   const zh = locale === "zh";
 
-  return <>
-    <button className="term-help-button" aria-haspopup="dialog" aria-label={t("Glossary", "名词解释")} title={t("Glossary", "名词解释")} onClick={() => dialog.current?.showModal()}>?</button>
-    <dialog className="rules-dialog" ref={dialog} aria-labelledby="terms-title" onClick={(event) => {
-      if (event.target === event.currentTarget) dialog.current?.close();
-    }}>
-      <div className="rules-content">
-        <div className="rules-heading"><h2 id="terms-title">{t("Glossary", "名词解释")}</h2><button aria-label={t("Close glossary", "关闭名词解释")} onClick={() => dialog.current?.close()}>×</button></div>
-        <dl className="term-list">
-          {TERMS.map(([english, chinese, englishText, chineseText]) => <div key={english}>
-            <dt>{zh ? chinese : english}</dt>
-            <dd>{zh ? chineseText : englishText}</dd>
-          </div>)}
-        </dl>
-      </div>
-    </dialog>
-  </>;
+  return <span className="peek">
+    <button type="button" className="icon-button term-help-button" aria-label={t("Glossary", "名词解释")} aria-describedby="term-help-text"
+      onKeyDown={(event) => {if (event.key === "Escape") event.currentTarget.blur();}}>?</button>
+    <div className="peek-bubble term-help-bubble" id="term-help-text" role="tooltip">
+      <dl className="term-list">
+        {TERMS.map(([english, chinese, englishText, chineseText]) => <div key={english}>
+          <dt>{zh ? chinese : english}</dt>
+          <dd>{zh ? chineseText : englishText}</dd>
+        </div>)}
+      </dl>
+    </div>
+  </span>;
 }

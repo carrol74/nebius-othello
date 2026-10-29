@@ -43,9 +43,9 @@ function SummaryText({text}: {text: string}) {
 export function SummaryPeek({summary}: {summary: GameSummary | null | undefined}) {
   const {t} = useLocale();
   if (summary?.status !== "ready" || !summary.text) return null;
-  return <span className="summary-peek">
-    <button type="button" aria-label={t("Game summary", "整盘总结")} aria-describedby="summary-peek-text"
+  return <span className="peek">
+    <button type="button" className="icon-button" aria-label={t("Game summary", "整盘总结")} aria-describedby="summary-peek-text"
       onKeyDown={(event) => {if (event.key === "Escape") event.currentTarget.blur();}}>i</button>
-    <div className="summary-peek-bubble" id="summary-peek-text" role="tooltip"><SummaryText text={summary.text} /></div>
+    <div className="peek-bubble summary-peek-bubble" id="summary-peek-text" role="tooltip"><SummaryText text={summary.text} /></div>
   </span>;
 }
