@@ -6,8 +6,6 @@ from nemothello.decision import assess_decision
 from nemothello.errors import AppError
 from nemothello.rules import apply_move, flips, legal_moves, opponent
 
-PHASES = ("opening", "midgame", "endgame")
-
 
 def reply_corners(board, actor, move):
     return set(legal_moves(apply_move(board, actor, move), opponent(actor))) & set(CORNERS)
@@ -29,7 +27,6 @@ def player_decisions(review):
 
 def game_profile(review):
     items = player_decisions(review)
-    phases = {phase: Counter() for phase in PHASES}
     totals = Counter()
     patterns = {"many_flips": [], "corner_access": []}
     decisions = []
@@ -53,8 +50,8 @@ def game_profile(review):
         if forced:
             totals["forced"] += 1
             continue
-        phases[phase]["choices"] += 1
-        phases[phase][category] += 1
+        totals["choices"] += 1
+        totals[category] += 1
         totals["assisted"] += assisted
         if category != "review":
             continue
@@ -69,18 +66,13 @@ def game_profile(review):
             not reply_corners(board, actor, move) for move in assessment["best_moves"]
         ):
             patterns["corner_access"].append(item["revision"])
-    for counts in phases.values():
-        totals.update(counts)
-    facts.insert(0, fact("game:choices", f"Complete analysis of all {len(items)} played human moves: "
-                        f"{totals['choices']} choices, {totals['forced']} forced moves. Among the choices, "
-                        f"{totals['best']} matched a searched best move, {totals['close']} were close, "
-                        f"{totals['review']} had a search-preferred alternative worth reviewing. "
-                        f"Hints were displayed on {totals['assisted']} choices. Search agreement in this game "
-                        "does not establish a skill rank, intent, or performance in other games.", "performance"))
-    facts.insert(1, fact("game:phases", " ".join(
-        f"{phase}: {counts['choices']} choices, {counts['best']} best, {counts['close']} close, "
-        f"{counts['review']} worth reviewing." for phase, counts in phases.items())
-        + " These are all the choices in each phase, not only selected mistakes.", "performance"))
+    # Only the counts the summary should mention; moves with one legal square are left out
+    facts.insert(0, fact("game:choices", f"{totals['best']} of your moves "
+                        f"matched the recommended move, {totals['close']} were only slightly worse than it, which is "
+                        f"not a mistake, and {totals['review']} were much worse than it and worth reviewing. "
+                        f"Hints were displayed on {totals['assisted']} moves. Agreement with the recommendation "
+                        "in this game does not establish a skill rank, intent, or performance in other games.",
+                        "performance"))
     facts.append(fact("game:hints", f"Hints were displayed on {totals['assisted']} non-forced player choices. "
                       "A displayed hint does not prove it was read or followed; assisted choices do not "
                       "establish unaided ability.", "hints"))
@@ -107,6 +99,6 @@ def game_profile(review):
                      "pattern" if topic == "many_flips" else "corners")
         facts.append(entry)
         observations.append({"id": topic, "positions": revisions, "fact_id": entry["id"]})
-    return {"facts": facts, "counts": dict(totals), "phases": {p: dict(v) for p, v in phases.items()},
+    return {"facts": facts, "counts": dict(totals),
             "observations": observations, "decisions": decisions,
             "revisions": [entry["revision"] for entry in decisions if entry["category"] != "forced"]}

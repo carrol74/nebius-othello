@@ -11,7 +11,7 @@ The interface supports English and Chinese. Nemothello uses Next.js for the web 
 The backend calls Nemotron 3 Super (`nvidia/nemotron-3-super-120b-a12b`) or Ultra (`nvidia/Nemotron-3-Ultra-550b-a55b`) through Token Factory's OpenAI-compatible chat completions API. Edax analyzes each finished game without a model call; Nemotron turns that analysis into coaching.
 
 - **Move lessons and follow-up questions** run as a tool-calling agent. Nemotron calls `play_line` to play out a line on the rules engine and `check_corner_threat` to test whether a move gives up a corner, then answers through `submit_answer`, citing the facts those tools returned.
-- **Game summaries** take two calls: Nemotron drafts the summary from the whole game's evidence with thinking on, then a second call audits the draft against that evidence.
+- **Game summaries** take two calls: Nemotron drafts a short summary from the whole game's evidence with thinking on, then a second call audits the draft against that evidence. The lesson shows the played move and a board mechanism the rules engine verified, and the summary ends with one question to ask before moves in the next game.
 - **Verification**: Nemotron writes numbers as placeholders that the backend fills from verified values. The backend rejects text that cites unknown facts, names coordinates outside the evidence, or mentions engine scores, and sends it back to the model for correction.
 
 Token Factory let one API key serve both model sizes: switching between Super and Ultra is a change to `TOKEN_FACTORY_MODEL_ID`, with no GPU hosting. Saved lessons and summaries reopen without another call, and `MODEL_TASKS_PER_DAY` (default 300) and `MODEL_TASKS_PER_SESSION_PER_DAY` (default 30) cap daily model use.

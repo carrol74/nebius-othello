@@ -28,6 +28,8 @@ ATTEMPTS = 2
 # Nemotron answered, but its text did not pass the code checks
 CHECK_FAILURES = {"COACH_UNGROUNDED", "REVIEW_PLAN_INVALID", "COACH_ROUNDS", "COACH_NO_TOOL", "REVIEW_TRUNCATED"}
 TOOL_ROUNDS = 4
+# A draft rejected by code checks or the audit is rewritten with that feedback
+SUMMARY_DRAFTS = 3
 SYSTEM_PROMPT = (
     "You are an Othello coach helping a player understand their own game. Explain why: what a move "
     "changes on the board and what the opponent can do next. The user message holds verified evidence "
@@ -168,7 +170,7 @@ class Nemotron:
         usage = {"requests": 0}
         trace = []
         try:
-            for attempt in range(2):
+            for attempt in range(SUMMARY_DRAFTS):
                 message = self.complete(messages, [summary_tool(evidence)], usage, max_tokens=4000, thinking=True)
                 calls = message.get("tool_calls") or []
                 if len(calls) != 1 or calls[0]["function"]["name"] != "submit_summary":
@@ -180,7 +182,7 @@ class Nemotron:
                     self.audit_summary(result, evidence, usage, trace)
                 except AppError as exc:
                     trace.append({"name": "submit_summary", "arguments": raw, "fact_id": None, "error": exc.message})
-                    if attempt == 1:
+                    if attempt == SUMMARY_DRAFTS - 1:
                         raise
                     messages.extend([{"role": "assistant", "content": None, "tool_calls": calls},
                                      {"role": "tool", "tool_call_id": call["id"],
@@ -198,7 +200,7 @@ class Nemotron:
     def audit_summary(self, result, evidence, usage, trace):
         messages = [{"role": "system", "content": SUMMARY_CHECK_PROMPT},
                     {"role": "user", "content": json.dumps({"evidence": json.loads(summary_message(evidence)),
-                                                             "draft": result["plan"]}, ensure_ascii=False)}]
+                                                             "summary": result["paragraphs"]}, ensure_ascii=False)}]
         message = self.complete(messages, [summary_check_tool()], usage, max_tokens=1200, thinking=False)
         calls = message.get("tool_calls") or []
         if len(calls) != 1 or calls[0]["function"]["name"] != "check_summary":
